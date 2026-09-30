@@ -37,10 +37,9 @@ jobs:
         run: |
           pip install -q finlab pandas numpy
           python update_data.py
+          cp RSI選股器.html index.html
       - name: 更新收盤股價（官方 TWSE+TPEx，缺價 yfinance 補）
         run: python daily_update.py
-      - name: 同步為 index.html
-        run: cp RSI選股器.html index.html
       - name: 提交回 main（Pages 自動重建）
         run: |
           git config user.name "rsi-bot"
