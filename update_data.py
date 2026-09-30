@@ -1,0 +1,548 @@
+# -*- coding: utf-8 -*-
+"""
+三頻率 RSI 選股器 — v7f 雙通道（60/40）本地資料更新與 HTML 產生器
+============================================================
+- 抓取 FinLab 最新資料，依 v7f 規則算出本週選股清單：
+    A 通道（60%）：v7e 前60% 15 檔（RSI20 排序）
+    B 通道（40%）：權值龍頭 4 檔（tsm_long 開關 ON 時）
+- 讀取歷史回測績效（my_nav_v7f.csv / v7f_summary.json）
+- 輸出 RSI選股器.html（資料全部內嵌，雙擊即開、免伺服器、免雲端、免 TG）
+- 用法：python update_data.py
+============================================================
+"""
+import os, sys, json, datetime
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+os.chdir(HERE)
+
+
+def load_token():
+    # GitHub Actions 用 env（secret），本機用 config.json
+    env_t = (os.environ.get("FINLAB_TOKEN") or "").strip()
+    if env_t:
+        return env_t
+    try:
+        cfg = json.load(open("config.json", encoding="utf-8"))
+        t = (cfg.get("FINLAB_TOKEN") or "").strip()
+        if t:
+            return t
+    except Exception:
+        pass
+    return ""
+
+
+TOKEN = load_token()
+if not TOKEN:
+    print("❌ 找不到 FinLab token（請在 config.json 填入 FINLAB_TOKEN）")
+    sys.exit(1)
+
+import pandas as pd
+import numpy as np
+import finlab
+from finlab import data
+
+finlab.login(api_token=TOKEN)
+
+MAX_HOLD_A = 15
+MAX_HOLD_B = 4
+W_A, W_B = 0.60, 0.40
+TARGET_W_A = W_A * 0.95 / MAX_HOLD_A   # 3.8%
+TARGET_W_B = W_B * 0.95 / MAX_HOLD_B   # 9.5%
+
+
+def rsi(close, n):
+    d = close.diff()
+    g = d.clip(lower=0)
+    l = (-d).clip(lower=0)
+    ag = g.ewm(alpha=1 / n, min_periods=n, adjust=False).mean()
+    al = l.ewm(alpha=1 / n, min_periods=n, adjust=False).mean()
+    return 100 - 100 / (1 + ag / al)
+
+
+def common(code):
+    s = str(code)
+    return len(s) == 4 and s.isdigit() and not s.startswith("0")
+
+
+# ---------- 1. 抓取 FinLab 資料 ----------
+print("① 抓取 FinLab 資料（首次約 1~3 分鐘，之後有快取）…")
+close = data.get("etl:adj_close")
+raw = data.get("price:收盤價")
+roe = data.get("fundamental_features:ROE稅後").apply(pd.to_numeric, errors="coerce")
+tv = data.get("price:成交金額")
+
+keep = [c for c in close.columns if common(c)]
+close = close[keep]
+raw = raw[[c for c in keep if c in raw.columns]]
+roe = roe[[c for c in keep if c in roe.columns]]
+tv = tv[[c for c in keep if c in tv.columns]]
+
+name_map = {}
+try:
+    info = data.get("company_basic_info")
+    if info is not None and "公司簡稱" in info.columns:
+        key = "stock_id" if "stock_id" in info.columns else info.index.name
+        name_map = info.set_index(key)["公司簡稱"].to_dict()
+except Exception:
+    pass
+
+# ---------- 2. 指標與訊號（v7f，全部 shift(1) 防未來函數） ----------
+r20, r60, r120 = rsi(close, 20), rsi(close, 60), rsi(close, 120)
+r20s = r20.shift(1)
+ma60 = close.rolling(60).mean()
+tv20 = tv.rolling(20).mean()
+liq = tv20.gt(tv20.quantile(0.40, axis=1), axis=0)   # A：前60%
+
+# A 通道（v7e）
+long_up = (r120 > 55).shift(1)
+mid_ok = (r60 < 75).shift(1)
+rally = (r20.pct_change(3, fill_method=None) > 0.02).shift(1)
+stuck = ((r20 > 75).rolling(3).sum() == 3).shift(1)
+roe_ok = (roe > 0).shift(1).fillna(True)
+buyA = long_up & mid_ok & rally & stuck & roe_ok & liq.shift(1).fillna(True)
+sellA = buyA.shift(80).fillna(False) | (close < ma60)
+posA = buyA.hold_until(sellA)
+
+# B 通道（權值龍頭動能）
+rank_tv = tv20.rank(axis=1, ascending=False)
+big = rank_tv.shift(1) <= 15
+bull = close.shift(1) > ma60.shift(1)
+lt_up = (r120 > 60).shift(1)
+not_hot = r20s < 88
+buyB = big & bull & lt_up & not_hot & roe_ok
+sellB = buyB.shift(80).fillna(False) | (close < ma60)
+posB = buyB.hold_until(sellB)
+
+# tsm_long 開關
+tsm_on = False
+try:
+    tsm = close["2330"]
+    if pd.notna(tsm.rolling(20).mean().iloc[-1]) and pd.notna(tsm.rolling(60).mean().iloc[-1]):
+        tsm_on = bool(tsm.rolling(20).mean().shift(1).iloc[-1] >= tsm.rolling(60).mean().shift(1).iloc[-1]
+                      and tsm.shift(1).iloc[-1] >= tsm.rolling(60).mean().shift(1).iloc[-1])
+except Exception:
+    tsm_on = False
+
+# ---------- 3. 最新交易日選股清單 ----------
+last_day = close.dropna(how="all").index[-1]
+sig_day = last_day.strftime("%Y-%m-%d")
+
+# A 通道：RSI20 排序前 15
+curA = posA.loc[last_day]
+codesA = [c for c in curA[curA].index.tolist() if c in r20.columns]
+scoredA = sorted(codesA, key=lambda c: float(r20[c].loc[last_day])
+                 if pd.notna(r20[c].loc[last_day]) else -1, reverse=True)
+cur_codes_a = scoredA[:MAX_HOLD_A]
+
+# B 通道：成交金額排序前 4
+curB = posB.loc[last_day]
+codesB = [c for c in curB[curB].index.tolist() if c in tv20.columns]
+scoredB = sorted(codesB, key=lambda c: float(tv20[c].loc[last_day])
+                 if pd.notna(tv20[c].loc[last_day]) else -1, reverse=True)
+cur_codes_b = scoredB[:MAX_HOLD_B]
+
+# 與上次清單比對（買 / 賣 / 持有）
+state = {}
+if os.path.exists("state.json"):
+    try:
+        state = json.load(open("state.json", encoding="utf-8"))
+    except Exception:
+        state = {}
+prev_codes = state.get("codes", [])
+prev_codes_b = state.get("codes_b", [])
+prev_date = state.get("date")
+
+def build_holdings(cur_codes, prev_codes, w_target):
+    out = []
+    for c in cur_codes:
+        px = float(raw[c].loc[last_day]) if pd.notna(raw[c].loc[last_day]) else None
+        r = float(r20[c].loc[last_day]) if pd.notna(r20[c].loc[last_day]) else None
+        st = "hold"
+        if prev_date and c not in prev_codes:
+            st = "buy"
+        out.append({
+            "code": c, "name": name_map.get(c, c),
+            "px": round(px, 2) if px else None,
+            "rsi20": round(r, 1) if r is not None else None,
+            "status": st, "w": w_target,
+        })
+    return out
+
+holdings_a = build_holdings(cur_codes_a, prev_codes, TARGET_W_A)
+holdings_b = build_holdings(cur_codes_b, prev_codes_b, TARGET_W_B)
+
+sells = []
+if prev_date:
+    sells = [{"code": c, "name": name_map.get(c, c), "pool": "A"} for c in prev_codes if c not in cur_codes_a]
+    sells += [{"code": c, "name": name_map.get(c, c), "pool": "B"} for c in prev_codes_b if c not in cur_codes_b]
+
+json.dump({"date": sig_day, "codes": cur_codes_a, "codes_b": cur_codes_b},
+          open("state.json", "w", encoding="utf-8"), ensure_ascii=False)
+
+# ---------- 4. 績效資料（v7f） ----------
+nav_df = pd.read_csv("my_nav_v7f.csv", encoding="utf-8-sig")
+nav_df["date"] = pd.to_datetime(nav_df["date"])
+nav_df = nav_df.sort_values("date").drop_duplicates("date")
+nav_list = [[d.strftime("%Y-%m-%d"), round(float(n), 0)]
+            for d, n in zip(nav_df["date"], nav_df["nav"])]
+
+nav_arr = nav_df["nav"].to_numpy()
+peak = np.maximum.accumulate(nav_arr)
+dd_arr = (nav_arr / peak - 1) * 100
+dd_list = [[d.strftime("%Y-%m-%d"), round(float(x), 2)]
+           for d, x in zip(nav_df["date"], dd_arr)]
+
+yearly = []
+for y, g in nav_df.groupby(nav_df["date"].dt.year):
+    if len(g) < 2:
+        continue
+    first, last = g["nav"].iloc[0], g["nav"].iloc[-1]
+    yearly.append({"year": int(y), "ret": round((last / first - 1) * 100, 2)})
+
+summary = json.load(open("v7f_summary.json", encoding="utf-8"))
+
+# AI 訊號
+ai = {}
+try:
+    ai = json.load(open("ai_signals.json", encoding="utf-8"))
+except Exception:
+    ai = {}
+
+DATA = {
+    "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+    "sig_date": sig_day,
+    "holdings_a": holdings_a,
+    "holdings_b": holdings_b,
+    "sells": sells,
+    "has_prev": bool(prev_date),
+    "prev_date": prev_date,
+    "tsm_on": tsm_on,
+    "ai": ai,
+    "perf": {
+        "final_nav": summary.get("final_nav"),
+        "cagr": summary.get("cagr"),
+        "mdd": summary.get("mdd"),
+        "start_capital": 100000,
+        "nav": nav_list,
+        "dd": dd_list,
+        "yearly": yearly,
+    },
+    "target_w_a": TARGET_W_A,
+    "target_w_b": TARGET_W_B,
+}
+
+# ---------- 5. 生成 HTML ----------
+DATA_JSON = json.dumps(DATA, ensure_ascii=False)
+
+HTML = """<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>三頻率 RSI 選股器 v7f（雙通道 60/40）</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<style>
+  :root{
+    --bg:#0f1420; --card:#1a2233; --card2:#202b42; --line:#2c3a55;
+    --txt:#e8edf5; --dim:#8fa0b8; --up:#ff4d4f; --down:#3ddc84;
+    --accent:#4da3ff; --warn:#f5b942; --gold:#f5c542;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--txt); font-family:"Segoe UI","Microsoft JhengHei",sans-serif; padding:20px;}
+  .wrap{max-width:1180px; margin:0 auto;}
+  header{display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:10px; margin-bottom:16px;}
+  h1{font-size:24px; letter-spacing:1px;}
+  h1 small{color:var(--dim); font-size:13px; font-weight:normal; margin-left:8px;}
+  .meta{color:var(--dim); font-size:13px; text-align:right; line-height:1.7;}
+  .cards{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px;}
+  .card .k{color:var(--dim); font-size:12px; margin-bottom:6px;}
+  .card .v{font-size:24px; font-weight:700;}
+  .card .s{color:var(--dim); font-size:11px; margin-top:4px;}
+  .up{color:var(--up);} .down{color:var(--down);}
+  section{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:16px;}
+  section h2{font-size:16px; margin-bottom:12px; display:flex; align-items:center; gap:8px;}
+  section h2 .tag{font-size:11px; background:var(--card2); border:1px solid var(--line); padding:2px 8px; border-radius:20px; color:var(--dim); font-weight:normal;}
+  .assetbar{display:flex; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap;}
+  .assetbar label{color:var(--dim); font-size:13px;}
+  .assetbar input{background:var(--card2); border:1px solid var(--line); color:var(--txt); padding:8px 12px; border-radius:8px; font-size:15px; width:180px;}
+  table{width:100%; border-collapse:collapse; font-size:13.5px;}
+  th{color:var(--dim); text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); font-weight:600; white-space:nowrap;}
+  td{padding:8px 10px; border-bottom:1px solid #1f293d; white-space:nowrap;}
+  tr:hover td{background:#1d2840;}
+  .num{text-align:right; font-variant-numeric:tabular-nums;}
+  .badge{display:inline-block; padding:2px 10px; border-radius:20px; font-size:12px; font-weight:600;}
+  .b-buy{background:rgba(255,77,79,.15); color:var(--up); border:1px solid rgba(255,77,79,.4);}
+  .b-hold{background:rgba(77,163,255,.12); color:var(--accent); border:1px solid rgba(77,163,255,.35);}
+  .b-sell{background:rgba(61,220,132,.12); color:var(--down); border:1px solid rgba(61,220,132,.4);}
+  .chart{width:100%; height:340px;}
+  .chart.small{height:200px;}
+  .note{color:var(--dim); font-size:12px; margin-top:10px; line-height:1.8;}
+  .warnbox{background:rgba(245,185,66,.1); border:1px solid rgba(245,185,66,.4); color:var(--warn); padding:10px 14px; border-radius:10px; font-size:13px; margin-bottom:14px;}
+  .switch{display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border-radius:20px; font-size:13px; font-weight:600; margin-bottom:12px;}
+  .sw-on{background:rgba(61,220,132,.12); color:var(--down); border:1px solid rgba(61,220,132,.4);}
+  .sw-off{background:rgba(245,185,66,.1); color:var(--warn); border:1px solid rgba(245,185,66,.4);}
+  .ai-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:10px;}
+  .ai-item{background:var(--card2); border:1px solid var(--line); border-radius:10px; padding:10px 12px;}
+  .ai-item .k{color:var(--dim); font-size:12px;}
+  .ai-item .v{font-size:16px; font-weight:600; margin-top:4px;}
+  .empty{color:var(--dim); padding:14px 0; font-size:13px;}
+  footer{color:var(--dim); font-size:11px; text-align:center; padding:16px 0 8px; line-height:1.8;}
+  @media (max-width:900px){ .cards{grid-template-columns:repeat(2,1fr);} .ai-grid{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>📊 三頻率 RSI 選股器<small>v7f 雙通道 60/40</small></h1>
+    <div class="meta">
+      訊號基準日：<b id="m-sig"></b>｜資料更新：<span id="m-gen"></span><br>
+      每週五盤後依清單執行｜下單請以口袋證券 App 手動操作
+    </div>
+  </header>
+
+  <div id="warnbox" class="warnbox" style="display:none"></div>
+
+  <div class="cards">
+    <div class="card"><div class="k">年化報酬率 CAGR</div><div class="v up" id="c-cagr">—</div><div class="s">2015-01 ~ 2026-09</div></div>
+    <div class="card"><div class="k">最大回撤 MDD</div><div class="v down" id="c-mdd">—</div><div class="s">歷史回測口徑</div></div>
+    <div class="card"><div class="k">最終資產</div><div class="v" id="c-nav">—</div><div class="s">初始本金 <span id="c-cap">—</span></div></div>
+    <div class="card"><div class="k">權值通道</div><div class="v" id="c-sw">—</div><div class="s">tsm_long 開關</div></div>
+  </div>
+
+  <div id="ai-banner" class="warnbox" style="display:none"></div>
+
+  <section>
+    <h2>🎯 A 通道選股清單（60%）<span class="tag" id="h-cnt-a"></span></h2>
+    <div class="assetbar">
+      <label>目前總資產（元）</label>
+      <input type="number" id="asset" value="1000000" step="10000" min="0">
+      <span class="note">A 每檔 = 總資產 × 3.8% ÷ 收盤價｜B 每檔 = × 9.5%</span>
+    </div>
+    <table>
+      <thead><tr>
+        <th>狀態</th><th>代號</th><th>名稱</th><th class="num">收盤價</th>
+        <th class="num">RSI20</th><th class="num">建議股數</th>
+      </tr></thead>
+      <tbody id="tb-a"></tbody>
+    </table>
+    <div class="note">🟢 買進 = 本週新進訊號　🔵 持有 = 續抱　A 通道滿倉 15 檔、每檔 3.8%</div>
+  </section>
+
+  <section id="b-sec">
+    <h2>📌 B 通道權值（40%）<span class="tag" id="h-cnt-b"></span></h2>
+    <div class="switch" id="sw-box">—</div>
+    <table>
+      <thead><tr>
+        <th>狀態</th><th>代號</th><th>名稱</th><th class="num">收盤價</th>
+        <th class="num">RSI20</th><th class="num">建議股數</th>
+      </tr></thead>
+      <tbody id="tb-b"></tbody>
+    </table>
+    <div class="note">B 通道僅在台積電站上季線（tsm_long ON）時啟用，最多 4 檔、每檔 9.5%</div>
+  </section>
+
+  <section id="sell-sec" style="display:none">
+    <h2>📉 本週建議賣出<span class="tag" id="s-cnt"></span></h2>
+    <table>
+      <thead><tr><th>通道</th><th>代號</th><th>名稱</th><th>原因</th></tr></thead>
+      <tbody id="tb-sell"></tbody>
+    </table>
+    <div class="note">賣出原因：持有滿 80 交易日 或 收盤跌破 MA60（季線）→ 請於週五盤後以市價賣出</div>
+  </section>
+
+  <section>
+    <h2>🤖 AI 紅利監控<span class="tag" id="ai-upd"></span></h2>
+    <div class="ai-grid" id="ai-grid"></div>
+    <div class="note" id="ai-note"></div>
+  </section>
+
+  <section>
+    <h2>📈 歷史績效（2015-01 ~ 2026-09 回測）</h2>
+    <div class="chart" id="chart-nav"></div>
+    <div class="note" style="margin-top:6px">淨值曲線（初始 10 萬元、單筆複利、每週五調倉、60/40 雙通道）</div>
+    <div class="chart small" id="chart-dd" style="margin-top:10px"></div>
+    <div class="note" style="margin-top:6px">回撤（Drawdown）走勢</div>
+    <div class="chart small" id="chart-yr" style="margin-top:10px"></div>
+    <div class="note" style="margin-top:6px">年度報酬率（%）</div>
+  </section>
+
+  <section>
+    <h2>🕘 說明</h2>
+    <div class="note">
+      ▸ 資料源 FinLab API，訊號基準日為最新交易日（盤後收盤價）。<br>
+      ▸ A 通道（60%）：RSI120&gt;55、RSI60&lt;75、RSI20三日漲&gt;2%、RSI20&gt;75 連3日、ROE&gt;0、成交金額前60%、15 檔。<br>
+      ▸ B 通道（40%）：成交金額前15 + 站上MA60 + RSI120&gt;60 + RSI20&lt;88 + ROE&gt;0，取 4 檔；僅 tsm_long ON 時啟用。<br>
+      ▸ 出場：持有滿 80 交易日 或 跌破 MA60。AI 訊號轉弱時建議手動降 B 通道（80/20 或全關）。<br>
+      ▸ 績效為 2015-01 ~ 2026-09 歷史回測（賣出成本 0.3%、買入 0%、含漲跌停跳過）。
+    </div>
+  </section>
+
+  <footer>
+    資料來源：FinLab API（還權收盤 / ROE 稅後 / 成交金額）｜績效為歷史回測統計，僅供研究參考，不構成投資建議<br>
+    過去績效不代表未來表現；實盤操作請以口袋證券 App 為準。
+  </footer>
+</div>
+
+<script>
+const DATA = __DATA__;
+
+function fmt(n){ return (n===null||n===undefined||isNaN(n)) ? "—" : n.toLocaleString("en-US",{maximumFractionDigits:0}); }
+function pct(x){ return (x===null||x===undefined||isNaN(x)) ? "—" : (x*100).toFixed(1)+"%"; }
+const $ = id => document.getElementById(id);
+
+$("m-sig").textContent = DATA.sig_date;
+$("m-gen").textContent = DATA.generated_at;
+const P = DATA.perf;
+$("c-cagr").textContent = pct(P.cagr);
+$("c-mdd").textContent = pct(P.mdd);
+$("c-nav").textContent = fmt(P.final_nav);
+$("c-cap").textContent = fmt(P.start_capital);
+$("c-sw").textContent = DATA.tsm_on ? "🟢 ON" : "⚪ OFF";
+$("c-sw").className = "v " + (DATA.tsm_on ? "down" : "warn");
+
+const d = new Date(DATA.sig_date);
+if(d.getDay() !== 5){
+  $("warnbox").style.display = "block";
+  $("warnbox").textContent = "ℹ️ 目前訊號基準日為「" + DATA.sig_date + "」，非本週最後交易日（週五）。此清單僅供提前參考，正式調倉請以本週五盤後最新資料為準（屆時再執行一次更新）。";
+}
+
+// AI 訊號
+const AI = DATA.ai || {};
+$("ai-upd").textContent = AI.updated || "—";
+const aiMap = [
+  ["Hyperscaler capex", AI.capex],
+  ["AI 變現率", AI.monet],
+  ["CoWoS 產能", AI.cowos],
+];
+const AG = $("ai-grid");
+aiMap.forEach(([k,v])=>{
+  const emoji = (v||"").match(/正|跟上|滿載|成長/) ? "🟢" : ((v||"").match(/轉負|落後|鬆動|下降|減速/) ? "🔴" : "⚪");
+  const el = document.createElement("div");
+  el.className = "ai-item";
+  el.innerHTML = `<div class="k">${k}</div><div class="v">${emoji} ${v||"—"}</div>`;
+  AG.appendChild(el);
+});
+const aiWeak = ["capex","monet","cowos"].some(k => ["轉負","落後","鬆動","下降","減速"].some(x => (AI[k]||"").includes(x)));
+if(aiWeak){
+  $("ai-banner").style.display = "block";
+  $("ai-banner").textContent = "⚠️ AI 訊號轉弱：建議將權值通道降為 80/20 或全關！";
+}
+if(AI.note) $("ai-note").textContent = "ℹ️ " + AI.note;
+
+// B 通道開關狀態
+$("sw-box").textContent = DATA.tsm_on ? "🟢 權值通道 ON（台積電站上季線 → 60/40）" : "⚪ 權值通道 OFF（台積電未站上季線 → 100% A）";
+$("sw-box").className = "switch " + (DATA.tsm_on ? "sw-on" : "sw-off");
+
+// 選股清單渲染
+const assetInput = $("asset");
+const isFirst = !DATA.has_prev;
+function renderTable(tbId, list, w, isA){
+  const TB = $(tbId);
+  const asset = parseFloat(assetInput.value) || 0;
+  TB.innerHTML = "";
+  if(!isA && !DATA.tsm_on){
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="6" class="empty">B 通道關閉（tsm_long OFF）— 資金 100% 於 A 通道</td>`;
+    TB.appendChild(tr);
+    return;
+  }
+  list.forEach(h=>{
+    const st = (h.status === "buy" || isFirst) ? ["買進","b-buy"] : ["持有","b-hold"];
+    const qty = (h.px && asset>0) ? Math.floor(asset * w / h.px) : null;
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      `<td><span class="badge ${st[1]}">${st[0]}</span></td>` +
+      `<td><b>${h.code}</b></td><td>${h.name}</td>` +
+      `<td class="num">${h.px!==null?h.px:"—"}</td>` +
+      `<td class="num">${h.rsi20!==null?h.rsi20:"—"}</td>` +
+      `<td class="num"><b>${qty!==null?qty.toLocaleString("en-US"):"—"}</b></td>`;
+    TB.appendChild(tr);
+  });
+}
+$("h-cnt-a").textContent = DATA.holdings_a.length + " 檔・每檔 3.8%";
+$("h-cnt-b").textContent = DATA.holdings_b.length + " 檔・每檔 9.5%";
+function renderAll(){
+  renderTable("tb-a", DATA.holdings_a, DATA.target_w_a, true);
+  renderTable("tb-b", DATA.holdings_b, DATA.target_w_b, false);
+}
+assetInput.addEventListener("input", renderAll);
+renderAll();
+
+// 賣出清單
+const S = DATA.sells;
+if(S && S.length){
+  $("sell-sec").style.display = "block";
+  $("s-cnt").textContent = S.length + " 檔";
+  const TS = $("tb-sell");
+  S.forEach(s=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${s.pool==="B"?"B":"A"}</td><td><b>${s.code}</b></td><td>${s.name}</td><td>掉出前 ${s.pool==="B"?"4":"15"} 名（賣出換股）</td>`;
+    TS.appendChild(tr);
+  });
+}
+
+// ECharts
+function initChart(id, opt){
+  const el = $(id);
+  if(typeof echarts === "undefined"){
+    el.innerHTML = '<div class="empty">⚠️ 無法載入 ECharts（需網路連線）；資料表格仍可正常查看。</div>';
+    return;
+  }
+  const ch = echarts.init(el);
+  ch.setOption(opt);
+  window.addEventListener("resize", ()=>ch.resize());
+}
+const AXIS = { axisLine:{lineStyle:{color:"#2c3a55"}}, axisLabel:{color:"#8fa0b8"}, splitLine:{lineStyle:{color:"#1f293d"}} };
+
+initChart("chart-nav", {
+  backgroundColor:"transparent",
+  tooltip:{trigger:"axis", valueFormatter:v=>fmt(v)},
+  grid:{left:70,right:20,top:20,bottom:60},
+  xAxis:{type:"category", data:P.nav.map(x=>x[0]), ...AXIS, axisLabel:{color:"#8fa0b8", hideOverlap:true}},
+  yAxis:{type:"value", ...AXIS, axisLabel:{color:"#8fa0b8", formatter:v=> (v>=10000 ? (v/10000).toFixed(0)+"萬" : v)}},
+  dataZoom:[{type:"inside",start:60,end:100},{type:"slider",height:18,bottom:10,start:60,end:100}],
+  series:[{
+    type:"line", data:P.nav.map(x=>x[1]), showSymbol:false,
+    lineStyle:{width:2,color:"#4da3ff"},
+    areaStyle:{color:{type:"linear",x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:"rgba(77,163,255,.35)"},{offset:1,color:"rgba(77,163,255,0)"}]}}
+  }]
+});
+
+initChart("chart-dd", {
+  backgroundColor:"transparent",
+  tooltip:{trigger:"axis", valueFormatter:v=>v.toFixed(2)+"%"},
+  grid:{left:60,right:20,top:15,bottom:30},
+  xAxis:{type:"category", data:P.dd.map(x=>x[0]), ...AXIS, axisLabel:{show:false}},
+  yAxis:{type:"value", ...AXIS, axisLabel:{color:"#8fa0b8", formatter:v=>v+"%"}},
+  series:[{
+    type:"line", data:P.dd.map(x=>x[1]), showSymbol:false,
+    lineStyle:{width:1.5,color:"#3ddc84"},
+    areaStyle:{color:{type:"linear",x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:"rgba(61,220,132,.3)"},{offset:1,color:"rgba(61,220,132,0)"}]}}
+  }]
+});
+
+initChart("chart-yr", {
+  backgroundColor:"transparent",
+  tooltip:{trigger:"axis", valueFormatter:v=>v.toFixed(2)+"%"},
+  grid:{left:60,right:20,top:15,bottom:30},
+  xAxis:{type:"category", data:P.yearly.map(x=>x.year), ...AXIS},
+  yAxis:{type:"value", ...AXIS, axisLabel:{color:"#8fa0b8", formatter:v=>v+"%"}},
+  series:[{
+    type:"bar", data:P.yearly.map(x=>({value:x.ret, itemStyle:{color:x.ret>=0?"#ff4d4f":"#3ddc84"}})),
+    barWidth:"55%", label:{show:true, position:"top", color:"#8fa0b8", formatter:p=>p.value.toFixed(1)+"%"}
+  }]
+});
+</script>
+</body>
+</html>
+"""
+
+HTML = HTML.replace("__DATA__", DATA_JSON)
+with open("RSI選股器.html", "w", encoding="utf-8") as f:
+    f.write(HTML)
+
+print("✅ 完成！")
+print(f"   訊號基準日：{sig_day}")
+print(f"   A 通道：{len(holdings_a)} 檔｜B 通道：{len(holdings_b)} 檔｜權值開關：{'ON' if tsm_on else 'OFF'}")
+print(f"   已生成：RSI選股器.html　→　雙擊即可用瀏覽器開啟")
