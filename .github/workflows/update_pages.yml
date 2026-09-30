@@ -1,34 +1,50 @@
 name: 更新選股器網頁
 on:
   schedule:
-    - cron: '0 4 * * 5'   # 週五 12:00 台北（與 TG 同步預覽）
-    - cron: '10 0 * * 6'  # 週六 00:10 UTC = 台北 08:10（最終確認版）
+    - cron: '40 6 * * 1-4'   # 週一~四 14:40 台北：只更新收盤股價
+    - cron: '40 6 * * 5'     # 週五 14:40：完整 FinLab 選股 + 更新股價
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 更新模式
+        required: false
+        default: daily
+        type: choice
+        options:
+          - daily
+          - full
 permissions:
   contents: write
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 jobs:
-  build:
+  update:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: 安裝依賴
-        run: pip install -q finlab pandas numpy
-      - name: 更新選股資料並產生網頁
+      - name: 安裝基礎依賴
+        run: pip install -q yfinance
+      - name: 完整選股（僅週五或手動 full）
+        if: >
+          (github.event_name == 'schedule' && github.event.schedule == '40 6 * * 5')
+          || (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'full')
         env:
           FINLAB_TOKEN: ${{ secrets.FINLAB_TOKEN }}
         run: |
+          pip install -q finlab pandas numpy
           python update_data.py
-          cp RSI選股器.html index.html
-      - name: 提交狀態與網頁回 main（Pages 自動重建）
+      - name: 更新收盤股價（官方 TWSE+TPEx，缺價 yfinance 補）
+        run: python daily_update.py
+      - name: 同步為 index.html
+        run: cp RSI選股器.html index.html
+      - name: 提交回 main（Pages 自動重建）
         run: |
           git config user.name "rsi-bot"
           git config user.email "bot@rsi.local"
-          git add state.json index.html || true
-          git commit -m "update state & page [skip ci]" || echo "無變更"
+          git add state.json index.html RSI選股器.html || true
+          git commit -m "auto update page [skip ci]" || echo "無變更"
           git push
