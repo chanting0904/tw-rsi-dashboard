@@ -1,56 +1,34 @@
 name: 更新選股器網頁
-
 on:
   schedule:
     - cron: '0 4 * * 5'   # 週五 12:00 台北（與 TG 同步預覽）
     - cron: '10 0 * * 6'  # 週六 00:10 UTC = 台北 08:10（最終確認版）
   workflow_dispatch:
-
 permissions:
   contents: write
-  pages: write
-  id-token: write
-
 concurrency:
   group: pages
   cancel-in-progress: true
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-
       - name: 安裝依賴
         run: pip install -q finlab pandas numpy
-
       - name: 更新選股資料並產生網頁
         env:
           FINLAB_TOKEN: ${{ secrets.FINLAB_TOKEN }}
         run: |
           python update_data.py
-          mkdir -p _site
-          cp RSI選股器.html _site/index.html
-
-      - name: 提交狀態（買/賣/持有去重）
+          cp RSI選股器.html index.html
+      - name: 提交狀態與網頁回 main（Pages 自動重建）
         run: |
           git config user.name "rsi-bot"
           git config user.email "bot@rsi.local"
-          git add state.json || true
-          git commit -m "update state" || echo "無變更"
+          git add state.json index.html || true
+          git commit -m "update state & page [skip ci]" || echo "無變更"
           git push
-
-      - name: 設定 Pages
-        uses: actions/configure-pages@v5
-
-      - name: 上傳產物
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
-
-      - name: 部署
-        uses: actions/deploy-pages@v4
