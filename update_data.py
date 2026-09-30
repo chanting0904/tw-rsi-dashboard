@@ -42,6 +42,7 @@ import finlab
 from finlab import data
 
 finlab.login(api_token=TOKEN)
+data.set_storage(data.FileStorage("finlab_db"))
 
 MAX_HOLD_A = 15
 MAX_HOLD_B = 4
