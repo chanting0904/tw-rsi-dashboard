@@ -278,6 +278,12 @@ HTML = """<!DOCTYPE html>
   td{padding:8px 10px; border-bottom:1px solid #1f293d; white-space:nowrap;}
   tr:hover td{background:#1d2840;}
   .num{text-align:right; font-variant-numeric:tabular-nums;}
+  .cell-input{width:92px; background:var(--card2); border:1px solid var(--line); color:var(--txt); padding:5px 7px; border-radius:6px; font-size:13px; text-align:right; font-variant-numeric:tabular-nums;}
+  .cell-input:focus{outline:none; border-color:var(--accent);}
+  .tgt{text-align:right; font-variant-numeric:tabular-nums; color:var(--dim);}
+  .adj-pos{color:var(--up); font-weight:700; white-space:nowrap;}
+  .adj-neg{color:var(--down); font-weight:700; white-space:nowrap;}
+  .adj-zero{color:var(--dim); white-space:nowrap;}
   .badge{display:inline-block; padding:2px 10px; border-radius:20px; font-size:12px; font-weight:600;}
   .b-buy{background:rgba(255,77,79,.15); color:var(--up); border:1px solid rgba(255,77,79,.4);}
   .b-hold{background:rgba(77,163,255,.12); color:var(--accent); border:1px solid rgba(77,163,255,.35);}
@@ -327,12 +333,13 @@ HTML = """<!DOCTYPE html>
     <div class="assetbar">
       <label>目前總資產（元）</label>
       <input type="number" id="asset" value="1000000" step="10000" min="0">
-      <span class="note">A 每檔 = 總資產 × 3.8% ÷ 收盤價｜B 每檔 = × 9.5%</span>
+      <span class="note">輸入你的進場價與持股，系統自動算目標股數與加減碼（資料只存在你自己的瀏覽器）</span>
     </div>
     <table>
       <thead><tr>
         <th>狀態</th><th>代號</th><th>名稱</th><th class="num">收盤價</th>
-        <th class="num">RSI20</th><th class="num">建議股數</th>
+        <th class="num">RSI20</th><th class="num">我的進場價</th><th class="num">目前持股</th>
+        <th class="num">目標股數</th><th class="num">調整(+-)</th>
       </tr></thead>
       <tbody id="tb-a"></tbody>
     </table>
@@ -345,7 +352,8 @@ HTML = """<!DOCTYPE html>
     <table>
       <thead><tr>
         <th>狀態</th><th>代號</th><th>名稱</th><th class="num">收盤價</th>
-        <th class="num">RSI20</th><th class="num">建議股數</th>
+        <th class="num">RSI20</th><th class="num">我的進場價</th><th class="num">目前持股</th>
+        <th class="num">目標股數</th><th class="num">調整(+-)</th>
       </tr></thead>
       <tbody id="tb-b"></tbody>
     </table>
@@ -469,37 +477,82 @@ if(AI.note) $("ai-note").textContent = "ℹ️ " + AI.note;
 $("sw-box").textContent = DATA.tsm_on ? "🟢 權值通道 ON（台積電站上季線 → 60/40）" : "⚪ 權值通道 OFF（台積電未站上季線 → 100% A）";
 $("sw-box").className = "switch " + (DATA.tsm_on ? "sw-on" : "sw-off");
 
-// 選股清單渲染
+// ===== 個人參數：進場價 / 持股（localStorage 只存使用者自己瀏覽器） =====
+const STORE_KEY = "rsi_user_pos_v1";
+const MAXA = 15;
+let userStore = (()=>{ try{ return JSON.parse(localStorage.getItem(STORE_KEY))||{}; }catch(e){ return {}; } })();
+function saveStore(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(userStore)); }catch(e){} }
+
 const assetInput = $("asset");
 const isFirst = !DATA.has_prev;
+// tsm_on：A 60%（每檔3.8%）；tsm_off：A 100%（每檔6.33%）
+function wA(){ return DATA.tsm_on ? DATA.target_w_a : 0.95/MAXA; }
+const wB = DATA.target_w_b;
+
+// 掉出最新清單（建議賣出）的標的：下週不顯示，並清掉本地殘留
+const curCodeSet = new Set([...DATA.holdings_a.map(h=>h.code), ...DATA.holdings_b.map(h=>h.code)]);
+Object.keys(userStore).forEach(c=>{ if(!curCodeSet.has(c)) delete userStore[c]; });
+saveStore();
+
+function recalcRow(code, w){
+  const pxEl = document.querySelector(`input[data-code="${code}"][data-field="px"]`);
+  if(!pxEl) return;
+  const qtyEl = document.querySelector(`input[data-code="${code}"][data-field="qty"]`);
+  const px = parseFloat(pxEl.value)||0;
+  const qty = parseFloat(qtyEl.value)||0;
+  const asset = parseFloat(assetInput.value)||0;
+  const tgt = (px>0 && asset>0) ? Math.floor(asset*w/px) : 0;
+  document.querySelector(`[data-code="${code}"][data-field="tgt"]`).textContent = tgt.toLocaleString("en-US");
+  const adj = tgt - qty;
+  const adjEl = document.querySelector(`[data-code="${code}"][data-field="adj"]`);
+  if(adj>0) adjEl.innerHTML = `<span class="adj-pos">+${adj.toLocaleString("en-US")} 增持</span>`;
+  else if(adj<0) adjEl.innerHTML = `<span class="adj-neg">${adj.toLocaleString("en-US")} 減持</span>`;
+  else adjEl.innerHTML = `<span class="adj-zero">持平</span>`;
+}
+function onCell(code, field, w){
+  const v = document.querySelector(`input[data-code="${code}"][data-field="${field}"]`).value;
+  if(!userStore[code]) userStore[code] = {};
+  userStore[code][field] = v;
+  saveStore();
+  recalcRow(code, w);
+}
 function renderTable(tbId, list, w, isA){
   const TB = $(tbId);
-  const asset = parseFloat(assetInput.value) || 0;
+  const asset = parseFloat(assetInput.value)||0;
   TB.innerHTML = "";
   if(!isA && !DATA.tsm_on){
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td colspan="6" class="empty">B 通道關閉（tsm_long OFF）— 資金 100% 於 A 通道</td>`;
+    tr.innerHTML = `<td colspan="9" class="empty">B 通道關閉（tsm_long OFF）— 資金 100% 於 A 通道</td>`;
     TB.appendChild(tr);
     return;
   }
   list.forEach(h=>{
-    const st = (h.status === "buy" || isFirst) ? ["買進","b-buy"] : ["持有","b-hold"];
-    const qty = (h.px && asset>0) ? Math.floor(asset * w / h.px) : null;
+    const isBuy = (h.status==="buy" || isFirst);
+    const st = isBuy ? ["買進","b-buy"] : ["持有","b-hold"];
+    const saved = userStore[h.code] || {};
+    const pxV = (saved.px!==undefined && saved.px!=="") ? saved.px : (h.px!==null ? h.px : "");
+    const qtyV = (saved.qty!==undefined && saved.qty!=="") ? saved.qty : (isBuy && h.px ? Math.floor(asset*w/h.px) : "");
     const tr = document.createElement("tr");
     tr.innerHTML =
       `<td><span class="badge ${st[1]}">${st[0]}</span></td>` +
       `<td><b>${h.code}</b></td><td>${h.name}</td>` +
       `<td class="num">${h.px!==null?h.px:"—"}</td>` +
       `<td class="num">${h.rsi20!==null?h.rsi20:"—"}</td>` +
-      `<td class="num"><b>${qty!==null?qty.toLocaleString("en-US"):"—"}</b></td>`;
+      `<td class="num"><input class="cell-input" type="number" min="0" step="0.01" data-code="${h.code}" data-field="px" value="${pxV}"></td>` +
+      `<td class="num"><input class="cell-input" type="number" min="0" step="1" data-code="${h.code}" data-field="qty" value="${qtyV}"></td>` +
+      `<td class="tgt" data-code="${h.code}" data-field="tgt">—</td>` +
+      `<td class="num" data-code="${h.code}" data-field="adj">—</td>`;
     TB.appendChild(tr);
+    tr.querySelector(`input[data-field="px"]`).addEventListener("input", ()=>onCell(h.code,"px",w));
+    tr.querySelector(`input[data-field="qty"]`).addEventListener("input", ()=>onCell(h.code,"qty",w));
+    recalcRow(h.code, w);
   });
 }
-$("h-cnt-a").textContent = DATA.holdings_a.length + " 檔・每檔 3.8%";
-$("h-cnt-b").textContent = DATA.holdings_b.length + " 檔・每檔 9.5%";
+$("h-cnt-a").textContent = DATA.holdings_a.length + "檔・" + (DATA.tsm_on ? "每檔3.8%" : "每檔6.3%");
+$("h-cnt-b").textContent = DATA.holdings_b.length + "檔・每檔9.5%";
 function renderAll(){
-  renderTable("tb-a", DATA.holdings_a, DATA.target_w_a, true);
-  renderTable("tb-b", DATA.holdings_b, DATA.target_w_b, false);
+  renderTable("tb-a", DATA.holdings_a, wA(), true);
+  renderTable("tb-b", DATA.holdings_b, wB, false);
 }
 assetInput.addEventListener("input", renderAll);
 renderAll();
