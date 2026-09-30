@@ -2,7 +2,8 @@ name: 更新選股器網頁
 
 on:
   schedule:
-    - cron: '10 0 * * 6'   # 週六 00:10 UTC = 台北 08:10
+    - cron: '0 4 * * 5'   # 週五 12:00 台北（與 TG 同步預覽）
+    - cron: '10 0 * * 6'  # 週六 00:10 UTC = 台北 08:10（最終確認版）
   workflow_dispatch:
 
 permissions:

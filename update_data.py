@@ -176,8 +176,14 @@ if prev_date:
     sells = [{"code": c, "name": name_map.get(c, c), "pool": "A"} for c in prev_codes if c not in cur_codes_a]
     sells += [{"code": c, "name": name_map.get(c, c), "pool": "B"} for c in prev_codes_b if c not in cur_codes_b]
 
-json.dump({"date": sig_day, "codes": cur_codes_a, "codes_b": cur_codes_b},
-          open("state.json", "w", encoding="utf-8"), ensure_ascii=False)
+# 台北時間週五 = 12:00 預覽版（與 TG 同步）：不覆蓋上週基準，
+# 避免把「當週買賣」拆散到兩天；週六最終版才更新 state。
+from datetime import datetime, timedelta, timezone
+TW_TZ = timezone(timedelta(hours=8))
+_is_friday_preview = datetime.now(TW_TZ).weekday() == 4
+if not _is_friday_preview and os.environ.get("COMMIT_STATE", "1") != "0":
+    json.dump({"date": sig_day, "codes": cur_codes_a, "codes_b": cur_codes_b},
+              open("state.json", "w", encoding="utf-8"), ensure_ascii=False)
 
 # ---------- 4. 績效資料（v7f） ----------
 nav_df = pd.read_csv("my_nav_v7f.csv", encoding="utf-8-sig")
@@ -329,7 +335,7 @@ HTML = """<!DOCTYPE html>
       </tr></thead>
       <tbody id="tb-a"></tbody>
     </table>
-    <div class="note">🟢 買進 = 本週新進訊號　🔵 持有 = 續抱　A 通道滿倉 15 檔、每檔 3.8%</div>
+    <div class="note">🟢 買進 = 本週新進訊號　🔵 持有 = 續抱　🔴 賣出 = 掉出清單建議賣出　A 通道滿倉 15 檔、每檔 3.8%</div>
   </section>
 
   <section id="b-sec">
