@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-"""每日盤後更新：TWSE（上市）＋ TPEx（上櫃）官方收盤價 → 更新網頁。
-免費、無 token、不耗 FinLab 流量；缺價自動用 yfinance（.TW/.TWO）補。非交易日略過。"""
-import os, re, json, ssl, urllib.request
+"""每日盤後更新網頁收盤價。資料源優先序：
+TWSE+TPEx 官方免費源（台灣/本機最穩）-> FinLab（國外 runner 兜底，token）-> yfinance（最後）。
+所有源皆失敗 -> exit(1) 讓 workflow 紅叉，絕不假成功。"""
+import os, re, sys, json, ssl, urllib.request
 from datetime import datetime
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -15,7 +16,7 @@ HDR = {"User-Agent": "Mozilla/5.0"}
 
 def _get(url):
     req = urllib.request.Request(url, headers=HDR)
-    return urllib.request.urlopen(req, timeout=30, context=CTX).read().decode("utf-8", "replace")
+    return urllib.request.urlopen(req, timeout=20, context=CTX).read().decode("utf-8", "replace")
 
 
 def twse_prices():
@@ -58,6 +59,17 @@ def tpex_prices():
     return px, dstr
 
 
+def finlab_prices(token):
+    import finlab
+    from finlab import data
+    finlab.login(api_token=token)
+    raw = data.get("price:收盤價")
+    last = raw.dropna(how="all").index[-1]
+    row = raw.loc[last]
+    px = {str(c): float(v) for c, v in row.items() if v == v and float(v) > 0}
+    return px, last.strftime("%Y%m%d")
+
+
 def yf_prices(codes):
     import yfinance as yf
     out = {}
@@ -88,39 +100,35 @@ def codes_of(d):
 def update_file(path, px, sig):
     html = open(path, encoding="utf-8").read()
     m, d = read_data(html)
-    miss = []
     for k in ("holdings_a", "holdings_b"):
         for h in d.get(k, []):
             c = str(h.get("code"))
             if c in px:
                 h["px"] = px[c]
-            else:
-                miss.append(c)
     d["sig_date"] = sig
     d["generated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M")
     new = json.dumps(d, ensure_ascii=False)
     open(path, "w", encoding="utf-8").write(html[:m.start(1)] + new + html[m.end(1):])
-    return miss
 
 
 def main():
-    px, dstr, errs = {}, None, []
+    token = os.environ.get("FINLAB_TOKEN")
+    px, dstr = {}, None
+
     try:
         p1, d1 = twse_prices()
         px.update(p1)
         dstr = d1
-        print("TWSE OK", len(p1))
+        print("[OK] TWSE", len(p1))
     except Exception as e:
-        errs.append("TWSE:" + str(e))
-        print("TWSE 失敗:", e)
+        print("[FAIL] TWSE:", e)
     try:
         p2, d2 = tpex_prices()
         px.update(p2)
         dstr = d2 or dstr
-        print("TPEx OK", len(p2))
+        print("[OK] TPEx", len(p2))
     except Exception as e:
-        errs.append("TPEx:" + str(e))
-        print("TPEx 失敗:", e)
+        print("[FAIL] TPEx:", e)
 
     codes = []
     for p in (SRC, IDX):
@@ -132,27 +140,37 @@ def main():
             except Exception:
                 pass
 
-    if not px:
-        if not codes:
-            print("完全無資料來源與標的，略過")
-            return
-        print("官方源全失敗，yfinance 全備援")
-        px = yf_prices(codes)
-        dstr = datetime.now().strftime("%Y%m%d")
-    else:
-        miss = [c for c in codes if c not in px]
-        if miss:
-            print("官方源缺", miss, "→ yfinance 補")
-            px.update(yf_prices(miss))
+    miss = [c for c in codes if c not in px]
+    if (not px or miss) and token:
+        print("-> 官方源不足，FinLab 兜底（缺", len(miss) if px else "全部", "）")
+        try:
+            pf, df = finlab_prices(token)
+            for c in (miss if px else codes):
+                if c in pf:
+                    px[c] = pf[c]
+            if not dstr:
+                dstr = df
+            print("[OK] FinLab", len(pf), "| 資料日", df)
+        except Exception as e:
+            print("[FAIL] FinLab:", e)
 
-    if not px or not dstr:
-        print("無有效資料，略過")
-        return
+    miss = [c for c in codes if c not in px]
+    if miss:
+        print("-> yfinance 補:", miss)
+        px.update(yf_prices(miss))
+
+    miss = [c for c in codes if c not in px]
+    if not px or (codes and miss):
+        print("[FAIL] 致命：以下持股所有資料源皆失敗:", miss if codes else "（全市場無資料）")
+        sys.exit(1)
+
+    if not dstr:
+        dstr = datetime.now().strftime("%Y%m%d")
     sig = "%s-%s-%s" % (dstr[:4], dstr[4:6], dstr[6:8])
     for p in (SRC, IDX):
         if os.path.exists(p):
-            miss = update_file(p, px, sig)
-            print("更新", os.path.basename(p), "| 仍缺:", miss if miss else "無")
+            update_file(p, px, sig)
+            print("[OK] 已更新", os.path.basename(p), "->", sig)
 
 
 if __name__ == "__main__":
