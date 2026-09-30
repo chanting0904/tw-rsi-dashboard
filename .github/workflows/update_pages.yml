@@ -45,6 +45,6 @@ jobs:
         run: |
           git config user.name "rsi-bot"
           git config user.email "bot@rsi.local"
-          git add state.json index.html RSI選股器.html || true
+          git add state.json index.html
           git commit -m "auto update page [skip ci]" || echo "無變更"
           git push
