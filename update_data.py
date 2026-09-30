@@ -288,6 +288,9 @@ HTML = """<!DOCTYPE html>
   .ai-item .v{font-size:16px; font-weight:600; margin-top:4px;}
   .empty{color:var(--dim); padding:14px 0; font-size:13px;}
   footer{color:var(--dim); font-size:11px; text-align:center; padding:16px 0 8px; line-height:1.8;}
+  button{background:var(--accent); color:#0f1420; border:none; padding:8px 20px; border-radius:8px; font-size:14px; font-weight:700; cursor:pointer;}
+  button:hover{filter:brightness(1.1);}
+  input[type=month]{background:var(--card2); border:1px solid var(--line); color:var(--txt); padding:8px 12px; border-radius:8px; font-size:14px; width:150px;}
   @media (max-width:900px){ .cards{grid-template-columns:repeat(2,1fr);} .ai-grid{grid-template-columns:1fr;} }
 </style>
 </head>
@@ -355,6 +358,31 @@ HTML = """<!DOCTYPE html>
     <h2>🤖 AI 紅利監控<span class="tag" id="ai-upd"></span></h2>
     <div class="ai-grid" id="ai-grid"></div>
     <div class="note" id="ai-note"></div>
+  </section>
+
+  <section>
+    <h2>🧪 互動回測試算<span class="tag">自訂年月・本金</span></h2>
+    <div class="assetbar">
+      <label>起始年月</label>
+      <input type="month" id="bt-start">
+      <label>結束年月</label>
+      <input type="month" id="bt-end">
+      <label>初始本金（元）</label>
+      <input type="number" id="bt-cap" value="1000000" step="100000" min="0">
+      <button id="bt-run">重新計算</button>
+    </div>
+    <div class="cards" id="bt-cards">
+      <div class="card"><div class="k">區間最終資產</div><div class="v" id="bt-nav">—</div><div class="s" id="bt-nav-s">—</div></div>
+      <div class="card"><div class="k">區間年化 CAGR</div><div class="v up" id="bt-cagr">—</div><div class="s">年化報酬率</div></div>
+      <div class="card"><div class="k">區間最大回撤</div><div class="v down" id="bt-mdd">—</div><div class="s">期間內最深跌幅</div></div>
+      <div class="card"><div class="k">區間累積報酬</div><div class="v" id="bt-tot">—</div><div class="s">起訖期間總報酬</div></div>
+    </div>
+    <div class="chart small" id="chart-bt" style="margin-top:10px"></div>
+    <div class="note" style="margin-top:6px">區間內淨值曲線（依每週 v7f 回測淨值等比縮放至指定本金）</div>
+    <table id="bt-yearly" style="margin-top:10px">
+      <thead><tr><th>年度</th><th class="num">報酬率</th><th class="num">年底資產（按本金）</th></tr></thead>
+      <tbody></tbody>
+    </table>
   </section>
 
   <section>
@@ -533,6 +561,61 @@ initChart("chart-yr", {
     barWidth:"55%", label:{show:true, position:"top", color:"#8fa0b8", formatter:p=>p.value.toFixed(1)+"%"}
   }]
 });
+
+// ===== 互動回測（自訂年月・本金） =====
+function fmtDate(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+const btStart = $("bt-start"), btEnd = $("bt-end"), btCap = $("bt-cap"), btRun = $("bt-run");
+btStart.value = P.nav[0][0].slice(0,7);
+btEnd.value = P.nav[P.nav.length-1][0].slice(0,7);
+let btChart = null;
+function runBt(){
+  const nav = P.nav.map(x=>[new Date(x[0]), x[1]]);
+  const start = new Date(btStart.value + "-01");
+  const end = new Date(btEnd.value + "-01"); end.setMonth(end.getMonth()+1);
+  const seg = nav.filter(([d])=> d>=start && d<end);
+  if(seg.length < 2){ alert("區間資料不足（需至少 2 週），請調整年月"); return; }
+  const cap = parseFloat(btCap.value) || 0;
+  const first = seg[0][1], last = seg[seg.length-1][1];
+  const scale = cap / first;
+  const navScaled = seg.map(([d,v])=>[d, v*scale]);
+  const finalVal = last * scale;
+  const totRet = (last/first - 1) * 100;
+  const days = (seg[seg.length-1][0] - seg[0][0]) / 86400000;
+  const cagr = days > 30 ? (Math.pow(last/first, 365/days) - 1) * 100 : null;
+  let peakV = -Infinity, mdd = 0;
+  navScaled.forEach(([d,v])=>{ if(v>peakV) peakV=v; const dd=(v/peakV-1)*100; if(dd<mdd) mdd=dd; });
+  $("bt-nav").textContent = fmt(finalVal);
+  $("bt-nav-s").textContent = fmtDate(seg[0][0]) + " 至 " + fmtDate(seg[seg.length-1][0]);
+  $("bt-cagr").textContent = cagr===null ? "—" : cagr.toFixed(2)+"%";
+  $("bt-cagr").className = "v up";
+  $("bt-mdd").textContent = mdd.toFixed(2)+"%";
+  $("bt-tot").textContent = (totRet>=0?"+":"") + totRet.toFixed(2)+"%";
+  $("bt-tot").className = "v " + (totRet>=0?"up":"down");
+  const TB = $("bt-yearly").querySelector("tbody"); TB.innerHTML = "";
+  const years = [...new Set(navScaled.map(([d])=> d.getFullYear()))];
+  years.forEach(y=>{
+    const ys = navScaled.filter(([d])=> d.getFullYear()===y);
+    if(ys.length < 2) return;
+    const yf = ys[0][1], yl = ys[ys.length-1][1];
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${y}</td><td class="num">${((yl/yf-1)*100>=0?"+":"")+((yl/yf-1)*100).toFixed(2)}%</td><td class="num">${fmt(yl)}</td>`;
+    TB.appendChild(tr);
+  });
+  if(typeof echarts !== "undefined"){
+    if(!btChart) btChart = echarts.init($("chart-bt"));
+    btChart.setOption({
+      backgroundColor:"transparent",
+      tooltip:{trigger:"axis", valueFormatter:v=>fmt(v)},
+      grid:{left:70,right:20,top:20,bottom:40},
+      xAxis:{type:"category", data:navScaled.map(x=>x[0]), ...AXIS, axisLabel:{color:"#8fa0b8", hideOverlap:true}},
+      yAxis:{type:"value", ...AXIS, axisLabel:{color:"#8fa0b8", formatter:v=> (v>=10000 ? (v/10000).toFixed(0)+"萬" : v)}},
+      series:[{type:"line", data:navScaled.map(x=>x[1]), showSymbol:false, lineStyle:{width:2,color:"#f5c542"}, areaStyle:{color:{type:"linear",x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:"rgba(245,197,66,.3)"},{offset:1,color:"rgba(245,197,66,0)"}]}}}]
+    });
+    window.addEventListener("resize", ()=>btChart.resize());
+  }
+}
+btRun.addEventListener("click", runBt);
+runBt();
 </script>
 </body>
 </html>
