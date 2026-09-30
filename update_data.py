@@ -215,7 +215,7 @@ except Exception:
     ai = {}
 
 DATA = {
-    "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+    "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
     "sig_date": sig_day,
     "holdings_a": holdings_a,
     "holdings_b": holdings_b,
