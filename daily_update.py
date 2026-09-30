@@ -105,7 +105,8 @@ def update_file(path, px, sig):
             c = str(h.get("code"))
             if c in px:
                 h["px"] = px[c]
-    d["sig_date"] = sig
+    d["px_date"] = sig
+    d.setdefault("rebal_date", d.get("sig_date"))
     d["generated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M")
     new = json.dumps(d, ensure_ascii=False)
     open(path, "w", encoding="utf-8").write(html[:m.start(1)] + new + html[m.end(1):])
@@ -119,16 +120,16 @@ def main():
         p1, d1 = twse_prices()
         px.update(p1)
         dstr = d1
-        print("[OK] TWSE", len(p1))
+        print("[OK] TWSE OK", len(p1))
     except Exception as e:
-        print("[FAIL] TWSE:", e)
+        print("[FAIL] TWSE 失敗:", e)
     try:
         p2, d2 = tpex_prices()
         px.update(p2)
         dstr = d2 or dstr
-        print("[OK] TPEx", len(p2))
+        print("[OK] TPEx OK", len(p2))
     except Exception as e:
-        print("[FAIL] TPEx:", e)
+        print("[FAIL] TPEx 失敗:", e)
 
     codes = []
     for p in (SRC, IDX):
@@ -142,7 +143,7 @@ def main():
 
     miss = [c for c in codes if c not in px]
     if (not px or miss) and token:
-        print("-> 官方源不足，FinLab 兜底（缺", len(miss) if px else "全部", "）")
+        print("-> 官方源不足，改用 FinLab 兜底（缺", len(miss) if px else "全部", "）")
         try:
             pf, df = finlab_prices(token)
             for c in (miss if px else codes):
@@ -150,9 +151,9 @@ def main():
                     px[c] = pf[c]
             if not dstr:
                 dstr = df
-            print("[OK] FinLab", len(pf), "| 資料日", df)
+            print("[OK] FinLab OK", len(pf), "| 資料日", df)
         except Exception as e:
-            print("[FAIL] FinLab:", e)
+            print("[FAIL] FinLab 失敗:", e)
 
     miss = [c for c in codes if c not in px]
     if miss:

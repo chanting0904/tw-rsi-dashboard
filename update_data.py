@@ -101,8 +101,9 @@ rally = (r20.pct_change(3, fill_method=None) > 0.02).shift(1)
 stuck = ((r20 > 75).rolling(3).sum() == 3).shift(1)
 roe_ok = (roe > 0).shift(1).fillna(True)
 buyA = long_up & mid_ok & rally & stuck & roe_ok & liq.shift(1).fillna(True)
-sellA = buyA.shift(80).fillna(False) | (close < ma60)
-posA = buyA.hold_until(sellA)
+buyA_gh = buyA.shift(1)
+sellA = (close.shift(1) < ma60.shift(1)) | buyA_gh.shift(80).fillna(False)
+posA = buyA_gh.hold_until(sellA)
 
 # B 通道（權值龍頭動能）
 rank_tv = tv20.rank(axis=1, ascending=False)
@@ -111,8 +112,9 @@ bull = close.shift(1) > ma60.shift(1)
 lt_up = (r120 > 60).shift(1)
 not_hot = r20s < 88
 buyB = big & bull & lt_up & not_hot & roe_ok
-sellB = buyB.shift(80).fillna(False) | (close < ma60)
-posB = buyB.hold_until(sellB)
+buyB_gh = buyB.shift(1)
+sellB = (close.shift(1) < ma60.shift(1)) | buyB_gh.shift(80).fillna(False)
+posB = buyB_gh.hold_until(sellB)
 
 # tsm_long 開關
 tsm_on = False
@@ -124,15 +126,18 @@ try:
 except Exception:
     tsm_on = False
 
-# ---------- 3. 最新交易日選股清單 ----------
+# ---------- 3. 調倉日選股清單（可由 REBAL_DAY 凍結在指定日，預設最新交易日） ----------
 last_day = close.dropna(how="all").index[-1]
+_rebal_env = os.environ.get("REBAL_DAY", "").strip()
+if _rebal_env:
+    last_day = pd.Timestamp(_rebal_env)
 sig_day = last_day.strftime("%Y-%m-%d")
 
 # A 通道：RSI20 排序前 15
 curA = posA.loc[last_day]
 codesA = [c for c in curA[curA].index.tolist() if c in r20.columns]
-scoredA = sorted(codesA, key=lambda c: float(r20[c].loc[last_day])
-                 if pd.notna(r20[c].loc[last_day]) else -1, reverse=True)
+scoredA = sorted(codesA, key=lambda c: float(r20s[c].loc[last_day])
+                 if pd.notna(r20s[c].loc[last_day]) else -1, reverse=True)
 cur_codes_a = scoredA[:MAX_HOLD_A]
 
 # B 通道：成交金額排序前 4
@@ -218,6 +223,8 @@ except Exception:
 DATA = {
     "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
     "sig_date": sig_day,
+    "rebal_date": sig_day,
+    "px_date": sig_day,
     "holdings_a": holdings_a,
     "holdings_b": holdings_b,
     "sells": sells,
@@ -312,8 +319,8 @@ HTML = """<!DOCTYPE html>
   <header>
     <h1>📊 三頻率 RSI 選股器<small>v7f 雙通道 60/40</small></h1>
     <div class="meta">
-      訊號基準日：<b id="m-sig"></b>｜資料更新：<span id="m-gen"></span><br>
-      每週五盤後依清單執行｜下單請以口袋證券 App 手動操作
+      持股買賣推薦：<b id="m-rebal"></b>（每週最後交易日盤後更新一次）<br>
+      股價更新：<b id="m-px"></b>（每日收盤 F5，持股買賣不變）
     </div>
   </header>
 
@@ -434,8 +441,8 @@ function fmt(n){ return (n===null||n===undefined||isNaN(n)) ? "—" : n.toLocale
 function pct(x){ return (x===null||x===undefined||isNaN(x)) ? "—" : (x*100).toFixed(1)+"%"; }
 const $ = id => document.getElementById(id);
 
-$("m-sig").textContent = DATA.sig_date;
-$("m-gen").textContent = DATA.generated_at;
+$("m-rebal").textContent = DATA.rebal_date || DATA.sig_date;
+$("m-px").textContent = DATA.px_date || DATA.sig_date;
 const P = DATA.perf;
 $("c-cagr").textContent = pct(P.cagr);
 $("c-mdd").textContent = pct(P.mdd);
@@ -444,11 +451,8 @@ $("c-cap").textContent = fmt(P.start_capital);
 $("c-sw").textContent = DATA.tsm_on ? "🟢 ON" : "⚪ OFF";
 $("c-sw").className = "v " + (DATA.tsm_on ? "down" : "warn");
 
-const d = new Date(DATA.sig_date);
-if(d.getDay() !== 5){
-  $("warnbox").style.display = "block";
-  $("warnbox").textContent = "ℹ️ 目前訊號基準日為「" + DATA.sig_date + "」，非本週最後交易日（週五）。此清單僅供提前參考，正式調倉請以本週五盤後最新資料為準（屆時再執行一次更新）。";
-}
+$("warnbox").style.display = "block";
+$("warnbox").textContent = "ℹ️ 持股買賣清單為「" + (DATA.rebal_date||DATA.sig_date) + "」結算結果，下次於本週最後交易日盤後更新；中間每日僅刷新股價，持股買賣不變。";
 
 // AI 訊號
 const AI = DATA.ai || {};
