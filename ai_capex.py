@@ -85,19 +85,23 @@ def get_finmind_capex(token, code):
 
 
 def get_yf_capex(ticker):
-    """yfinance：年度 Capital Expenditure（負值→取絕對值），最新年 vs 前一年 YoY"""
+    """yfinance：優先單季 Capital Expenditure（與最新季報對齊），失敗退年度。
+    回傳 (財季, 最新單季值, 前年同期值)。"""
     import yfinance as yf
     t = yf.Ticker(ticker)
-    cf = t.cashflow
-    if cf is None or not any("Capital Expenditure" in str(i) for i in cf.index):
-        return None, None, None
-    row = cf.loc[[i for i in cf.index if "Capital Expenditure" in str(i)][0]].dropna()
-    if len(row) == 0:
-        return None, None, None
-    cur = abs(float(row.iloc[0]))
-    prev = abs(float(row.iloc[1])) if len(row) > 1 else None
-    q_ = q_of(row.index[0])
-    return q_, cur, prev
+    for df in (t.quarterly_cashflow, t.cashflow):
+        if df is None or len(df) == 0:
+            continue
+        idx = [i for i in df.index if "Capital Expenditure" in str(i)]
+        if not idx:
+            continue
+        row = df.loc[idx[0]].dropna()
+        if len(row) == 0:
+            continue
+        cur = abs(float(row.iloc[0]))
+        prev = abs(float(row.iloc[1])) if len(row) > 1 else None
+        return q_of(row.index[0]), cur, prev
+    return None, None, None
 
 
 def get_sec_capex(cik, tag="PaymentsToAcquirePropertyPlantAndEquipment"):
