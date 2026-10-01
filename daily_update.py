@@ -126,7 +126,9 @@ def main():
     try:
         p2, d2 = tpex_prices()
         px.update(p2)
-        dstr = d2 or dstr
+        # 日期取較新者：TPEx 盤後更新可能慢半天，不能覆蓋 TWSE 的正確日期
+        if d2:
+            dstr = max(dstr, d2) if dstr else d2
         print("[OK] TPEx OK", len(p2))
     except Exception as e:
         print("[FAIL] TPEx 失敗:", e)
