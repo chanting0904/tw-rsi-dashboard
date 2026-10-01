@@ -511,11 +511,14 @@ function recalcRow(code, w){
   const asset = parseFloat(assetInput.value)||0;
   const tgt = (px>0 && asset>0) ? Math.floor(asset*w/px) : 0;
   document.querySelector(`[data-code="${code}"][data-field="tgt"]`).textContent = tgt.toLocaleString("en-US");
-  const adj = tgt - qty;
+  // 再平衡門檻 ±25%：現況市值偏離目標市值 ≤25% 就不動（與回測引擎 THRESH 一致）
+  const tgtVal = asset * w, curVal = qty * px;
+  let adj = 0;
+  if(tgtVal > 0 && Math.abs(tgtVal - curVal) > tgtVal * 0.25){ adj = tgt - qty; }
   const adjEl = document.querySelector(`[data-code="${code}"][data-field="adj"]`);
   if(adj>0) adjEl.innerHTML = `<span class="adj-pos">+${adj.toLocaleString("en-US")} 增持</span>`;
   else if(adj<0) adjEl.innerHTML = `<span class="adj-neg">${adj.toLocaleString("en-US")} 減持</span>`;
-  else adjEl.innerHTML = `<span class="adj-zero">持平</span>`;
+  else adjEl.innerHTML = `<span class="adj-zero">持平（偏離<25%）</span>`;
 }
 function onCell(code, field, w){
   const v = document.querySelector(`input[data-code="${code}"][data-field="${field}"]`).value;
