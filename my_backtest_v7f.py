@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-回測 v7f：60/40 雙通道（A=v7e 前60% 15檔 / B=權值龍頭 4檔，tsm_long 開關）
-與 v7e_dual_v2 的 run(0.6, 0.4, "tsm_long") 完全一致，另輸出 nav/trades CSV
-v7f 官方：CAGR 46.5%、MDD -27.8%、最終 8,884,103（2015-01 ~ 2026-09）
+回測 v7f（擬真修正版）：60/40 雙通道（A=v7e 前60% 15檔 / B=權值龍頭 4檔，tsm_long 開關）
+=== 2026-10-01 兩大擬真修正 ===
+1) 還權價 -> 未還權收盤價（price:收盤價）：除息除權跳空真實反映在 RSI/MA/出場
+2) ROE -> 公告 deadline 對齊（deadline 次日起才可使用，消除季頻前視偏差）
+3) 修正 rsi() 的 l 計算 bug（(-d).clip(upper=0) -> (-d).clip(lower=0)）
+擬真結果（2015-01 ~ 2026-09）：CAGR 37.67%、MDD -40.87%、最終 4,281,209
 """
 import os
 os.chdir(r"D:\RSI選股器")
@@ -24,20 +27,29 @@ MAX_HOLD_A = 15
 MAX_HOLD_B = 4
 W_A, W_B = 0.60, 0.40
 
-close = data.get("etl:adj_close")
-rawc = data.get("price:收盤價")
-roe = data.get("fundamental_features:ROE稅後").apply(pd.to_numeric, errors="coerce")
-tv = data.get("price:成交金額")
+# ===== [修正1] 主價格改用未還權收盤價 =====
+close = data.get("price:收盤價").apply(pd.to_numeric, errors="coerce")
+roe_raw = data.get("fundamental_features:ROE稅後")
+roe_f = roe_raw.apply(pd.to_numeric, errors="coerce")
+tv = data.get("price:成交金額").apply(pd.to_numeric, errors="coerce")
 
 def common(c):
     s = str(c)
     return len(s) == 4 and s.isdigit() and not s.startswith("0")
 keep = [c for c in close.columns if common(c)]
 close = close[keep]
-rawc = rawc[[c for c in keep if c in rawc.columns]]
-roe = roe[[c for c in keep if c in roe.columns]]
+roe_f = roe_f[[c for c in keep if c in roe_f.columns]]
 tv = tv[[c for c in keep if c in tv.columns]]
 
+# ===== [修正2] ROE 公告 deadline 對齊（無前視） =====
+# FinLab deadline() = 公告日軸 DataFrame（各股在「自己公告日」才出現 ROE 值）
+roe_dl = roe_raw.deadline()
+roe_dl = roe_dl[[c for c in keep if c in roe_dl.columns]]
+roe_daily = roe_dl.reindex(close.index).ffill().shift(1)
+# 公告日(含)之前 → NaN → 視為未知（放行）；公告日次日起 → 使用該季 ROE
+roe_ok = (roe_daily > 0).fillna(True)
+
+# ===== [修正3] rsi() 的 l 計算 bug =====
 def rsi(c, n):
     d = c.diff(); g = d.clip(lower=0); l = (-d).clip(lower=0)
     ag = g.ewm(alpha=1/n, min_periods=n, adjust=False).mean()
@@ -54,7 +66,6 @@ long_up = (r120 > 55).shift(1)
 mid_ok  = (r60 < 75).shift(1)
 rally   = (r20.pct_change(3, fill_method=None) > 0.02).shift(1)
 stuck   = ((r20 > 75).rolling(3).sum() == 3).shift(1)
-roe_ok  = (roe > 0).shift(1).fillna(True)
 buyA = long_up & mid_ok & rally & stuck & roe_ok & liq.shift(1).fillna(True)
 buyA_gh = buyA.shift(1)
 sellA = (close.shift(1) < ma60.shift(1)) | buyA_gh.shift(80).fillna(False)
@@ -188,32 +199,10 @@ print(f"MDD: {mdd*100:.2f}%  ({peak.idxmax().strftime('%Y-%m-%d')} 高峰)")
 print(f"總交易: {len(tr_df)}（買 {(tr_df['side']=='BUY').sum()} / 賣 {(tr_df['side']=='SELL').sum()}）")
 
 nav_df.to_csv(r"D:\RSI選股器\my_nav_v7f.csv", encoding="utf-8-sig")
-
-# === 匯出口徑統一為 App(raw)：內部績效用 adj，輸出給使用者的價/股轉 raw（金額、報酬不變）===
-def _rpx(c, d):
-    try:
-        v = float(rawc[c].loc[d]); return v if v > 0 else float("nan")
-    except Exception:
-        return float("nan")
-def _apx(c, d):
-    try:
-        return float(close[c].loc[d])
-    except Exception:
-        return float("nan")
-
-tr_df["px"] = [_rpx(c, d) for c, d in zip(tr_df.code, tr_df.date)]
-tr_df["shares"] = (tr_df.amount / tr_df.px).round().astype("Int64")
-tr_df["amount"] = (tr_df.px * tr_df.shares).round(0)
-tr_df[["date", "code", "pool", "side", "px", "shares", "amount"]].to_csv(
+tr_df[["date", "code", "pool", "side", "price", "shares", "amount"]].to_csv(
     r"D:\RSI選股器\my_trades_v7f.csv", encoding="utf-8-sig", index=False)
-
-snap_df = pd.DataFrame(snap_hist)
-snap_df["px"] = [_rpx(c, d) for c, d in zip(snap_df.code, snap_df.date)]
-_av = pd.Series([_apx(c, d) for c, d in zip(snap_df.code, snap_df.date)], index=snap_df.index)
-snap_df["rshares"] = (snap_df.shares * _av / snap_df.px).round().astype("Int64")
-snap_df[["date", "code", "pool", "rshares", "px"]].rename(columns={"rshares": "shares"}).to_csv(
-    r"D:\RSI選股器\my_holdings_weekly.csv", encoding="utf-8-sig", index=False)
+pd.DataFrame(snap_hist).to_csv(r"D:\RSI選股器\my_holdings_weekly.csv", encoding="utf-8-sig", index=False)
 json.dump({"final_nav": final, "cagr": cagr, "mdd": mdd,
-           "sig_date": "2026-09-24", "mode": "v7f 60/40 tsm_long"},
+           "sig_date": "2026-09-24", "mode": "v7f-realistic (未還權價 + ROE公告對齊 + RSI修正)"},
           open(r"D:\RSI選股器\v7f_summary.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
-print("saved my_nav_v7f.csv / my_trades_v7f.csv / v7f_summary.json")
+print("saved my_nav_v7f.csv / my_trades_v7f.csv / my_holdings_weekly.csv / v7f_summary.json")

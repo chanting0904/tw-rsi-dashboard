@@ -67,15 +67,15 @@ def common(code):
 
 # ---------- 1. 抓取 FinLab 資料 ----------
 print("① 抓取 FinLab 資料（首次約 1~3 分鐘，之後有快取）…")
-close = data.get("etl:adj_close")
-raw = data.get("price:收盤價")
-roe = data.get("fundamental_features:ROE稅後").apply(pd.to_numeric, errors="coerce")
-tv = data.get("price:成交金額")
+# [擬真同步] 訊號主價改用未還權收盤價（與回測/實盤同口徑；除息跳空真實反映）
+close = data.get("price:收盤價").apply(pd.to_numeric, errors="coerce")
+raw = close
+roe_raw = data.get("fundamental_features:ROE稅後")
+tv = data.get("price:成交金額").apply(pd.to_numeric, errors="coerce")
 
 keep = [c for c in close.columns if common(c)]
 close = close[keep]
 raw = raw[[c for c in keep if c in raw.columns]]
-roe = roe[[c for c in keep if c in roe.columns]]
 tv = tv[[c for c in keep if c in tv.columns]]
 
 name_map = {}
@@ -99,7 +99,11 @@ long_up = (r120 > 55).shift(1)
 mid_ok = (r60 < 75).shift(1)
 rally = (r20.pct_change(3, fill_method=None) > 0.02).shift(1)
 stuck = ((r20 > 75).rolling(3).sum() == 3).shift(1)
-roe_ok = (roe > 0).shift(1).fillna(True)
+# [擬真同步] ROE 公告 deadline 對齊（公告日次日起才可用，消除前視）
+roe_dl = roe_raw.deadline()
+roe_dl = roe_dl[[c for c in keep if c in roe_dl.columns]]
+roe_daily = roe_dl.reindex(close.index).ffill().shift(1)
+roe_ok = (roe_daily > 0).fillna(True)
 buyA = long_up & mid_ok & rally & stuck & roe_ok & liq.shift(1).fillna(True)
 buyA_gh = buyA.shift(1)
 sellA = (close.shift(1) < ma60.shift(1)) | buyA_gh.shift(80).fillna(False)
@@ -434,7 +438,7 @@ HTML = """<!DOCTYPE html>
   </section>
 
   <footer>
-    資料來源：FinLab API（還權收盤 / ROE 稅後 / 成交金額）｜績效為歷史回測統計，僅供研究參考，不構成投資建議<br>
+    資料來源：FinLab API（未還權收盤價 / ROE 稅後公告日對齊 / 成交金額）｜績效為歷史回測統計，僅供研究參考，不構成投資建議<br>
     過去績效不代表未來表現；實盤操作請以口袋證券 App 為準。
   </footer>
 </div>
