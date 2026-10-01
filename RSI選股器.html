@@ -41,6 +41,7 @@
   .adj-pos{color:var(--up); font-weight:700; white-space:nowrap;}
   .adj-neg{color:var(--down); font-weight:700; white-space:nowrap;}
   .adj-zero{color:var(--dim); white-space:nowrap;}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin:0 5px 0 0;vertical-align:-1px;}
   .badge{display:inline-block; padding:2px 10px; border-radius:20px; font-size:12px; font-weight:600;}
   .b-buy{background:rgba(255,77,79,.15); color:var(--up); border:1px solid rgba(255,77,79,.4);}
   .b-hold{background:rgba(77,163,255,.12); color:var(--accent); border:1px solid rgba(77,163,255,.35);}
@@ -100,7 +101,7 @@
       </tr></thead>
       <tbody id="tb-a"></tbody>
     </table>
-    <div class="note">🟢 買進 = 本週新進訊號　🔵 持有 = 續抱　🔴 賣出 = 掉出清單建議賣出　A 通道額度（tsm ON 約 60%、OFF 為 100%）按當週實際檔數均分</div>
+    <div class="note"><span class="dot" style="background:#ff4d4f"></span>買進 = 本週新進訊號　<span class="dot" style="background:#4da3ff"></span>持有 = 續抱　<span class="dot" style="background:#3ddc84"></span>賣出 = 掉出清單建議賣出　A 通道額度（tsm ON 約 60%、OFF 為 100%）按當週實際檔數均分</div>
   </section>
 
   <section id="b-sec">
