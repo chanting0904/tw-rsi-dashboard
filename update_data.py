@@ -350,7 +350,7 @@ HTML = """<!DOCTYPE html>
       <thead><tr>
         <th>狀態</th><th>代號</th><th>名稱</th><th class="num">收盤價</th>
         <th class="num">RSI20</th><th class="num">我的進場價</th><th class="num">目前持股</th>
-        <th class="num">目標股數</th><th class="num">調整(+-)</th>
+        <th class="num">損益(%)</th><th class="num">目標股數</th><th class="num">調整(+-)</th>
       </tr></thead>
       <tbody id="tb-a"></tbody>
     </table>
@@ -364,7 +364,7 @@ HTML = """<!DOCTYPE html>
       <thead><tr>
         <th>狀態</th><th>代號</th><th>名稱</th><th class="num">收盤價</th>
         <th class="num">RSI20</th><th class="num">我的進場價</th><th class="num">目前持股</th>
-        <th class="num">目標股數</th><th class="num">調整(+-)</th>
+        <th class="num">損益(%)</th><th class="num">目標股數</th><th class="num">調整(+-)</th>
       </tr></thead>
       <tbody id="tb-b"></tbody>
     </table>
@@ -506,19 +506,28 @@ function recalcRow(code, w){
   const pxEl = document.querySelector(`input[data-code="${code}"][data-field="px"]`);
   if(!pxEl) return;
   const qtyEl = document.querySelector(`input[data-code="${code}"][data-field="qty"]`);
-  const px = parseFloat(pxEl.value)||0;
+  const spot = parseFloat(pxEl.dataset.spot)||0;   // 現價（收盤價）
+  const cost = parseFloat(pxEl.value)||0;          // 我的進場價（僅用於損益）
   const qty = parseFloat(qtyEl.value)||0;
   const asset = parseFloat(assetInput.value)||0;
-  const tgt = (px>0 && asset>0) ? Math.floor(asset*w/px) : 0;
+
+  // 損益：現價 vs 進場價
+  const plEl = document.querySelector(`[data-code="${code}"][data-field="pl"]`);
+  if(qty>0 && cost>0 && spot>0){
+    const plAmt=(spot-cost)*qty, plPct=(spot/cost-1)*100;
+    plEl.innerHTML=`<span class="${plAmt>=0?"adj-pos":"adj-neg"}">${plAmt>=0?"+":""}${Math.round(plAmt).toLocaleString("en-US")}<br>(${plPct>=0?"+":""}${plPct.toFixed(1)}%)</span>`;
+  } else plEl.innerHTML="—";
+
+  // 目標股數與再平衡，一律用現價 spot
+  const tgt = (spot>0 && asset>0) ? Math.floor(asset*w/spot) : 0;
   document.querySelector(`[data-code="${code}"][data-field="tgt"]`).textContent = tgt.toLocaleString("en-US");
-  // 再平衡門檻 ±25%：現況市值偏離目標市值 ≤25% 就不動（與回測引擎 THRESH 一致）
-  const tgtVal = asset * w, curVal = qty * px;
+  const tgtVal = asset*w, curVal = qty*spot;
   let adj = 0;
-  if(tgtVal > 0 && Math.abs(tgtVal - curVal) > tgtVal * 0.25){ adj = tgt - qty; }
+  if(tgtVal>0 && Math.abs(tgtVal-curVal) > tgtVal*0.25){ adj = tgt-qty; }
   const adjEl = document.querySelector(`[data-code="${code}"][data-field="adj"]`);
   if(adj>0) adjEl.innerHTML = `<span class="adj-pos">+${adj.toLocaleString("en-US")} 增持</span>`;
   else if(adj<0) adjEl.innerHTML = `<span class="adj-neg">${adj.toLocaleString("en-US")} 減持</span>`;
-  else adjEl.innerHTML = `<span class="adj-zero">持平（偏離<25%）</span>`;
+  else adjEl.innerHTML = `<span class="adj-zero">持平</span>`;
 }
 function onCell(code, field, w){
   const v = document.querySelector(`input[data-code="${code}"][data-field="${field}"]`).value;
@@ -533,7 +542,7 @@ function renderTable(tbId, list, w, isA){
   TB.innerHTML = "";
   if(!isA && !DATA.tsm_on){
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td colspan="9" class="empty">B 通道關閉（tsm_long OFF）— 資金 100% 於 A 通道</td>`;
+    tr.innerHTML = `<td colspan="10" class="empty">B 通道關閉（tsm_long OFF）— 資金 100% 於 A 通道</td>`;
     TB.appendChild(tr);
     return;
   }
@@ -549,8 +558,9 @@ function renderTable(tbId, list, w, isA){
       `<td><b>${h.code}</b></td><td>${h.name}</td>` +
       `<td class="num">${h.px!==null?h.px:"—"}</td>` +
       `<td class="num">${h.rsi20!==null?h.rsi20:"—"}</td>` +
-      `<td class="num"><input class="cell-input" type="number" min="0" step="0.01" data-code="${h.code}" data-field="px" value="${pxV}"></td>` +
+      `<td class="num"><input class="cell-input" type="number" min="0" step="0.01" data-code="${h.code}" data-field="px" data-spot="${h.px!==null?h.px:''}" value="${pxV}"></td>` +
       `<td class="num"><input class="cell-input" type="number" min="0" step="1" data-code="${h.code}" data-field="qty" value="${qtyV}"></td>` +
+      `<td class="num pl" data-code="${h.code}" data-field="pl">—</td>` +
       `<td class="tgt" data-code="${h.code}" data-field="tgt">—</td>` +
       `<td class="num" data-code="${h.code}" data-field="adj">—</td>`;
     TB.appendChild(tr);
