@@ -79,13 +79,24 @@ raw = raw[[c for c in keep if c in raw.columns]]
 tv = tv[[c for c in keep if c in tv.columns]]
 
 name_map = {}
+excl_special = set()
 try:
     info = data.get("company_basic_info")
     if info is not None and "公司簡稱" in info.columns:
         key = "stock_id" if "stock_id" in info.columns else info.index.name
         name_map = info.set_index(key)["公司簡稱"].to_dict()
+        if "實收資本額(元)" in info.columns:
+            excl_special |= set(info[info["公司簡稱"].astype(str).str.contains("-創", na=False, regex=False)][key].astype(str))
+            excl_special |= set(info[info["實收資本額(元)"].astype(float) < 5e8][key].astype(str))
 except Exception:
     pass
+# [v7g] 排除創新板與微型股本（<5億）＝實盤可操作性
+if excl_special:
+    keep = [c for c in keep if c not in excl_special]
+    close = close[keep]
+    raw = raw[[c for c in keep if c in raw.columns]]
+    tv = tv[[c for c in keep if c in tv.columns]]
+    print(f"② [v7g] 排除特殊股 {len(excl_special)} 檔，選股池 {len(keep)} 檔")
 
 # ---------- 2. 指標與訊號（v7f，全部 shift(1) 防未來函數） ----------
 r20, r60, r120 = rsi(close, 20), rsi(close, 60), rsi(close, 120)
@@ -295,7 +306,7 @@ HTML = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>天穹紅蓮三重脈衝時空追擊者 v7f（雙通道 60/40）</title>
+<title>天穹紅蓮三重脈衝時空追擊者 v7g（雙通道 60/40）</title>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
 <style>
   :root{
@@ -360,7 +371,7 @@ HTML = """<!DOCTYPE html>
 <body>
 <div class="wrap">
   <header>
-    <h1>🌩️ 天穹紅蓮三重脈衝時空追擊者<small>v7f 雙通道 60/40</small></h1>
+    <h1>🌩️ 天穹紅蓮三重脈衝時空追擊者<small>v7g 雙通道 60/40</small></h1>
     <div class="meta">
       持股買賣推薦：<b id="m-rebal"></b>（每週最後交易日盤後更新一次）<br>
       股價更新：<b id="m-px"></b>（每日收盤 F5，持股買賣不變）
@@ -468,12 +479,13 @@ HTML = """<!DOCTYPE html>
       ▸ A 通道（60%）：RSI120&gt;55、RSI60&lt;75、RSI20三日漲&gt;2%、RSI20&gt;75 連3日、ROE&gt;0、成交金額前60%、15 檔。<br>
       ▸ B 通道（40%）：成交金額前15 + 站上MA60 + RSI120&gt;60 + RSI20&lt;88 + ROE&gt;0，取 4 檔；僅 tsm_long ON 時啟用。<br>
       ▸ 出場：持有滿 80 交易日 或 跌破 MA60。AI 訊號轉弱時建議手動降 B 通道（80/20 或全關）。<br>
+      ▸ [v7g] 選股池排除：創新板（-創）與實收資本額 &lt; 5 億之微型股（實盤可操作性：避開流動性差/易暴跌之妖股）。<br>
       ▸ 績效為 2015-01 ~ 2026-09 歷史回測（賣出成本 0.3%、買入 0%、含漲跌停跳過）。
     </div>
   </section>
 
   <footer>
-    天穹紅蓮三重脈衝時空追擊者 v7f ｜ 資料來源：FinLab API（未還權收盤價 / ROE 稅後公告日對齊 / 成交金額）｜績效為歷史回測統計，僅供研究參考，不構成投資建議<br>
+    天穹紅蓮三重脈衝時空追擊者 v7g ｜ 資料來源：FinLab API（未還權收盤價 / ROE 稅後公告日對齊 / 成交金額 / 排除創新板與微型股本）｜績效為歷史回測統計，僅供研究參考，不構成投資建議<br>
     過去績效不代表未來表現；實盤操作請以口袋證券 App 為準。
   </footer>
 </div>

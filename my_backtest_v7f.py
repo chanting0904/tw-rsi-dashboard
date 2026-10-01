@@ -37,6 +37,20 @@ def common(c):
     s = str(c)
     return len(s) == 4 and s.isdigit() and not s.startswith("0")
 keep = [c for c in close.columns if common(c)]
+
+# ===== [v7g] 排除創新板（-創）與微型股本（<5億）＝實盤可操作性 =====
+excl_special = set()
+try:
+    _info = data.get("company_basic_info")
+    if _info is not None and "公司簡稱" in _info.columns and "實收資本額(元)" in _info.columns:
+        _key = "stock_id" if "stock_id" in _info.columns else _info.index.name
+        excl_special |= set(_info[_info["公司簡稱"].astype(str).str.contains("-創", na=False, regex=False)][_key].astype(str))
+        excl_special |= set(_info[_info["實收資本額(元)"].astype(float) < 5e8][_key].astype(str))
+except Exception:
+    pass
+keep = [c for c in keep if c not in excl_special]
+print(f"[v7g] 排除特殊股 {len(excl_special)} 檔，選股池 {len(keep)} 檔")
+
 close = close[keep]
 roe_f = roe_f[[c for c in keep if c in roe_f.columns]]
 tv = tv[[c for c in keep if c in tv.columns]]
@@ -203,6 +217,6 @@ tr_df[["date", "code", "pool", "side", "price", "shares", "amount"]].to_csv(
     r"D:\RSI選股器\my_trades_v7f.csv", encoding="utf-8-sig", index=False)
 pd.DataFrame(snap_hist).to_csv(r"D:\RSI選股器\my_holdings_weekly.csv", encoding="utf-8-sig", index=False)
 json.dump({"final_nav": final, "cagr": cagr, "mdd": mdd,
-           "sig_date": "2026-09-24", "mode": "v7f-realistic (未還權價 + ROE公告對齊 + RSI修正)"},
+           "sig_date": nav_df.index[-1].strftime("%Y-%m-%d"), "mode": "v7g (排除創新板+微型股本<5億)"},
           open(r"D:\RSI選股器\v7f_summary.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 print("saved my_nav_v7f.csv / my_trades_v7f.csv / my_holdings_weekly.csv / v7f_summary.json")
