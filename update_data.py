@@ -132,6 +132,40 @@ except Exception:
 
 # ---------- 3. 調倉日選股清單（可由 REBAL_DAY 凍結在指定日，預設最新交易日） ----------
 last_day = close.dropna(how="all").index[-1]
+
+# [斷更偵測] FinLab 資料新鮮度：實際最後日 vs 預期最近交易日（含休市表）
+def _load_holidays():
+    try:
+        h = json.load(open(os.path.join(HERE, "holidays.json"), encoding="utf-8"))
+        s = set()
+        for v in h.values():
+            s.update(v)
+        return s
+    except Exception:
+        return set()
+
+
+HOLS = _load_holidays()
+
+
+def _trading(d):
+    return d.weekday() < 5 and d.strftime("%Y-%m-%d") not in HOLS
+
+
+_exp = pd.Timestamp(datetime.datetime.now().date())
+while not _trading(_exp):
+    _exp -= pd.Timedelta(days=1)
+_missing_days = 0
+_d = last_day + pd.Timedelta(days=1)
+while _d <= _exp:
+    if _trading(_d):
+        _missing_days += 1
+    _d += pd.Timedelta(days=1)
+data_stale = bool(last_day < _exp and _missing_days > 1)
+stale_date = last_day.strftime("%Y-%m-%d")
+if data_stale:
+    print(f"⚠️ 警告：FinLab 資料停在 {stale_date}，已缺 {_missing_days} 個交易日（訊號非最新）")
+
 _rebal_env = os.environ.get("REBAL_DAY", "").strip()
 if _rebal_env:
     last_day = pd.Timestamp(_rebal_env)
@@ -230,6 +264,9 @@ DATA = {
     "sig_date": sig_day,
     "rebal_date": sig_day,
     "px_date": sig_day,
+    "stale": data_stale,
+    "stale_date": stale_date,
+    "stale_missing": _missing_days,
     "holdings_a": holdings_a,
     "holdings_b": holdings_b,
     "sells": sells,
@@ -258,7 +295,7 @@ HTML = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>三頻率 RSI 選股器 v7f（雙通道 60/40）</title>
+<title>天穹紅蓮三重脈衝時空追擊者 v7f（雙通道 60/40）</title>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
 <style>
   :root{
@@ -323,13 +360,14 @@ HTML = """<!DOCTYPE html>
 <body>
 <div class="wrap">
   <header>
-    <h1>📊 三頻率 RSI 選股器<small>v7f 雙通道 60/40</small></h1>
+    <h1>🌩️ 天穹紅蓮三重脈衝時空追擊者<small>v7f 雙通道 60/40</small></h1>
     <div class="meta">
       持股買賣推薦：<b id="m-rebal"></b>（每週最後交易日盤後更新一次）<br>
       股價更新：<b id="m-px"></b>（每日收盤 F5，持股買賣不變）
     </div>
   </header>
 
+  <div id="stalebox" class="warnbox" style="display:none"></div>
   <div id="warnbox" class="warnbox" style="display:none"></div>
 
   <div class="cards">
@@ -435,7 +473,7 @@ HTML = """<!DOCTYPE html>
   </section>
 
   <footer>
-    資料來源：FinLab API（未還權收盤價 / ROE 稅後公告日對齊 / 成交金額）｜績效為歷史回測統計，僅供研究參考，不構成投資建議<br>
+    天穹紅蓮三重脈衝時空追擊者 v7f ｜ 資料來源：FinLab API（未還權收盤價 / ROE 稅後公告日對齊 / 成交金額）｜績效為歷史回測統計，僅供研究參考，不構成投資建議<br>
     過去績效不代表未來表現；實盤操作請以口袋證券 App 為準。
   </footer>
 </div>
@@ -459,6 +497,11 @@ $("c-sw").className = "v " + (DATA.tsm_on ? "down" : "warn");
 
 $("warnbox").style.display = "block";
 $("warnbox").textContent = "ℹ️ 持股買賣清單為「" + (DATA.rebal_date||DATA.sig_date) + "」結算結果，下次於本週最後交易日盤後更新；中間每日僅刷新股價，持股買賣不變。";
+
+if(DATA.stale){
+  $("stalebox").style.display = "block";
+  $("stalebox").textContent = "⚠️ 資料源斷更警告：FinLab 資料停在 " + DATA.stale_date + "，已缺 " + DATA.stale_missing + " 個交易日！請勿依此下單，待資料源恢復後再操作。";
+}
 
 // AI 訊號
 const AI = DATA.ai || {};
