@@ -1,0 +1,20 @@
+name: AI 紅利三指標提醒
+on:
+  schedule:
+    - cron: '0 1 1 * *'    # 每月 1 號 09:00 台北（財報季月份 1/4/7/10 發詳細清單）
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 發送 AI 三指標提醒
+        env:
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: python ai_monitor.py
