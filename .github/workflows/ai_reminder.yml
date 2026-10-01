@@ -4,17 +4,40 @@ on:
     - cron: '0 1 1 * *'    # 每月 1 號 09:00 台北（財報季月份 1/4/7/10 發詳細清單）
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
+concurrency:
+  group: ai
+  cancel-in-progress: false
 jobs:
   remind:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Cache finlab_db
+        uses: actions/cache@v4
+        with:
+          path: finlab_db
+          key: finlab-ai-${{ github.run_id }}
+          restore-keys: finlab-ai-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: 發送 AI 三指標提醒
+      - name: 安裝依賴
+        run: pip install -q yfinance finlab pandas numpy
+      - name: 自動更新 capex（FinLab 台廠 + yfinance/SEC 美系）
+        env:
+          FINLAB_TOKEN: ${{ secrets.FINLAB_TOKEN }}
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+        run: python ai_capex.py
+      - name: 發送 AI 三指標提醒（monet/cowos 待手動更新）
         env:
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         run: python ai_monitor.py
+      - name: 提交 ai_signals.json 回 main
+        run: |
+          git config user.name "rsi-bot"
+          git config user.email "bot@rsi.local"
+          git add ai_signals.json
+          git commit -m "auto update ai capex [skip ci]" || echo "無變更"
+          git push

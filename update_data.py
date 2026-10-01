@@ -535,8 +535,9 @@ if(DATA.stale){
 // AI 訊號
 const AI = DATA.ai || {};
 $("ai-upd").textContent = AI.updated || "—";
+const aiChg = (AI.capex_chg != null && !Number.isNaN(AI.capex_chg)) ? `（YoY ${AI.capex_chg>0?"+":""}${AI.capex_chg}%）` : "";
 const aiMap = [
-  ["Hyperscaler capex", AI.capex],
+  ["Hyperscaler capex", (AI.capex||"—") + aiChg],
   ["AI 變現率", AI.monet],
   ["CoWoS 產能", AI.cowos],
 ];
