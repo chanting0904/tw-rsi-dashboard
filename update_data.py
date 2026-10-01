@@ -174,8 +174,12 @@ def build_holdings(cur_codes, prev_codes, w_target):
         })
     return out
 
-holdings_a = build_holdings(cur_codes_a, prev_codes, TARGET_W_A)
-holdings_b = build_holdings(cur_codes_b, prev_codes_b, TARGET_W_B)
+_nA, _nB = len(cur_codes_a), len(cur_codes_b)
+_wa_eff = W_A if tsm_on else 1.0
+twA = (_wa_eff * 0.95 / _nA) if _nA else TARGET_W_A
+twB = (W_B * 0.95 / _nB) if (_nB and tsm_on) else TARGET_W_B
+holdings_a = build_holdings(cur_codes_a, prev_codes, twA)
+holdings_b = build_holdings(cur_codes_b, prev_codes_b, twB)
 
 sells = []
 if prev_date:
@@ -241,8 +245,8 @@ DATA = {
         "dd": dd_list,
         "yearly": yearly,
     },
-    "target_w_a": TARGET_W_A,
-    "target_w_b": TARGET_W_B,
+    "target_w_a": twA,
+    "target_w_b": twB,
 }
 
 # ---------- 5. 生成 HTML ----------
@@ -350,7 +354,7 @@ HTML = """<!DOCTYPE html>
       </tr></thead>
       <tbody id="tb-a"></tbody>
     </table>
-    <div class="note">🟢 買進 = 本週新進訊號　🔵 持有 = 續抱　🔴 賣出 = 掉出清單建議賣出　A 通道滿倉 15 檔、每檔 3.8%</div>
+    <div class="note">🟢 買進 = 本週新進訊號　🔵 持有 = 續抱　🔴 賣出 = 掉出清單建議賣出　A 通道額度（tsm ON 約 60%、OFF 為 100%）按當週實際檔數均分</div>
   </section>
 
   <section id="b-sec">
@@ -364,7 +368,7 @@ HTML = """<!DOCTYPE html>
       </tr></thead>
       <tbody id="tb-b"></tbody>
     </table>
-    <div class="note">B 通道僅在台積電站上季線（tsm_long ON）時啟用，最多 4 檔、每檔 9.5%</div>
+    <div class="note">B 通道僅在台積電站上季線（tsm_long ON）時啟用，額度約 40% 按當週實際檔數均分（最多 4 檔）</div>
   </section>
 
   <section id="sell-sec" style="display:none">
@@ -489,8 +493,8 @@ function saveStore(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(userSt
 
 const assetInput = $("asset");
 const isFirst = !DATA.has_prev;
-// tsm_on：A 60%（每檔3.8%）；tsm_off：A 100%（每檔6.33%）
-function wA(){ return DATA.tsm_on ? DATA.target_w_a : 0.95/MAXA; }
+// 目標權重＝池有效額度×0.95÷該池實際檔數（與回測引擎一致）
+function wA(){ return DATA.target_w_a; }
 const wB = DATA.target_w_b;
 
 // 掉出最新清單（建議賣出）的標的：下週不顯示，並清掉本地殘留
@@ -552,8 +556,8 @@ function renderTable(tbId, list, w, isA){
     recalcRow(h.code, w);
   });
 }
-$("h-cnt-a").textContent = DATA.holdings_a.length + "檔・" + (DATA.tsm_on ? "每檔3.8%" : "每檔6.3%");
-$("h-cnt-b").textContent = DATA.holdings_b.length + "檔・每檔9.5%";
+$("h-cnt-a").textContent = DATA.holdings_a.length + "檔・每檔" + (wA()*100).toFixed(1) + "%";
+$("h-cnt-b").textContent = DATA.holdings_b.length ? (DATA.holdings_b.length + "檔・每檔" + (wB*100).toFixed(1) + "%") : "0檔・暫無標的（額度暫留現金）";
 function renderAll(){
   renderTable("tb-a", DATA.holdings_a, wA(), true);
   renderTable("tb-b", DATA.holdings_b, wB, false);
@@ -687,6 +691,8 @@ runBt();
 
 HTML = HTML.replace("__DATA__", DATA_JSON)
 with open("RSI選股器.html", "w", encoding="utf-8") as f:
+    f.write(HTML)
+with open("index.html", "w", encoding="utf-8") as f:
     f.write(HTML)
 
 print("✅ 完成！")
