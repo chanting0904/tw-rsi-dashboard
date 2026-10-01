@@ -190,12 +190,9 @@ if prev_date:
     sells = [{"code": c, "name": name_map.get(c, c), "pool": "A"} for c in prev_codes if c not in cur_codes_a]
     sells += [{"code": c, "name": name_map.get(c, c), "pool": "B"} for c in prev_codes_b if c not in cur_codes_b]
 
-# 台北時間週五 = 12:00 預覽版（與 TG 同步）：不覆蓋上週基準，
-# 避免把「當週買賣」拆散到兩天；週六最終版才更新 state。
-from datetime import datetime, timedelta, timezone
-TW_TZ = timezone(timedelta(hours=8))
-_is_friday_preview = datetime.now(TW_TZ).weekday() == 4
-if not _is_friday_preview and os.environ.get("COMMIT_STATE", "1") != "0":
+# 每次由 check_and_run 在「本週最後交易日」喚起即為正式調倉，
+# 覆寫 state.json 作為下週比對基準（僅 COMMIT_STATE=0 的重跑/預覽不覆寫）
+if os.environ.get("COMMIT_STATE", "1") != "0":
     json.dump({"date": sig_day, "codes": cur_codes_a, "codes_b": cur_codes_b},
               open("state.json", "w", encoding="utf-8"), ensure_ascii=False)
 
@@ -229,7 +226,7 @@ except Exception:
     ai = {}
 
 DATA = {
-    "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+    "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
     "sig_date": sig_day,
     "rebal_date": sig_day,
     "px_date": sig_day,
