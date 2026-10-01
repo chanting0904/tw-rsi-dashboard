@@ -344,7 +344,7 @@ HTML = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>天穹紅蓮三重脈衝時空追擊者 v7g-3（動態A·雙通道 60/40）</title>
+<title>天穹紅蓮三重脈衝時空追擊者 v7h（動態A·雙通道 60/40）</title>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
 <style>
   :root{
@@ -410,7 +410,7 @@ HTML = """<!DOCTYPE html>
 <body>
 <div class="wrap">
   <header>
-    <h1>🌩️ 天穹紅蓮三重脈衝時空追擊者<small>v7g-3 動態A·雙通道 60/40</small></h1>
+    <h1>🌩️ 天穹紅蓮三重脈衝時空追擊者<small>v7h 動態A·雙通道 60/40</small></h1>
     <div class="meta">
       持股買賣推薦：<b id="m-rebal"></b>（每週最後交易日盤後更新一次）<br>
       股價更新：<b id="m-px"></b>（每日收盤 F5，持股買賣不變）
