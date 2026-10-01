@@ -617,7 +617,9 @@ function recalcRow(code, w){
 
   // 目標股數與再平衡，一律用現價 spot
   const tgt = (spot>0 && asset>0) ? Math.floor(asset*w/spot) : 0;
-  document.querySelector(`[data-code="${code}"][data-field="tgt"]`).textContent = tgt.toLocaleString("en-US");
+  const tgtEl0 = document.querySelector(`[data-code="${code}"][data-field="tgt"]`);
+  if(spot>0 && asset>0 && tgt===0){ tgtEl0.innerHTML = `0<br><span style="color:#ff6b6b;font-size:11px">⚠️ 本金不足，跳過</span>`; }
+  else { tgtEl0.textContent = tgt.toLocaleString("en-US"); }
   const tgtVal = asset*w, curVal = qty*spot;
   let adj = 0;
   if(tgtVal>0 && Math.abs(tgtVal-curVal) > tgtVal*0.25){ adj = tgt-qty; }
