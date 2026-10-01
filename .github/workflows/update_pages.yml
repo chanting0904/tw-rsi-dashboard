@@ -1,8 +1,8 @@
 name: 更新選股器網頁
 on:
   schedule:
-    - cron: '40 6 * * 1-4'   # 週一~四 14:40 台北：只更新收盤股價
-    - cron: '0 4 * * 5'   # 週五 12:00 台北：完整選股（與 TG 同步）
+    - cron: '0 4 * * 1-5'    # 每天 12:00 台北：判斷是否本週最後交易日→完整選股
+    - cron: '40 6 * * 1-5'   # 每天 14:40 台北：更新當日收盤股價
   workflow_dispatch:
     inputs:
       mode:
@@ -34,16 +34,18 @@ jobs:
           python-version: '3.12'
       - name: 安裝依賴
         run: pip install -q yfinance finlab pandas numpy
-      - name: 完整選股（僅週五或手動 full）
+      - name: 完整選股（最後交易日 12:00，或手動 full）
         if: >
-          (github.event_name == 'schedule' && github.event.schedule == '0 4 * * 5')
+          (github.event_name == 'schedule' && github.event.schedule == '0 4 * * 1-5')
           || (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'full')
         env:
           FINLAB_TOKEN: ${{ secrets.FINLAB_TOKEN }}
-        run: |
-          python update_data.py
-          cp RSI選股器.html index.html
-      - name: 更新收盤股價（官方源→FinLab→yfinance，全失敗則紅叉）
+          FORCE_FULL: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
+        run: python check_and_run.py
+      - name: 更新收盤股價（官方源→FinLab→yfinance）
+        if: >
+          (github.event_name == 'schedule' && github.event.schedule == '40 6 * * 1-5')
+          || github.event_name == 'workflow_dispatch'
         env:
           FINLAB_TOKEN: ${{ secrets.FINLAB_TOKEN }}
         run: python daily_update.py
@@ -51,6 +53,6 @@ jobs:
         run: |
           git config user.name "rsi-bot"
           git config user.email "bot@rsi.local"
-          git add state.json index.html
+          git add state.json index.html RSI選股器.html holidays.json check_and_run.py
           git commit -m "auto update page [skip ci]" || echo "無變更"
           git push
