@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-台股三頻率 RSI 策略 - GitHub Actions 版（v7g-3 動態A·雙通道 60/40）
+台股三頻率 RSI 策略 - GitHub Actions 版（v7h 動態A·雙通道 60/40）
 策略邏輯（與回測 v7e_dual_v2 60/40 一致）：
   A 通道（60%）：v7e 原案（RSI120>55、RSI60<75、RSI20三日漲>2%、RSI20>75連3日、
                  ROE>0、近20日成交金額前60%、一般股票過濾），15 檔
@@ -362,7 +362,7 @@ def main():
             return int(asset * w_target // px)
         return None
 
-    # [v7g-3 動態A] 權重：B 空手 → A 吃 95%；B 有候選 → A60/B40（各 ×0.95）
+    # [v7h 動態A] 權重：B 空手 → A 吃 95%；B 有候選 → A60/B40（各 ×0.95）
     nA_, nB_ = len(cur_codes), len(cur_codes_b)
     if tsm_on and nB_ == 0:
         wa_eff, wb_eff = 1.0, 0.0
@@ -399,7 +399,7 @@ def main():
     asset_str = f"{asset:,.0f}" if asset else "未設定"
     sw_txt = "🟢 ON（動態A）" if tsm_on else "⚪ OFF（純 A 通道）"
     dyn_txt = "\nB 空手 → 額度併入 A 通道（A 吃 95%）" if (tsm_on and not cur_codes_b) else ""
-    lines = [f"<b>📊 三頻率RSI 雙通道通知（v7g-3）</b>",
+    lines = [f"<b>📊 三頻率RSI 雙通道通知（v7h）</b>",
              f"訊號基準：{sig_day}（今日盤後成交）",
              f"資產基準：{asset_str}　權值通道：{sw_txt}",
              f"A 每檔目標 {twA*100:.1f}%｜B 每檔 {twB*100:.1f}%{dyn_txt}\n"]

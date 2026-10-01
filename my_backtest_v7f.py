@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-回測 v7f（擬真修正版）：60/40 雙通道（A=v7e 前60% 15檔 / B=權值龍頭 4檔，tsm_long 開關）
-=== 2026-10-01 兩大擬真修正 ===
-1) 還權價 -> 未還權收盤價（price:收盤價）：除息除權跳空真實反映在 RSI/MA/出場
-2) ROE -> 公告 deadline 對齊（deadline 次日起才可使用，消除季頻前視偏差）
-3) 修正 rsi() 的 l 計算 bug（(-d).clip(upper=0) -> (-d).clip(lower=0)）
-擬真結果（2015-01 ~ 2026-09）：CAGR 37.67%、MDD -40.87%、最終 4,281,209
+回測 v7h（現行定案）：動態A·雙通道 60/40（A=v7e 前60% 15檔 / B=權值龍頭 4檔，tsm_long 開關）
+=== 關鍵擬真設定 ===
+1) 未還權收盤價（price:收盤價）：除息除權跳空真實反映
+2) ROE 公告 deadline 對齊（公告次日起才可用）＋歷史股本 ≥6億（季頻 deadline 對齊，無前視）
+3) 漲跌停跳過（±9.9%）、賣 0.3%、THRESH 25% 再平衡、BUFFER 5% 現金
+4) [v7h] 通道唯一歸屬：同檔跨 A/B → 保留原通道＋淨額調倉（不全賣全買，消除摩擦與踏空）
+5) [動態A] B 空手 → A 吃 95%（每檔 6.33%）；B 有候選 → A60/B40
+v7h 績效（2015-01 ~ 2026-09）：CAGR 40.88%、MDD -39.20%、最終 5,611,752
 """
 import os
 os.chdir(r"D:\RSI選股器")
@@ -18,7 +20,7 @@ from finlab import data
 
 finlab.login(api_token=json.load(open(r"D:\RSI選股器\config.json", encoding="utf-8"))["FINLAB_TOKEN"])
 
-# ===== [v7g-3] 歷史股本門檻（仟元）鎖定 6 億 + 動態A（正式預設）=====
+# ===== [v7h] 歷史股本門檻（仟元）鎖定 6 億 + 動態A（正式預設）=====
 # 正式（無 argv）= 6億 + 動態A（B空手→A吃95%）；敏感度：argv1=門檻、argv2=0/1 關閉/開啟動態A
 CAP_THRESHOLD = float(sys.argv[1]) if len(sys.argv) > 1 else 6e5
 DYN_A = len(sys.argv) <= 2 or sys.argv[2] != "0"
@@ -51,7 +53,7 @@ def common(c):
     return len(s) == 4 and s.isdigit() and not s.startswith("0")
 keep = [c for c in close.columns if common(c)]
 
-# ===== [v7g] 排除創新板（-創）＝實盤可操作性（創新板 2021 後才有，回測早期無資料，無污染） =====
+# ===== [v7h] 排除創新板（-創）＝實盤可操作性（創新板 2021 後才有，回測早期無資料，無污染） =====
 excl_innov = set()
 try:
     _info = data.get("company_basic_info")
@@ -61,7 +63,7 @@ try:
 except Exception:
     pass
 keep = [c for c in keep if c not in excl_innov]
-print(f"[v7g] 排除創新板 {len(excl_innov)} 檔，選股池 {len(keep)} 檔")
+print(f"[v7h] 排除創新板 {len(excl_innov)} 檔，選股池 {len(keep)} 檔")
 
 close = close[keep]
 roe_f = roe_f[[c for c in keep if c in roe_f.columns]]
@@ -75,7 +77,7 @@ roe_daily = roe_dl.reindex(close.index).ffill().shift(1)
 # 公告日(含)之前 → NaN → 視為未知（放行）；公告日次日起 → 使用該季 ROE
 roe_ok = (roe_daily > 0).fillna(True)
 
-# ===== [v7g-2] 歷史股本（季頻財報 deadline 對齊）＝消除未來資料污染 =====
+# ===== [v7h] 歷史股本（季頻財報 deadline 對齊）＝消除未來資料污染 =====
 # financial_statement:股本 單位＝仟元；門檻 6 億 = 6e5（仟元）
 # 用法：該股「當時最新公告」的股本 < 5 億 → 當週禁止進場/續持
 cap_q = data.get("financial_statement:股本").apply(pd.to_numeric, errors="coerce")
@@ -83,7 +85,7 @@ cap_q = cap_q[[c for c in keep if c in cap_q.columns]]
 cap_dl = cap_q.deadline()
 cap_daily = cap_dl.reindex(close.index).ffill().shift(1)
 cap_ok = (cap_daily >= CAP_THRESHOLD).fillna(True)  # NaN（早期無公告）→ 放行
-print(f"[v7g-2] 歷史股本序列就緒：{cap_daily.shape[1]} 檔 x {len(cap_daily)} 交易日 | 門檻 {CAP_THRESHOLD/1e5:.0f} 億")
+print(f"[v7h] 歷史股本序列就緒：{cap_daily.shape[1]} 檔 x {len(cap_daily)} 交易日 | 門檻 {CAP_THRESHOLD/1e5:.0f} 億")
 
 # ===== [修正3] rsi() 的 l 計算 bug =====
 def rsi(c, n):
@@ -143,7 +145,7 @@ for wk in weeks:
     px = close.loc[wk]
     on = bool(sw_tsm.get(wk, False))
     a_w, b_w = (W_A, W_B) if on else (1.0, 0.0)
-    # [v7g-2] 當週歷史股本 ≥ 5 億才允許進場（消除快照污染）；無財報資料→放行
+    # [v7h] 當週歷史股本 ≥ 6 億才允許進場（消除快照污染）；無財報資料→放行
     capw = cap_ok.loc[wk]
     def cap_pass(c):
         return c not in cap_ok.columns or bool(capw[c])
@@ -192,8 +194,10 @@ for wk in weeks:
                            "price": p, "shares": sh, "amount": sh * p})
             del pos[c]
 
-    total = cash + sum(pos[c]["shares"] * float(px[c])
-                       for c in pos if pd.notna(px[c]) and float(px[c]) > 0)
+    def mv_at(p):
+        return sum(pos[c]["shares"] * float(p[c])
+                   for c in pos if pd.notna(p[c]) and float(p[c]) > 0)
+    total = cash + mv_at(px)
     for pool, wgt in [("A", a_w), ("B", b_w)]:
         lst = want.get(pool, [])
         if not lst or wgt <= 0:
@@ -235,8 +239,7 @@ for wk in weeks:
                     trades.append({"date": wk, "code": c, "pool": pool, "side": "SELL",
                                    "price": p, "shares": sh, "amount": sh * p})
 
-    mv = sum(pos[c]["shares"] * float(px[c])
-             for c in pos if pd.notna(px[c]) and float(px[c]) > 0)
+    mv = mv_at(px)
     nav_hist.append({"date": wk, "nav": cash + mv, "nA": len([c for c in pos if pos[c]["pool"] == "A"]),
                      "nB": len([c for c in pos if pos[c]["pool"] == "B"])})
 
@@ -262,6 +265,6 @@ tr_df[["date", "code", "pool", "side", "price", "shares", "amount"]].to_csv(
 pd.DataFrame(snap_hist).to_csv(HLD_OUT, encoding="utf-8-sig", index=False)
 json.dump({"final_nav": final, "cagr": cagr, "mdd": mdd,
            "sig_date": nav_df.index[-1].strftime("%Y-%m-%d"),
-           "mode": f"v7g-2 歷史股本 ≥{CAP_THRESHOLD/1e5:.0f}億 (無污染)"},
+           "mode": f"v7h 歷史股本 ≥{CAP_THRESHOLD/1e5:.0f}億 動態A (無污染)"},
           open(SUM_OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 print(f"saved {NAV_OUT} / {TRD_OUT} / {HLD_OUT} / {SUM_OUT}")

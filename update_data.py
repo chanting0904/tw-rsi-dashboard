@@ -89,7 +89,7 @@ try:
 except Exception:
     pass
 
-# [v7g-2] 歷史股本（季頻財報 deadline 對齊）：最新已知股本 < 6 億 排除
+# [v7h] 歷史股本（季頻財報 deadline 對齊）：最新已知股本 < 6 億 排除
 # = 回測引擎同源（financial_statement:股本，仟元單位）＝實盤當下已知資訊、零污染
 CAP_MIN = 6e5  # 仟元 = 6 億
 try:
@@ -101,13 +101,13 @@ try:
 except Exception as e:
     print("歷史股本載入失敗（跳過排除）:", str(e)[:100])
 
-# [v7g-2] 排除創新板 + 最新股本 < 6 億＝實盤可操作性
+# [v7h] 排除創新板 + 最新股本 < 6 億＝實盤可操作性
 if excl_special:
     keep = [c for c in keep if c not in excl_special]
     close = close[keep]
     raw = raw[[c for c in keep if c in raw.columns]]
     tv = tv[[c for c in keep if c in tv.columns]]
-    print(f"② [v7g-2] 排除 -創 + 最新股本<6億 {len(excl_special)} 檔，選股池 {len(keep)} 檔")
+    print(f"② [v7h] 排除 -創 + 最新股本<6億 {len(excl_special)} 檔，選股池 {len(keep)} 檔")
 
 # ---------- 2. 指標與訊號（v7f，全部 shift(1) 防未來函數） ----------
 r20, r60, r120 = rsi(close, 20), rsi(close, 60), rsi(close, 120)
@@ -254,7 +254,7 @@ def build_holdings(cur_codes, w_target, pool_id):
     return out
 
 _nA, _nB = len(cur_codes_a), len(cur_codes_b)
-# [v7g-3 動態A] B 空手 → A 吃 95%（留 5% 現金）；B 有候選 → A60/B40（各 ×0.95）
+# [v7h 動態A] B 空手 → A 吃 95%（留 5% 現金）；B 有候選 → A60/B40（各 ×0.95）
 if tsm_on and _nB == 0:
     _wa_eff, _wb_eff = 1.0, 0.0
 else:
@@ -518,7 +518,7 @@ HTML = """<!DOCTYPE html>
       ▸ A 通道（60%）：RSI120&gt;55、RSI60&lt;75、RSI20三日漲&gt;2%、RSI20&gt;75 連3日、ROE&gt;0、成交金額前60%、15 檔。<br>
       ▸ B 通道（40%）：成交金額前15 + 站上MA60 + RSI120&gt;60 + RSI20&lt;88 + ROE&gt;0，取 4 檔；僅 tsm_long ON 時啟用。<br>
       ▸ 出場：持有滿 80 交易日 或 跌破 MA60。AI 訊號轉弱時建議手動降 B 通道（80/20 或全關）。<br>
-      ▸ [v7g] 選股池排除：創新板（-創）與最新公告股本 &lt; 6 億之微型股（歷史股本 deadline 對齊、零未來污染；避開流動性差/易暴跌之妖股）。<br>
+      ▸ [v7h] 選股池排除：創新板（-創）與最新公告股本 &lt; 6 億之微型股（歷史股本 deadline 對齊、零未來污染；避開流動性差/易暴跌之妖股）。<br>
       ▸ 績效為 2015-01 ~ 2026-09 歷史回測（賣出成本 0.3%、買入 0%、含漲跌停跳過）。
     </div>
   </section>
