@@ -318,7 +318,7 @@ function renderTable(tbId, list, w, isA){
     recalcRow(h.code, w);
   });
 }
-$"h-cnt-a".textContent = DATA.holdings_a.length + "檔・每檔" + (wA()*100).toFixed(1) + "%";
+$("h-cnt-a").textContent = DATA.holdings_a.length + "檔・每檔" + (wA()*100).toFixed(1) + "%";
 $("h-cnt-b").textContent = DATA.holdings_b.length ? (DATA.holdings_b.length + "檔・每檔" + (wB*100).toFixed(1) + "%") : "0檔・暫無標的（額度暫留現金）";
 function renderAll(){
   renderTable("tb-a", DATA.holdings_a, wA(), true);
