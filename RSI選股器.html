@@ -298,7 +298,9 @@ function renderTable(tbId, list, w, isA){
     const st = isBuy ? ["買進","b-buy"] : ["持有","b-hold"];
     const saved = userStore[h.code] || {};
     const pxV = (saved.px!==undefined && saved.px!=="") ? saved.px : (h.px!==null ? h.px : "");
-    const qtyV = (saved.qty!==undefined && saved.qty!=="") ? saved.qty : (isBuy && h.px ? Math.floor(asset*w/h.px) : "");
+    const qtyV = isBuy
+      ? (Math.floor(asset*w/(parseFloat(pxV)||h.px||1)) > 0 ? Math.floor(asset*w/(parseFloat(pxV)||h.px||1)) : "")
+      : ((saved.qty!==undefined && saved.qty!=="") ? saved.qty : "");
     const tr = document.createElement("tr");
     tr.innerHTML =
       `<td><span class="badge ${st[1]}">${st[0]}</span></td>` +
