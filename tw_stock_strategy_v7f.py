@@ -29,7 +29,7 @@ W_A = 0.60          # A 通道權重（開關 ON 時）
 W_B = 0.40          # B 通道權重
 TARGET_W_A = W_A * 0.95 / MAX_HOLD_A  # 3.8%
 TARGET_W_B = W_B * 0.95 / MAX_HOLD_B  # 9.5%
-ADJUST_THRESH = 0.05
+ADJUST_THRESH = 0.25   # 與回測引擎/網頁一致：偏離目標市值 25% 才調倉（原 0.05 會過度交易）
 FORCE = os.environ.get("FORCE") == "1"
 TW = ZoneInfo("Asia/Taipei")
 
@@ -383,7 +383,7 @@ def main():
             p = prev_qty_b.get(str(c), prev_qty.get(str(c)))
         if t is None or p is None:
             return
-        if abs(t - p) >= max(1, p * ADJUST_THRESH):
+        if abs(t - p) >= max(1, t * ADJUST_THRESH):   # 基準用目標股數 t（等價於網頁市值 25% 門檻）
             if cur_pool == "A":
                 adjust.append((c, p, t))
             else:
@@ -407,20 +407,20 @@ def main():
     # A 通道區塊
     if old_codes:
         lines.append(f"<b>🟢 A買進（{len(buys)}）</b>")
-        lines += [line(c, TARGET_W_A, True) for c in buys] or ["（無）"]
+        lines += [line(c, twA, True) for c in buys] or ["（無）"]
         lines.append(f"\n<b>🔴 A賣出（{len(sells)}）</b>")
-        lines += [line(c, TARGET_W_A) for c in sells] or ["（無）"]
+        lines += [line(c, twA) for c in sells] or ["（無）"]
         lines.append(f"\n<b>⚪ A繼續持有（{len(holds)}）</b>")
     else:
         lines.append("<b>📋 A通道完整持股清單（首次執行）</b>")
-    lines += [line(c, TARGET_W_A, True) for c in cur_codes]
+    lines += [line(c, twA, True) for c in cur_codes]
 
     # B 通道區塊（開關 ON 才顯示）
     if tsm_on:
         lines.append(f"\n<b>📌 B通道權值（40%）（{len(cur_codes_b)}）</b>")
         if old_codes_b:
             lines.append(f"　買進 {len(buys_b)}｜賣出 {len(sells_b)}｜持有 {len(holds_b)}")
-        lines += [line(c, TARGET_W_B, True) for c in cur_codes_b] or ["　（無權值訊號）"]
+        lines += [line(c, twB, True) for c in cur_codes_b] or ["　（無權值訊號）"]
     else:
         lines.append("\n<b>📌 B通道：關閉</b>（台積電未站上季線，資金 100% 於 A 通道）")
 
