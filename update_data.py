@@ -235,9 +235,13 @@ def build_holdings(cur_codes, prev_codes, w_target):
     return out
 
 _nA, _nB = len(cur_codes_a), len(cur_codes_b)
-_wa_eff = W_A if tsm_on else 1.0
-twA = (_wa_eff * 0.95 / _nA) if _nA else TARGET_W_A
-twB = (W_B * 0.95 / _nB) if (_nB and tsm_on) else TARGET_W_B
+# [v7g-3 動態A] B 空手 → A 吃 95%（留 5% 現金）；B 有候選 → A60/B40（各 ×0.95）
+if tsm_on and _nB == 0:
+    _wa_eff, _wb_eff = 1.0, 0.0
+else:
+    _wa_eff, _wb_eff = (W_A, W_B) if tsm_on else (1.0, 0.0)
+twA = (_wa_eff * 0.95 / _nA) if (_nA and _wa_eff > 0) else TARGET_W_A
+twB = (_wb_eff * 0.95 / _nB) if (_nB and _wb_eff > 0) else TARGET_W_B
 holdings_a = build_holdings(cur_codes_a, prev_codes, twA)
 holdings_b = build_holdings(cur_codes_b, prev_codes_b, twB)
 
@@ -307,6 +311,8 @@ DATA = {
     },
     "target_w_a": twA,
     "target_w_b": twB,
+    "wa_eff": round(_wa_eff, 3),
+    "wb_eff": round(_wb_eff, 3),
 }
 
 # ---------- 5. 生成 HTML ----------
@@ -317,7 +323,7 @@ HTML = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>天穹紅蓮三重脈衝時空追擊者 v7g-2（雙通道 60/40）</title>
+<title>天穹紅蓮三重脈衝時空追擊者 v7g-3（動態A·雙通道 60/40）</title>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
 <style>
   :root{
@@ -382,7 +388,7 @@ HTML = """<!DOCTYPE html>
 <body>
 <div class="wrap">
   <header>
-    <h1>🌩️ 天穹紅蓮三重脈衝時空追擊者<small>v7g-2 雙通道 60/40</small></h1>
+    <h1>🌩️ 天穹紅蓮三重脈衝時空追擊者<small>v7g-3 動態A·雙通道 60/40</small></h1>
     <div class="meta">
       持股買賣推薦：<b id="m-rebal"></b>（每週最後交易日盤後更新一次）<br>
       股價更新：<b id="m-px"></b>（每日收盤 F5，持股買賣不變）
@@ -637,8 +643,8 @@ function renderTable(tbId, list, w, isA){
     recalcRow(h.code, w);
   });
 }
-$("h-cnt-a").textContent = DATA.holdings_a.length + "檔・每檔" + (wA()*100).toFixed(1) + "%";
-$("h-cnt-b").textContent = DATA.holdings_b.length ? (DATA.holdings_b.length + "檔・每檔" + (wB*100).toFixed(1) + "%") : "0檔・暫無標的（額度暫留現金）";
+$("h-cnt-a").textContent = DATA.holdings_a.length + "檔・每檔" + (wA()*100).toFixed(1) + "%・A池額度" + (DATA.wa_eff*100).toFixed(0) + "%";
+$("h-cnt-b").textContent = DATA.holdings_b.length ? (DATA.holdings_b.length + "檔・每檔" + (wB*100).toFixed(1) + "%・B池額度" + (DATA.wb_eff*100).toFixed(0) + "%") : (DATA.tsm_on ? "0檔・額度併入A通道（動態）" : "0檔・B通道關閉");
 function renderAll(){
   renderTable("tb-a", DATA.holdings_a, wA(), true);
   renderTable("tb-b", DATA.holdings_b, wB, false);

@@ -18,14 +18,17 @@ from finlab import data
 
 finlab.login(api_token=json.load(open(r"D:\RSI選股器\config.json", encoding="utf-8"))["FINLAB_TOKEN"])
 
-# ===== [v7g-2] 歷史股本門檻（仟元單位）：正式鎖定 6 億 =====
+# ===== [v7g-3] 歷史股本門檻（仟元）鎖定 6 億 + 動態A（正式預設）=====
+# 正式（無 argv）= 6億 + 動態A（B空手→A吃95%）；敏感度：argv1=門檻、argv2=0/1 關閉/開啟動態A
 CAP_THRESHOLD = float(sys.argv[1]) if len(sys.argv) > 1 else 6e5
-USE_TAG = len(sys.argv) > 1
+DYN_A = len(sys.argv) <= 2 or sys.argv[2] != "0"
+IS_SENS = len(sys.argv) > 1
 CAP_TAG = f"cap{int(CAP_THRESHOLD / 1e5)}e8"  # cap2e8 / cap6e8 ...
-NAV_OUT = rf"D:\RSI選股器\my_nav_v7f{CAP_TAG if USE_TAG else ''}.csv"
-TRD_OUT = rf"D:\RSI選股器\my_trades_v7f{CAP_TAG if USE_TAG else ''}.csv"
-HLD_OUT = rf"D:\RSI選股器\my_holdings_weekly{CAP_TAG if USE_TAG else ''}.csv"
-SUM_OUT = rf"D:\RSI選股器\v7f_summary{CAP_TAG if USE_TAG else ''}.json"
+DYN_TAG = "_dyn" if DYN_A else ""
+NAV_OUT = rf"D:\RSI選股器\my_nav_v7f{CAP_TAG if IS_SENS else ''}{DYN_TAG if IS_SENS else ''}.csv"
+TRD_OUT = rf"D:\RSI選股器\my_trades_v7f{CAP_TAG if IS_SENS else ''}{DYN_TAG if IS_SENS else ''}.csv"
+HLD_OUT = rf"D:\RSI選股器\my_holdings_weekly{CAP_TAG if IS_SENS else ''}{DYN_TAG if IS_SENS else ''}.csv"
+SUM_OUT = rf"D:\RSI選股器\v7f_summary{CAP_TAG if IS_SENS else ''}{DYN_TAG if IS_SENS else ''}.json"
 
 START_CAPITAL = 100_000
 START_DATE = "2015-01-01"
@@ -158,6 +161,9 @@ for wk in weeks:
     else:
         want["B"] = []
     want_set = set(want["A"]) | set(want["B"])
+    # [動態A] B 空手 → 38% 併入 A（A 吃 95%）；B 有候選 → 恢復 A57/B38
+    if DYN_A and on and not want["B"]:
+        a_w, b_w = 1.0, 0.0
 
     for c in list(pos.keys()):
         pool = pos[c]["pool"]
