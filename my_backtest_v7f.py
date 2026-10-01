@@ -9,6 +9,7 @@
 """
 import os
 os.chdir(r"D:\RSI選股器")
+import sys
 import pandas as pd
 import numpy as np
 import finlab, json, warnings
@@ -16,6 +17,15 @@ warnings.filterwarnings("ignore")
 from finlab import data
 
 finlab.login(api_token=json.load(open(r"D:\RSI選股器\config.json", encoding="utf-8"))["FINLAB_TOKEN"])
+
+# ===== [v7g-2] 歷史股本門檻（仟元單位）：正式鎖定 6 億 =====
+CAP_THRESHOLD = float(sys.argv[1]) if len(sys.argv) > 1 else 6e5
+USE_TAG = len(sys.argv) > 1
+CAP_TAG = f"cap{int(CAP_THRESHOLD / 1e5)}e8"  # cap2e8 / cap6e8 ...
+NAV_OUT = rf"D:\RSI選股器\my_nav_v7f{CAP_TAG if USE_TAG else ''}.csv"
+TRD_OUT = rf"D:\RSI選股器\my_trades_v7f{CAP_TAG if USE_TAG else ''}.csv"
+HLD_OUT = rf"D:\RSI選股器\my_holdings_weekly{CAP_TAG if USE_TAG else ''}.csv"
+SUM_OUT = rf"D:\RSI選股器\v7f_summary{CAP_TAG if USE_TAG else ''}.json"
 
 START_CAPITAL = 100_000
 START_DATE = "2015-01-01"
@@ -38,18 +48,17 @@ def common(c):
     return len(s) == 4 and s.isdigit() and not s.startswith("0")
 keep = [c for c in close.columns if common(c)]
 
-# ===== [v7g] 排除創新板（-創）與微型股本（<5億）＝實盤可操作性 =====
-excl_special = set()
+# ===== [v7g] 排除創新板（-創）＝實盤可操作性（創新板 2021 後才有，回測早期無資料，無污染） =====
+excl_innov = set()
 try:
     _info = data.get("company_basic_info")
-    if _info is not None and "公司簡稱" in _info.columns and "實收資本額(元)" in _info.columns:
+    if _info is not None and "公司簡稱" in _info.columns:
         _key = "stock_id" if "stock_id" in _info.columns else _info.index.name
-        excl_special |= set(_info[_info["公司簡稱"].astype(str).str.contains("-創", na=False, regex=False)][_key].astype(str))
-        excl_special |= set(_info[_info["實收資本額(元)"].astype(float) < 5e8][_key].astype(str))
+        excl_innov = set(_info[_info["公司簡稱"].astype(str).str.contains("-創", na=False, regex=False)][_key].astype(str))
 except Exception:
     pass
-keep = [c for c in keep if c not in excl_special]
-print(f"[v7g] 排除特殊股 {len(excl_special)} 檔，選股池 {len(keep)} 檔")
+keep = [c for c in keep if c not in excl_innov]
+print(f"[v7g] 排除創新板 {len(excl_innov)} 檔，選股池 {len(keep)} 檔")
 
 close = close[keep]
 roe_f = roe_f[[c for c in keep if c in roe_f.columns]]
@@ -62,6 +71,16 @@ roe_dl = roe_dl[[c for c in keep if c in roe_dl.columns]]
 roe_daily = roe_dl.reindex(close.index).ffill().shift(1)
 # 公告日(含)之前 → NaN → 視為未知（放行）；公告日次日起 → 使用該季 ROE
 roe_ok = (roe_daily > 0).fillna(True)
+
+# ===== [v7g-2] 歷史股本（季頻財報 deadline 對齊）＝消除未來資料污染 =====
+# financial_statement:股本 單位＝仟元；門檻 5 億 = 5e5（仟元）
+# 用法：該股「當時最新公告」的股本 < 5 億 → 當週禁止進場/續持
+cap_q = data.get("financial_statement:股本").apply(pd.to_numeric, errors="coerce")
+cap_q = cap_q[[c for c in keep if c in cap_q.columns]]
+cap_dl = cap_q.deadline()
+cap_daily = cap_dl.reindex(close.index).ffill().shift(1)
+cap_ok = (cap_daily >= CAP_THRESHOLD).fillna(True)  # NaN（早期無公告）→ 放行
+print(f"[v7g-2] 歷史股本序列就緒：{cap_daily.shape[1]} 檔 x {len(cap_daily)} 交易日 | 門檻 {CAP_THRESHOLD/1e5:.0f} 億")
 
 # ===== [修正3] rsi() 的 l 計算 bug =====
 def rsi(c, n):
@@ -121,14 +140,18 @@ for wk in weeks:
     px = close.loc[wk]
     on = bool(sw_tsm.get(wk, False))
     a_w, b_w = (W_A, W_B) if on else (1.0, 0.0)
+    # [v7g-2] 當週歷史股本 ≥ 5 億才允許進場（消除快照污染）；無財報資料→放行
+    capw = cap_ok.loc[wk]
+    def cap_pass(c):
+        return c not in cap_ok.columns or bool(capw[c])
     want = {}
     tA = targetA.loc[wk]
-    codesA = tA[tA].index.tolist()
+    codesA = [c for c in tA[tA].index.tolist() if cap_pass(c)]
     scoredA = sorted(codesA, key=lambda c: float(r20s[c].loc[wk]) if pd.notna(r20s[c].loc[wk]) else -1, reverse=True)
     want["A"] = scoredA[:MAX_HOLD_A]
     if b_w > 0:
         tB = targetB.loc[wk]
-        codesB = tB[tB].index.tolist()
+        codesB = [c for c in tB[tB].index.tolist() if cap_pass(c)]
         tvw = tv20.loc[wk]
         scoredB = sorted(codesB, key=lambda c: float(tvw[c]) if pd.notna(tvw[c]) else -1, reverse=True)
         want["B"] = scoredB[:MAX_HOLD_B]
@@ -212,11 +235,12 @@ print(f"CAGR: {cagr*100:.2f}%")
 print(f"MDD: {mdd*100:.2f}%  ({peak.idxmax().strftime('%Y-%m-%d')} 高峰)")
 print(f"總交易: {len(tr_df)}（買 {(tr_df['side']=='BUY').sum()} / 賣 {(tr_df['side']=='SELL').sum()}）")
 
-nav_df.to_csv(r"D:\RSI選股器\my_nav_v7f.csv", encoding="utf-8-sig")
+nav_df.to_csv(NAV_OUT, encoding="utf-8-sig")
 tr_df[["date", "code", "pool", "side", "price", "shares", "amount"]].to_csv(
-    r"D:\RSI選股器\my_trades_v7f.csv", encoding="utf-8-sig", index=False)
-pd.DataFrame(snap_hist).to_csv(r"D:\RSI選股器\my_holdings_weekly.csv", encoding="utf-8-sig", index=False)
+    TRD_OUT, encoding="utf-8-sig", index=False)
+pd.DataFrame(snap_hist).to_csv(HLD_OUT, encoding="utf-8-sig", index=False)
 json.dump({"final_nav": final, "cagr": cagr, "mdd": mdd,
-           "sig_date": nav_df.index[-1].strftime("%Y-%m-%d"), "mode": "v7g (排除創新板+微型股本<5億)"},
-          open(r"D:\RSI選股器\v7f_summary.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
-print("saved my_nav_v7f.csv / my_trades_v7f.csv / my_holdings_weekly.csv / v7f_summary.json")
+           "sig_date": nav_df.index[-1].strftime("%Y-%m-%d"),
+           "mode": f"v7g-2 歷史股本 ≥{CAP_THRESHOLD/1e5:.0f}億 (無污染)"},
+          open(SUM_OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+print(f"saved {NAV_OUT} / {TRD_OUT} / {HLD_OUT} / {SUM_OUT}")
