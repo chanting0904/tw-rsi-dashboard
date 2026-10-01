@@ -462,11 +462,11 @@ HTML = """<!DOCTYPE html>
       <label>結束年月</label>
       <input type="month" id="bt-end">
       <label>初始本金（元）</label>
-      <input type="number" id="bt-cap" value="1000000" step="100000" min="0">
+      <input type="number" id="bt-cap" value="100000" step="100000" min="0">
       <button id="bt-run">重新計算</button>
     </div>
     <div class="cards" id="bt-cards">
-      <div class="card"><div class="k">區間最終資產</div><div class="v" id="bt-nav">—</div><div class="s" id="bt-nav-s">—</div></div>
+      <div class="card"><div class="k">試算期末資產（按本金）</div><div class="v" id="bt-nav">—</div><div class="s" id="bt-nav-s">—</div></div>
       <div class="card"><div class="k">區間年化 CAGR</div><div class="v up" id="bt-cagr">—</div><div class="s">年化報酬率</div></div>
       <div class="card"><div class="k">區間最大回撤</div><div class="v down" id="bt-mdd">—</div><div class="s">期間內最深跌幅</div></div>
       <div class="card"><div class="k">區間累積報酬</div><div class="v" id="bt-tot">—</div><div class="s">起訖期間總報酬</div></div>
