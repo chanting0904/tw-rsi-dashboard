@@ -218,14 +218,33 @@ prev_codes = state.get("codes", [])
 prev_codes_b = state.get("codes_b", [])
 prev_date = state.get("date")
 
-def build_holdings(cur_codes, prev_codes, w_target):
+# ===== [v7h] 通道唯一歸屬（與引擎同源）=====
+# 規則：已持有→保留原通道；新進→A 優先；跨通道→淨額調倉（不出現賣+買矛盾）
+_prev_pool = {c: "A" for c in prev_codes}
+_prev_pool.update({c: "B" for c in prev_codes_b})
+_prev_all = set(prev_codes) | set(prev_codes_b)
+_final_a, _final_b = [], []
+for c in cur_codes_a:
+    if _prev_pool.get(c) == "B" and c in cur_codes_b:
+        _final_b.append(c)
+    else:
+        _final_a.append(c)
+for c in cur_codes_b:
+    if c not in _final_a and c not in _final_b:
+        _final_b.append(c)
+cur_codes_a, cur_codes_b = _final_a, _final_b
+
+def build_holdings(cur_codes, w_target, pool_id):
     out = []
     for c in cur_codes:
         px = float(raw[c].loc[last_day]) if pd.notna(raw[c].loc[last_day]) else None
         r = float(r20[c].loc[last_day]) if pd.notna(r20[c].loc[last_day]) else None
-        st = "hold"
-        if prev_date and c not in prev_codes:
+        if not prev_date or c not in _prev_all:
             st = "buy"
+        elif _prev_pool.get(c) != pool_id:
+            st = "switch"
+        else:
+            st = "hold"
         out.append({
             "code": c, "name": name_map.get(c, c),
             "px": round(px, 2) if px else None,
@@ -242,13 +261,15 @@ else:
     _wa_eff, _wb_eff = (W_A, W_B) if tsm_on else (1.0, 0.0)
 twA = (_wa_eff * 0.95 / _nA) if (_nA and _wa_eff > 0) else TARGET_W_A
 twB = (_wb_eff * 0.95 / _nB) if (_nB and _wb_eff > 0) else TARGET_W_B
-holdings_a = build_holdings(cur_codes_a, prev_codes, twA)
-holdings_b = build_holdings(cur_codes_b, prev_codes_b, twB)
+holdings_a = build_holdings(cur_codes_a, twA, "A")
+holdings_b = build_holdings(cur_codes_b, twB, "B")
 
 sells = []
 if prev_date:
-    sells = [{"code": c, "name": name_map.get(c, c), "pool": "A"} for c in prev_codes if c not in cur_codes_a]
-    sells += [{"code": c, "name": name_map.get(c, c), "pool": "B"} for c in prev_codes_b if c not in cur_codes_b]
+    # 僅「完全掉出兩通道」者才賣（跨通道者保留為 switch）
+    _gone = _prev_all - set(cur_codes_a) - set(cur_codes_b)
+    sells = [{"code": c, "name": name_map.get(c, c),
+              "pool": _prev_pool.get(c, "A")} for c in _gone]
 
 # 每次由 check_and_run 在「本週最後交易日」喚起即為正式調倉，
 # 覆寫 state.json 作為下週比對基準（僅 COMMIT_STATE=0 的重跑/預覽不覆寫）
@@ -365,6 +386,7 @@ HTML = """<!DOCTYPE html>
   .badge{display:inline-block; padding:2px 10px; border-radius:20px; font-size:12px; font-weight:600;}
   .b-buy{background:rgba(255,77,79,.15); color:var(--up); border:1px solid rgba(255,77,79,.4);}
   .b-hold{background:rgba(77,163,255,.12); color:var(--accent); border:1px solid rgba(77,163,255,.35);}
+  .b-switch{background:rgba(255,179,0,.14); color:#ffb300; border:1px solid rgba(255,179,0,.45);}
   .b-sell{background:rgba(61,220,132,.12); color:var(--down); border:1px solid rgba(61,220,132,.4);}
   .chart{width:100%; height:340px;}
   .chart.small{height:200px;}
@@ -623,7 +645,10 @@ function renderTable(tbId, list, w, isA){
   }
   list.forEach(h=>{
     const isBuy = (h.status==="buy" || isFirst);
-    const st = isBuy ? ["買進","b-buy"] : ["持有","b-hold"];
+    let st;
+    if(isBuy) st = ["買進","b-buy"];
+    else if(h.status==="switch") st = ["轉通道","b-switch"];
+    else st = ["持有","b-hold"];
     const saved = userStore[h.code] || {};
     const pxV = (saved.px!==undefined && saved.px!=="") ? saved.px : (h.px!==null ? h.px : "");
     const qtyV = (saved.qty!==undefined && saved.qty!=="") ? saved.qty : (isBuy && h.px ? Math.floor(asset*w/h.px) : "");

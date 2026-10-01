@@ -76,7 +76,7 @@ roe_daily = roe_dl.reindex(close.index).ffill().shift(1)
 roe_ok = (roe_daily > 0).fillna(True)
 
 # ===== [v7g-2] 歷史股本（季頻財報 deadline 對齊）＝消除未來資料污染 =====
-# financial_statement:股本 單位＝仟元；門檻 5 億 = 5e5（仟元）
+# financial_statement:股本 單位＝仟元；門檻 6 億 = 6e5（仟元）
 # 用法：該股「當時最新公告」的股本 < 5 億 → 當週禁止進場/續持
 cap_q = data.get("financial_statement:股本").apply(pd.to_numeric, errors="coerce")
 cap_q = cap_q[[c for c in keep if c in cap_q.columns]]
@@ -160,14 +160,27 @@ for wk in weeks:
         want["B"] = scoredB[:MAX_HOLD_B]
     else:
         want["B"] = []
-    want_set = set(want["A"]) | set(want["B"])
-    # [動態A] B 空手 → 38% 併入 A（A 吃 95%）；B 有候選 → 恢復 A57/B38
+    # ===== [v7h 修正] 通道唯一歸屬（A/B 重疊時）=====
+    # 規則：已持有→保留原通道；新進→A 優先；跨通道→淨額調倉（不全賣全買）
+    _rawA, _rawB = list(want["A"]), list(want["B"])
+    _fa, _fb = [], []
+    for c in _rawA:
+        if c in pos and pos[c]["pool"] == "B" and c in _rawB:
+            _fb.append(c)          # 原 B 持有，本週仍在 B → 留 B
+        else:
+            _fa.append(c)
+    for c in _rawB:
+        if c not in _fa and c not in _fb:
+            _fb.append(c)
+    want["A"], want["B"] = _fa, _fb
+    want_set = set(_fa) | set(_fb)
+    # [動態A] B 空手 → 38% 併入 A（A 吃 95%）；B 有候選 → 恢復 A60/B40
     if DYN_A and on and not want["B"]:
         a_w, b_w = 1.0, 0.0
 
+    # 賣出：僅「完全掉出兩通道」者（跨通道者保留，交調倉迴圈淨額處理）
     for c in list(pos.keys()):
-        pool = pos[c]["pool"]
-        if c not in want.get(pool, []):
+        if c not in want_set:
             p = float(px[c])
             if np.isnan(p) or p <= 0:
                 continue
@@ -175,7 +188,7 @@ for wk in weeks:
                 continue
             sh = pos[c]["shares"]
             cash += sh * p * (1 - SELL_FEE)
-            trades.append({"date": wk, "code": c, "pool": pool, "side": "SELL",
+            trades.append({"date": wk, "code": c, "pool": pos[c]["pool"], "side": "SELL",
                            "price": p, "shares": sh, "amount": sh * p})
             del pos[c]
 
@@ -192,6 +205,8 @@ for wk in weeks:
                 continue
             cur = pos.get(c)
             cur_sh = cur["shares"] if cur else 0
+            if cur:
+                cur["pool"] = pool   # 通道標記同步（跨通道轉換即使不交易也更新）
             diff = tv_ - cur_sh * p
             if cur and abs(diff) <= tv_ * THRESH:
                 continue

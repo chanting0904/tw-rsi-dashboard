@@ -109,7 +109,10 @@ def update_file(path, px, sig):
     d.setdefault("rebal_date", d.get("sig_date"))
     d["generated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M")
     new = json.dumps(d, ensure_ascii=False)
-    open(path, "w", encoding="utf-8").write(html[:m.start(1)] + new + html[m.end(1):])
+    final_html = html[:m.start(1)] + new + html[m.end(1):]
+    tmp = path + ".tmp"
+    open(tmp, "w", encoding="utf-8").write(final_html)
+    os.replace(tmp, path)   # 原子替換，防寫一半斷電毀檔
 
 
 def main():

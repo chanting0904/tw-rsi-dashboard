@@ -225,8 +225,8 @@ def main():
     from finlab import data
     finlab.login(api_token=FINLAB_TOKEN)
 
-    close = must_get(data, "etl:adj_close")
-    raw_close = must_get(data, "price:收盤價")
+    close = must_get(data, "price:收盤價").apply(pd.to_numeric, errors="coerce")
+    raw_close = close
     roe = must_get(data, "fundamental_features:ROE稅後").apply(pd.to_numeric, errors="coerce")
     tv = must_get(data, "price:成交金額")
 
@@ -312,12 +312,32 @@ def main():
     scoredB.sort(key=lambda x: x[1], reverse=True)
     cur_codes_b = [c for c, _ in scoredB if is_common_stock(c)][:MAX_HOLD_B]
 
-    buys  = [c for c in cur_codes if c not in old_codes]
-    sells = [c for c in old_codes if c not in cur_codes]
-    holds = [c for c in cur_codes if c in old_codes]
-    buys_b  = [c for c in cur_codes_b if c not in old_codes_b]
-    sells_b = [c for c in old_codes_b if c not in cur_codes_b]
-    holds_b = [c for c in cur_codes_b if c in old_codes_b]
+    # ===== [v7h] 通道唯一歸屬（與引擎/網頁同源）=====
+    # 已持有→保留原通道；新進→A 優先；跨通道→淨額調倉（不賣+買矛盾）
+    _pp = {c: "A" for c in old_codes}
+    _pp.update({c: "B" for c in old_codes_b})
+    _pa_all = set(old_codes) | set(old_codes_b)
+    _fa, _fb = [], []
+    for c in cur_codes:
+        if _pp.get(c) == "B" and c in cur_codes_b:
+            _fb.append(c)
+        else:
+            _fa.append(c)
+    for c in cur_codes_b:
+        if c not in _fa and c not in _fb:
+            _fb.append(c)
+    cur_codes, cur_codes_b = _fa, _fb
+
+    # 完全掉出兩通道 → 賣出；跨通道 → switch（不列入買賣）
+    _gone = [c for c in _pa_all if c not in cur_codes and c not in cur_codes_b]
+    switch_codes = [c for c in cur_codes if _pp.get(c) == "B"]
+    switch_codes += [c for c in cur_codes_b if _pp.get(c) == "A"]
+    buys  = [c for c in cur_codes if c not in _pa_all]
+    sells = [c for c in _gone if _pp.get(c) == "A"]
+    holds = [c for c in cur_codes if _pp.get(c) == "A"]
+    buys_b  = [c for c in cur_codes_b if c not in _pa_all]
+    sells_b = [c for c in _gone if _pp.get(c) == "B"]
+    holds_b = [c for c in cur_codes_b if _pp.get(c) == "B"]
 
     sig_day = pd.Timestamp(last_day).strftime("%Y-%m-%d")
 
@@ -354,22 +374,27 @@ def main():
     target_qty = {c: calc_target(c, twA) for c in cur_codes}
     target_qty_b = {c: calc_target(c, twB) for c in cur_codes_b}
 
-    adjust = []
-    for c in holds:
-        t = target_qty.get(c)
-        p = prev_qty.get(str(c))
+    # 試算所有已持有股（含跨通道 switch）；p 依其「原通道」qty 表、t 依「新通道」目標
+    def _chk(c, cur_pool):
+        t = (target_qty if cur_pool == "A" else target_qty_b).get(c)
+        if cur_pool == "A":
+            p = prev_qty.get(str(c), prev_qty_b.get(str(c)))
+        else:
+            p = prev_qty_b.get(str(c), prev_qty.get(str(c)))
         if t is None or p is None:
-            continue
+            return
         if abs(t - p) >= max(1, p * ADJUST_THRESH):
-            adjust.append((c, p, t))
-    adjust_b = []
-    for c in holds_b:
-        t = target_qty_b.get(c)
-        p = prev_qty_b.get(str(c))
-        if t is None or p is None:
-            continue
-        if abs(t - p) >= max(1, p * ADJUST_THRESH):
-            adjust_b.append((c, p, t))
+            if cur_pool == "A":
+                adjust.append((c, p, t))
+            else:
+                adjust_b.append((c, p, t))
+    adjust, adjust_b = [], []
+    for c in cur_codes:
+        if c in _pa_all:
+            _chk(c, "A")
+    for c in cur_codes_b:
+        if c in _pa_all:
+            _chk(c, "B")
 
     asset_str = f"{asset:,.0f}" if asset else "未設定"
     sw_txt = "🟢 ON（動態A）" if tsm_on else "⚪ OFF（純 A 通道）"
@@ -398,6 +423,13 @@ def main():
         lines += [line(c, TARGET_W_B, True) for c in cur_codes_b] or ["　（無權值訊號）"]
     else:
         lines.append("\n<b>📌 B通道：關閉</b>（台積電未站上季線，資金 100% 於 A 通道）")
+
+    # 🟡 跨通道轉換（不整筆賣買，淨額調整即可）
+    if switch_codes:
+        lines.append(f"\n<b>🟡 通道轉換（{len(switch_codes)}）</b>")
+        for c in switch_codes:
+            tp_ = "B" if c in cur_codes_b else "A"
+            lines.append(f"• <code>{c}</code> {name_map.get(c, c)} → 轉入 {tp_} 通道，請依目標股數淨額增減（勿賣掉再買）")
 
     # 需調倉
     if adjust or adjust_b:
