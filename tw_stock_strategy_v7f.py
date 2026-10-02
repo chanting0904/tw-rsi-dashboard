@@ -312,6 +312,32 @@ def main():
     scoredB.sort(key=lambda x: x[1], reverse=True)
     cur_codes_b = [c for c, _ in scoredB if is_common_stock(c)][:MAX_HOLD_B]
 
+    # ===== [v7h-fix] 清單以回測引擎實際持股快照為權威（與網頁同源）=====
+    # 修復：posA/posB 是理想訊號部位（2033/2887 殘留、6226 漏列、1303 通道錯位）
+    _new_buys = set()
+    try:
+        _snap = pd.read_csv("my_holdings_weekly.csv")
+        _snap["date"] = pd.to_datetime(_snap["date"])
+        _snap_last = _snap["date"].max()
+        _wk = _snap[_snap["date"] == _snap_last]
+        _sa = [str(int(c)).zfill(4) for c in _wk.loc[_wk["pool"] == "A", "code"]]
+        _sb = [str(int(c)).zfill(4) for c in _wk.loc[_wk["pool"] == "B", "code"]]
+        _sa = [c for c in _sa if c in close.columns]
+        _sb = [c for c in _sb if c in close.columns]
+        if _sa or _sb:
+            cur_codes, cur_codes_b = _sa, _sb
+            try:
+                _tr = pd.read_csv("my_trades_v7f.csv")
+                _tr["date"] = pd.to_datetime(_tr["date"])
+                _trl = _tr[_tr["date"] == _snap_last]
+                _new_buys = {str(int(c)).zfill(4) for c in
+                             _trl.loc[_trl["side"] == "BUY", "code"]}
+            except Exception:
+                _new_buys = set()
+            print(f"[引擎快照] {_snap_last.date()} A={len(_sa)} B={len(_sb)} 新買={len(_new_buys)}")
+    except Exception as e:
+        print("快照讀取失敗，沿用訊號清單:", e)
+
     # ===== [v7h] 通道唯一歸屬（與引擎/網頁同源）=====
     # 已持有→保留原通道；新進→A 優先；跨通道→淨額調倉（不賣+買矛盾）
     _pp = {c: "A" for c in old_codes}
@@ -332,12 +358,12 @@ def main():
     _gone = [c for c in _pa_all if c not in cur_codes and c not in cur_codes_b]
     switch_codes = [c for c in cur_codes if _pp.get(c) == "B"]
     switch_codes += [c for c in cur_codes_b if _pp.get(c) == "A"]
-    buys  = [c for c in cur_codes if c not in _pa_all]
+    buys  = [c for c in cur_codes if c in _new_buys]
     sells = [c for c in _gone if _pp.get(c) == "A"]
-    holds = [c for c in cur_codes if _pp.get(c) == "A"]
-    buys_b  = [c for c in cur_codes_b if c not in _pa_all]
+    holds = [c for c in cur_codes if c not in buys and _pp.get(c) == "A"]
+    buys_b  = [c for c in cur_codes_b if c in _new_buys]
     sells_b = [c for c in _gone if _pp.get(c) == "B"]
-    holds_b = [c for c in cur_codes_b if _pp.get(c) == "B"]
+    holds_b = [c for c in cur_codes_b if c not in buys_b and _pp.get(c) == "B"]
 
     sig_day = pd.Timestamp(last_day).strftime("%Y-%m-%d")
 
