@@ -334,13 +334,43 @@ for c in cur_codes_b:
         _final_b.append(c)
 cur_codes_a, cur_codes_b = _final_a, _final_b
 
+# ===== [v7h-fix] 網頁清單改以「回測引擎實際持股快照」為唯一權威 =====
+# 修復：posA/posB 是理想訊號部位（造成 2033/2887 殘留、6226 漏列、1303 通道錯位）
+# my_holdings_weekly.csv = 引擎模擬成交後的真實持股（含調倉/賣出/現金約束）
+_new_buys = set()
+try:
+    _snap = pd.read_csv("my_holdings_weekly.csv", encoding="utf-8-sig")
+    _snap["date"] = pd.to_datetime(_snap["date"])
+    _snap_last = _snap["date"].max()
+    _wk = _snap[_snap["date"] == _snap_last]
+    _snap_a = [str(int(c)).zfill(4) for c in _wk.loc[_wk["pool"] == "A", "code"]]
+    _snap_b = [str(int(c)).zfill(4) for c in _wk.loc[_wk["pool"] == "B", "code"]]
+    _snap_a = [c for c in _snap_a if c in raw.columns]
+    _snap_b = [c for c in _snap_b if c in raw.columns]
+    if _snap_a or _snap_b:
+        cur_codes_a, cur_codes_b = _snap_a, _snap_b
+        # 當週真正新買（trades 最後一週 BUY）→ 標 buy；引擎既有持倉 → hold
+        try:
+            _tr = pd.read_csv("my_trades_v7f.csv", encoding="utf-8-sig")
+            _tr["date"] = pd.to_datetime(_tr["date"])
+            _tr_last = _tr[_tr["date"] == _snap_last]
+            _new_buys = {str(int(c)).zfill(4) for c in
+                         _tr_last.loc[_tr_last["side"] == "BUY", "code"]}
+        except Exception:
+            _new_buys = set()
+        print(f"[引擎快照] {_snap_last.date()} A={len(_snap_a)} B={len(_snap_b)} 新買={len(_new_buys)}")
+    else:
+        print("[警告] 引擎快照為空，沿用訊號清單")
+except Exception as _e:
+    print("[警告] 引擎快照讀取失敗，沿用訊號清單:", _e)
+
 def build_holdings(cur_codes, w_target, pool_id):
     out = []
     for c in cur_codes:
         px = float(raw[c].loc[last_day]) if pd.notna(raw[c].loc[last_day]) else None
         r = float(r20[c].loc[last_day]) if pd.notna(r20[c].loc[last_day]) else None
         if not prev_date or c not in _prev_all:
-            st = "buy"
+            st = "buy" if c in _new_buys else "hold"
         elif _prev_pool.get(c) != pool_id:
             st = "switch"
         else:
