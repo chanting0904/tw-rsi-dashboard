@@ -184,7 +184,11 @@ for wk in weeks:
     for c in list(pos.keys()):
         if c not in want_set:
             p = float(px[c])
+            # [修復] 下市/無價股：價格全 NaN 賣不掉 → 強制了結，不計現金（防卡倉污染持倉快照）
             if np.isnan(p) or p <= 0:
+                trades.append({"date": wk, "code": c, "pool": pos[c]["pool"], "side": "SELL",
+                               "price": 0.0, "shares": pos[c]["shares"], "amount": 0.0})
+                del pos[c]
                 continue
             if c in limit_dn.columns and bool(limit_dn[c].get(wk, False)):
                 continue
