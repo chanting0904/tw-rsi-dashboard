@@ -215,10 +215,11 @@ def main():
                 save_state(old_codes, old_codes_b, prev_qty, prev_qty_b, asset, last_update_id)
             print(f"{today} 非交易日，僅處理指令")
             return
-        if is_trading_day(today + datetime.timedelta(days=1)):
+        # [v7h-跳過版] 只在「週五」調倉推播；週五休市 → 該週跳過不推播（與回測 38.18%/-35.58% 一致）
+        if today.weekday() != 4:
             if changed:
                 save_state(old_codes, old_codes_b, prev_qty, prev_qty_b, asset, last_update_id)
-            print(f"{today} 非本週最後交易日，僅處理指令")
+            print(f"{today} 非週五調倉日（{today.strftime('%A')}），僅處理指令")
             return
 
     import finlab
