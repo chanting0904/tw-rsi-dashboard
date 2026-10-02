@@ -415,7 +415,8 @@ if os.environ.get("COMMIT_STATE", "1") != "0":
               open("state.json", "w", encoding="utf-8"), ensure_ascii=False)
 
 # ---------- 4. 績效資料（v7f） ----------
-nav_df = pd.read_csv("my_nav_v7f.csv", encoding="utf-8-sig")
+# 正式版：週五才調倉＋週五休市跳過該週（v7h 週五版 skip59）
+nav_df = pd.read_csv("my_nav_v7f_w5_close_skip59.csv", encoding="utf-8-sig")
 nav_df["date"] = pd.to_datetime(nav_df["date"])
 nav_df = nav_df.sort_values("date").drop_duplicates("date")
 nav_list = [[d.strftime("%Y-%m-%d"), round(float(n), 0)]
