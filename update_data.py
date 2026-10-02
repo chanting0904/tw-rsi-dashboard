@@ -720,6 +720,10 @@ function saveStore(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(userSt
 
 const assetInput = $("asset");
 const isFirst = !DATA.has_prev;
+// [v7h-fix] 買/持以「使用者實盤持股」為準：
+// 你沒輸入股數（或 qty=0）→ 標「買進」並自動帶建議股數；
+// 你已輸入股數 → 標「持有」＋目標/增減持試算。0 檔首次進場不再顯示「全部持有」。
+function hasMyQty(c){ const s=userStore[c]; return !!(s && parseFloat(s.qty)>0); }
 // 目標權重＝池有效額度×0.95÷該池實際檔數（與回測引擎一致）
 function wA(){ return DATA.target_w_a; }
 const wB = DATA.target_w_b;
@@ -776,7 +780,7 @@ function renderTable(tbId, list, w, isA){
     return;
   }
   list.forEach(h=>{
-    const isBuy = (h.status==="buy" || isFirst);
+    const isBuy = (isFirst || !hasMyQty(h.code));
     let st;
     if(isBuy) st = ["買進","b-buy"];
     else if(h.status==="switch") st = ["轉通道","b-switch"];
