@@ -1,7 +1,7 @@
 name: 更新選股器網頁
 on:
   schedule:
-    - cron: '0 4 * * 1-5'    # 每天 12:00 台北：判斷是否本週最後交易日→完整選股＋TG推播＋/CASH
+    - cron: '0 22 * * 1-5'    # 每天 06:00 台北：判斷是否本週最後交易日→完整選股＋TG推播＋/CASH（09:00 開盤掛單）
     - cron: '40 6 * * 1-5'   # 每天 14:40 台北：更新當日收盤股價
   workflow_dispatch:
     inputs:
@@ -34,9 +34,9 @@ jobs:
           python-version: '3.12'
       - name: 安裝依賴
         run: pip install -q yfinance finlab pandas numpy
-      - name: 完整選股（最後交易日 12:00，或手動 full）＋ TG 推播
+      - name: 完整選股（最後交易日 06:00，或手動 full）＋ TG 推播
         if: >
-          (github.event_name == 'schedule' && github.event.schedule == '0 4 * * 1-5')
+          (github.event_name == 'schedule' && github.event.schedule == '0 22 * * 1-5')
           || (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'full')
         env:
           FINLAB_TOKEN: ${{ secrets.FINLAB_TOKEN }}

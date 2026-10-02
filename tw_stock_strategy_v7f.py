@@ -7,7 +7,7 @@
   B 通道（40%）：權值龍頭動能（成交金額前15 + 收盤>MA60 + RSI120>60 + RSI20<88 + ROE>0），4 檔
   開關 tsm_long：台積電 MA20≥MA60 且收盤≥MA60（昨日資料）→ ON 時 60/40，OFF 時全 A
   出場：持有滿80交易日 或 收盤<MA60
-  執行：每週最後交易日 12:00(台北) 推播，昨日訊號→今日盤後收盤價成交
+  執行：每週最後交易日 06:00(台北) 推播，昨日訊號→今日 09:00 開盤掛單（以開盤價成交，跳空時依開盤價調整股數）
   AI 紅利監控：讀 ai_signals.json 三指標（Hyperscaler capex / AI變現率 / CoWoS產能），
               任一轉弱即提示降 B 通道
 v7f 官方績效（60/40）：CAGR 46.5%、MDD -27.8%（2015-01 ~ 2026-09）
@@ -436,7 +436,7 @@ def main():
     sw_txt = "🟢 ON（動態A）" if tsm_on else "⚪ OFF（純 A 通道）"
     dyn_txt = "\nB 空手 → 額度併入 A 通道（A 吃 95%）" if (tsm_on and not cur_codes_b) else ""
     lines = [f"<b>📊 三頻率RSI 雙通道通知（v7h）</b>",
-             f"訊號基準：{sig_day}（今日盤後成交）",
+             f"訊號基準：{sig_day}（今日 09:00 開盤掛單，以開盤價成交）",
              f"資產基準：{asset_str}　權值通道：{sw_txt}",
              f"A 每檔目標 {twA*100:.1f}%｜B 每檔 {twB*100:.1f}%{dyn_txt}\n"]
 
@@ -499,7 +499,8 @@ def main():
     if ai.get("note"):
         lines.append(f"ℹ️ {ai.get('note')}")
 
-    lines.append("\nℹ️ 若收盤鎖漲/跌停可能排不到，沒成交下週再試、不追單")
+    lines.append("\nℹ️ 09:00 開盤若跳空鎖漲/跌停（±9.9%）可能掛不到，沒成交下週再試、不追單")
+    lines.append("ℹ️ 建議股數依昨日收盤價試算，開盤跳空時請以 09:00 開盤價重新計算股數")
     if not asset:
         lines.append("⚠️ 回覆 <code>/CASH 金額</code> 設定總資產以顯示建議股數")
 
