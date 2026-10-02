@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-"""每天 06:00 觸發：僅「週五」才執行完整選股（週五休市 → 該週跳過，與回測一致）。
+"""每天 06:00 觸發：僅「本週最後交易日」才執行完整選股
+（週五休市 → 提前週四，與回測 w5_close 一致）。
 FORCE_FULL=1 可手動強制（workflow_dispatch full 用）。"""
 import datetime, json, os, subprocess, sys
 from zoneinfo import ZoneInfo
@@ -28,13 +29,14 @@ def trading(d):
 
 def main():
     today = datetime.datetime.now(ZoneInfo("Asia/Taipei")).date()
-    is_fri = trading(today) and today.weekday() == 4  # 僅週五調倉；週五休市→該週跳過
-    if FORCE or is_fri:
-        print(f"[full] {today} 為週五調倉日，執行完整選股")
+    # 本週最後交易日：今天是交易日且明天非交易日（週五休市 → 提前週四）
+    is_last_td = trading(today) and not trading(today + datetime.timedelta(days=1))
+    if FORCE or is_last_td:
+        print(f"[full] {today} 為本週最後交易日，執行完整選股")
         r = subprocess.run([sys.executable, os.path.join(ROOT, "update_data.py")])
         sys.exit(r.returncode)
     else:
-        print(f"[skip] {today} 非週五調倉日（{today.strftime('%A')}），本日不選股")
+        print(f"[skip] {today} 非本週最後交易日（{today.strftime('%A')}），本日不選股")
 
 
 if __name__ == "__main__":

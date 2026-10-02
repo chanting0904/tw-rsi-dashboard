@@ -336,10 +336,10 @@ cur_codes_a, cur_codes_b = _final_a, _final_b
 
 # ===== [v7h-fix] 網頁清單改以「回測引擎實際持股快照」為唯一權威 =====
 # 修復：posA/posB 是理想訊號部位（造成 2033/2887 殘留、6226 漏列、1303 通道錯位）
-# my_holdings_weekly.csv = 引擎模擬成交後的真實持股（含調倉/賣出/現金約束）
+# my_holdings_weekly_w5_close.csv = 引擎模擬成交後的真實持股（週五收盤版）
 _new_buys = set()
 try:
-    _snap = pd.read_csv("my_holdings_weekly.csv", encoding="utf-8-sig")
+    _snap = pd.read_csv("my_holdings_weekly_w5_close.csv", encoding="utf-8-sig")
     _snap["date"] = pd.to_datetime(_snap["date"])
     _snap_last = _snap["date"].max()
     _wk = _snap[_snap["date"] == _snap_last]
@@ -351,7 +351,7 @@ try:
         cur_codes_a, cur_codes_b = _snap_a, _snap_b
         # 當週真正新買（trades 最後一週 BUY）→ 標 buy；引擎既有持倉 → hold
         try:
-            _tr = pd.read_csv("my_trades_v7f.csv", encoding="utf-8-sig")
+            _tr = pd.read_csv("my_trades_v7f_w5_close.csv", encoding="utf-8-sig")
             _tr["date"] = pd.to_datetime(_tr["date"])
             _tr_last = _tr[_tr["date"] == _snap_last]
             _new_buys = {str(int(c)).zfill(4) for c in
@@ -415,8 +415,8 @@ if os.environ.get("COMMIT_STATE", "1") != "0":
               open("state.json", "w", encoding="utf-8"), ensure_ascii=False)
 
 # ---------- 4. 績效資料（v7f） ----------
-# 正式版：週五才調倉＋週五休市跳過該週（v7h 週五版 skip59）
-nav_df = pd.read_csv("my_nav_v7f_w5_close_skip59.csv", encoding="utf-8-sig")
+# 正式版：週五收盤調倉、週五休市提前用週四收盤（w5_close，38.18%/-35.58%）
+nav_df = pd.read_csv("my_nav_v7f_w5_close.csv", encoding="utf-8-sig")
 nav_df["date"] = pd.to_datetime(nav_df["date"])
 nav_df = nav_df.sort_values("date").drop_duplicates("date")
 nav_list = [[d.strftime("%Y-%m-%d"), round(float(n), 0)]
