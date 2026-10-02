@@ -92,7 +92,7 @@
     <h2>🎯 A 通道選股清單（60%）<span class="tag" id="h-cnt-a"></span></h2>
     <div class="assetbar">
       <label>目前總資產（元）</label>
-      <input type="number" id="asset" value="1000000" step="10000" min="0">
+      <input type="number" id="asset" value="100000" step="10000" min="0">
       <span class="note">輸入你的進場價與持股，系統自動算目標股數與加減碼（資料只存在你自己的瀏覽器）</span>
     </div>
     <table>
@@ -248,6 +248,8 @@ let userStore = (()=>{ try{ return JSON.parse(localStorage.getItem(STORE_KEY))||
 function saveStore(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(userStore)); }catch(e){} }
 
 const assetInput = $("asset");
+// 本金也記在本地：開啟時直接帶回上次輸入（不用每次改回 10 萬）
+if (userStore.asset) assetInput.value = userStore.asset;
 const isFirst = !DATA.has_prev;
 // 目標權重＝池有效額度×0.95÷該池實際檔數（與回測引擎一致）
 function wA(){ return DATA.target_w_a; }
@@ -336,7 +338,7 @@ function renderAll(){
   renderTable("tb-a", DATA.holdings_a, wA(), true);
   renderTable("tb-b", DATA.holdings_b, wB, false);
 }
-assetInput.addEventListener("input", renderAll);
+assetInput.addEventListener("input", ()=>{ userStore.asset = assetInput.value; saveStore(); renderAll(); });
 renderAll();
 
 // 賣出清單
