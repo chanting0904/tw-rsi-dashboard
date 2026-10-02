@@ -70,7 +70,21 @@ print("① 抓取 FinLab 資料（首次約 1~3 分鐘，之後有快取）…")
 # [擬真同步] 訊號主價改用未還權收盤價（與回測/實盤同口徑；除息跳空真實反映）
 close = data.get("price:收盤價").apply(pd.to_numeric, errors="coerce")
 raw = close
-roe_raw = data.get("fundamental_features:ROE稅後")
+# [ROE 本地化] 優先讀 roe_local.feather（獨立本地庫、不耗 FinLab 流量），
+# 只有本地庫不存在/損毀時才 fallback 到 FinLab（每季財報公布後請跑 update_roe.py 更新本地庫）
+roe_raw = None
+if os.path.exists("roe_local.feather"):
+    try:
+        _roe_loc = pd.read_feather("roe_local.feather")
+        if "date" in _roe_loc.columns:
+            _roe_loc = _roe_loc.set_index("date")
+        roe_raw = _roe_loc
+        print("② ROE：讀取本地庫 roe_local.feather（不依賴 FinLab）")
+    except Exception as _e:
+        print(f"② ROE 本地庫讀取失敗（{_e}），fallback FinLab…")
+if roe_raw is None:
+    roe_raw = data.get("fundamental_features:ROE稅後")
+    print("② ROE：FinLab 來源")
 tv = data.get("price:成交金額").apply(pd.to_numeric, errors="coerce")
 
 keep = [c for c in close.columns if common(c)]
@@ -122,7 +136,11 @@ mid_ok = (r60 < 75).shift(1)
 rally = (r20.pct_change(3, fill_method=None) > 0.02).shift(1)
 stuck = ((r20 > 75).rolling(3).sum() == 3).shift(1)
 # [擬真同步] ROE 公告 deadline 對齊（公告日次日起才可用，消除前視）
-roe_dl = roe_raw.deadline()
+# 本地庫 index 已是公告日 → 直接 reindex+ffill；FinLab 來源才需 .deadline()
+if hasattr(roe_raw, "deadline"):
+    roe_dl = roe_raw.deadline()
+else:
+    roe_dl = roe_raw
 roe_dl = roe_dl[[c for c in keep if c in roe_dl.columns]]
 roe_daily = roe_dl.reindex(close.index).ffill().shift(1)
 roe_ok = (roe_daily > 0).fillna(True)
