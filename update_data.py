@@ -38,6 +38,15 @@ if not TOKEN:
 
 import pandas as pd
 import numpy as np
+
+# [本地化] 盤後先自動更新本地庫（TWSE/TPEx 官方源優先、零 FinLab 流量）。
+# 失敗不阻斷（繼續用既有本地庫），GitHub Actions 端亦適用。
+try:
+    from local_db_updater import main as _local_update
+    _local_update()
+except Exception as _e:
+    print(f"[本地庫更新] 跳過（{str(_e)[:80]}）")
+
 import finlab
 from finlab import data
 
@@ -66,26 +75,61 @@ def common(code):
 
 
 # ---------- 1. 抓取 FinLab 資料 ----------
-print("① 抓取 FinLab 資料（首次約 1~3 分鐘，之後有快取）…")
+print("① 抓取資料（本地庫優先，FinLab fallback）…")
+HERE_DIR = os.path.dirname(os.path.abspath(__file__))
+LOCAL_DB = os.path.join(HERE_DIR, "local_db")
+
+
+def _load_local(name, idx_col=None):
+    """讀 local_db/*.feather；不存在回 None"""
+    p = os.path.join(LOCAL_DB, name)
+    if not os.path.exists(p):
+        return None
+    df = pd.read_feather(p)
+    if idx_col and idx_col in df.columns:
+        df = df.set_index(idx_col)
+        if not isinstance(df.index, pd.DatetimeIndex):
+            df.index = pd.to_datetime(df.index)
+    return df
+
+
 # [擬真同步] 訊號主價改用未還權收盤價（與回測/實盤同口徑；除息跳空真實反映）
-close = data.get("price:收盤價").apply(pd.to_numeric, errors="coerce")
+_close_loc = _load_local("close.feather", "date")
+if _close_loc is not None and len(_close_loc) > 100:
+    close = _close_loc.apply(pd.to_numeric, errors="coerce")
+    print("② 收盤價：本地庫（local_db/close.feather，最新", str(close.index.max().date()), "）")
+else:
+    close = data.get("price:收盤價").apply(pd.to_numeric, errors="coerce")
+    print("② 收盤價：FinLab")
 raw = close
 # [ROE 本地化] 優先讀 roe_local.feather（獨立本地庫、不耗 FinLab 流量），
 # 只有本地庫不存在/損毀時才 fallback 到 FinLab（每季財報公布後請跑 update_roe.py 更新本地庫）
 roe_raw = None
-if os.path.exists("roe_local.feather"):
+_roe_loc = _load_local("roe.feather", "date")
+if _roe_loc is not None:
+    roe_raw = _roe_loc
+    print("② ROE：讀取本地庫 roe.feather（不依賴 FinLab）")
+elif os.path.exists(os.path.join(HERE_DIR, "roe_local.feather")):
     try:
-        _roe_loc = pd.read_feather("roe_local.feather")
+        _roe_loc = pd.read_feather(os.path.join(HERE_DIR, "roe_local.feather"))
         if "date" in _roe_loc.columns:
             _roe_loc = _roe_loc.set_index("date")
+            _roe_loc.index = pd.to_datetime(_roe_loc.index)
         roe_raw = _roe_loc
-        print("② ROE：讀取本地庫 roe_local.feather（不依賴 FinLab）")
+        print("② ROE：讀取 roe_local.feather（不依賴 FinLab）")
     except Exception as _e:
         print(f"② ROE 本地庫讀取失敗（{_e}），fallback FinLab…")
 if roe_raw is None:
     roe_raw = data.get("fundamental_features:ROE稅後")
     print("② ROE：FinLab 來源")
-tv = data.get("price:成交金額").apply(pd.to_numeric, errors="coerce")
+# 成交金額：本地庫優先
+_tv_loc = _load_local("amount.feather", "date")
+if _tv_loc is not None and len(_tv_loc) > 100:
+    tv = _tv_loc.apply(pd.to_numeric, errors="coerce")
+    print("② 成交金額：本地庫（local_db/amount.feather）")
+else:
+    tv = data.get("price:成交金額").apply(pd.to_numeric, errors="coerce")
+    print("② 成交金額：FinLab")
 
 keep = [c for c in close.columns if common(c)]
 close = close[keep]
@@ -94,22 +138,35 @@ tv = tv[[c for c in keep if c in tv.columns]]
 
 name_map = {}
 excl_special = set()
-try:
-    info = data.get("company_basic_info")
-    if info is not None and "公司簡稱" in info.columns:
-        key = "stock_id" if "stock_id" in info.columns else info.index.name
-        name_map = info.set_index(key)["公司簡稱"].to_dict()
-        excl_special |= set(info[info["公司簡稱"].astype(str).str.contains("-創", na=False, regex=False)][key].astype(str))
-except Exception:
-    pass
+_info_loc = _load_local("basic_info.feather")
+if _info_loc is None:
+    try:
+        _info_loc = data.get("company_basic_info")
+    except Exception:
+        _info_loc = None
+if _info_loc is not None and "公司簡稱" in _info_loc.columns:
+    key = "stock_id" if "stock_id" in _info_loc.columns else _info_loc.index.name
+    name_map = _info_loc.set_index(key)["公司簡稱"].to_dict()
+    excl_special |= set(_info_loc[_info_loc["公司簡稱"].astype(str).str.contains("-創", na=False, regex=False)][key].astype(str))
+    print("② 公司資訊：本地庫" if os.path.exists(os.path.join(LOCAL_DB, "basic_info.feather")) else "② 公司資訊：FinLab")
 
 # [v7h] 歷史股本（季頻財報 deadline 對齊）：最新已知股本 < 6 億 排除
 # = 回測引擎同源（financial_statement:股本，仟元單位）＝實盤當下已知資訊、零污染
 CAP_MIN = 6e5  # 仟元 = 6 億
 try:
-    cap_q = data.get("financial_statement:股本").apply(pd.to_numeric, errors="coerce")
+    _cap_loc = _load_local("capital.feather", "date")
+    if _cap_loc is not None and len(_cap_loc) > 10:
+        cap_q = _cap_loc.apply(pd.to_numeric, errors="coerce")
+        print("② 股本：本地庫（local_db/capital.feather）")
+    else:
+        cap_q = data.get("financial_statement:股本").apply(pd.to_numeric, errors="coerce")
+        print("② 股本：FinLab")
     cap_q = cap_q[[c for c in keep if c in cap_q.columns]]
-    cap_dl = cap_q.deadline().reindex(close.index).ffill().shift(1)
+    # 本地庫 index 已是公告日 → 直接 ffill；FinLab 來源才需 .deadline()
+    if hasattr(cap_q, "deadline") and not isinstance(cap_q.index, pd.DatetimeIndex):
+        cap_dl = cap_q.deadline().reindex(close.index).ffill().shift(1)
+    else:
+        cap_dl = cap_q.reindex(close.index).ffill().shift(1)
     cap_last = cap_dl.iloc[-1]  # 最新已知公告股本
     excl_special |= set(cap_last[cap_last < CAP_MIN].index)  # NaN（無財報資料）→ 放行，不排除
 except Exception as e:
@@ -124,6 +181,31 @@ if excl_special:
     print(f"② [v7h] 排除 -創 + 最新股本<6億 {len(excl_special)} 檔，選股池 {len(keep)} 檔")
 
 # ---------- 2. 指標與訊號（v7f，全部 shift(1) 防未來函數） ----------
+def hold_until(buy, sell):
+    """等價 FinLab .hold_until()：買訊日(含)起持有 1，賣訊日歸 0。
+    向量化（逐檔 cumsum 法）：
+      buy 訊號日開始持倉；sell 訊號日收場。
+      state = 1 after 最近一次 buy 事件，且未再遇 sell 事件。
+    實作：以「買訊出現後、sell 出現前」為持有窗口。
+      marker = buy（+1）／sell（-1）首個事件位置 → 用方向累計。"""
+    buy = buy.fillna(False).astype(bool)
+    sell = sell.fillna(False).astype(bool)
+    out = pd.DataFrame(False, index=buy.index, columns=buy.columns)
+    for c in buy.columns:
+        b = buy[c].to_numpy()
+        s = sell[c].to_numpy()
+        n = len(b)
+        state = np.zeros(n, dtype=bool)
+        h = False
+        for i in range(n):
+            if b[i]:
+                h = True
+            elif s[i]:
+                h = False
+            state[i] = h
+        out[c] = state
+    return out
+
 r20, r60, r120 = rsi(close, 20), rsi(close, 60), rsi(close, 120)
 r20s = r20.shift(1)
 ma60 = close.rolling(60).mean()
@@ -147,7 +229,7 @@ roe_ok = (roe_daily > 0).fillna(True)
 buyA = long_up & mid_ok & rally & stuck & roe_ok & liq.shift(1).fillna(True)
 buyA_gh = buyA.shift(1)
 sellA = (close.shift(1) < ma60.shift(1)) | buyA_gh.shift(80).fillna(False)
-posA = buyA_gh.hold_until(sellA)
+posA = hold_until(buyA_gh, sellA)
 
 # B 通道（權值龍頭動能）
 rank_tv = tv20.rank(axis=1, ascending=False)
@@ -158,7 +240,7 @@ not_hot = r20s < 88
 buyB = big & bull & lt_up & not_hot & roe_ok
 buyB_gh = buyB.shift(1)
 sellB = (close.shift(1) < ma60.shift(1)) | buyB_gh.shift(80).fillna(False)
-posB = buyB_gh.hold_until(sellB)
+posB = hold_until(buyB_gh, sellB)
 
 # tsm_long 開關
 tsm_on = False
