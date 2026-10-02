@@ -369,8 +369,10 @@ def build_holdings(cur_codes, w_target, pool_id):
     for c in cur_codes:
         px = float(raw[c].loc[last_day]) if pd.notna(raw[c].loc[last_day]) else None
         r = float(r20[c].loc[last_day]) if pd.notna(r20[c].loc[last_day]) else None
-        if not prev_date or c not in _prev_all:
-            st = "buy" if c in _new_buys else "hold"
+        # [v7h-fix] 狀態只看「回測引擎實際動作」，不依賴上週 state 比對：
+        # 本週新買 → buy；跨通道 → switch；引擎既有持倉 → hold
+        if c in _new_buys:
+            st = "buy"
         elif _prev_pool.get(c) != pool_id:
             st = "switch"
         else:
@@ -395,11 +397,16 @@ holdings_a = build_holdings(cur_codes_a, twA, "A")
 holdings_b = build_holdings(cur_codes_b, twB, "B")
 
 sells = []
-if prev_date:
-    # 僅「完全掉出兩通道」者才賣（跨通道者保留為 switch）
-    _gone = _prev_all - set(cur_codes_a) - set(cur_codes_b)
-    sells = [{"code": c, "name": name_map.get(c, c),
-              "pool": _prev_pool.get(c, "A")} for c in _gone]
+# [v7h-fix] 賣出清單以「回測引擎本週實際 SELL 事件」為權威（不依賴 state.json）
+try:
+    _tr_last_sell = _tr_last.loc[_tr_last["side"] == "SELL"]
+    for _r in _tr_last_sell.itertuples():
+        _c = str(int(_r.code)).zfill(4)
+        if _c in name_map and _c not in set(cur_codes_a) | set(cur_codes_b):
+            sells.append({"code": _c, "name": name_map.get(_c, _c),
+                          "pool": str(_r.pool) if getattr(_r, "pool", None) else "A"})
+except Exception as _e:
+    print("[警告] 賣出事件讀取失敗:", _e)
 
 # 每次由 check_and_run 在「本週最後交易日」喚起即為正式調倉，
 # 覆寫 state.json 作為下週比對基準（僅 COMMIT_STATE=0 的重跑/預覽不覆寫）
@@ -720,10 +727,6 @@ function saveStore(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(userSt
 
 const assetInput = $("asset");
 const isFirst = !DATA.has_prev;
-// [v7h-fix] 買/持以「使用者實盤持股」為準：
-// 你沒輸入股數（或 qty=0）→ 標「買進」並自動帶建議股數；
-// 你已輸入股數 → 標「持有」＋目標/增減持試算。0 檔首次進場不再顯示「全部持有」。
-function hasMyQty(c){ const s=userStore[c]; return !!(s && parseFloat(s.qty)>0); }
 // 目標權重＝池有效額度×0.95÷該池實際檔數（與回測引擎一致）
 function wA(){ return DATA.target_w_a; }
 const wB = DATA.target_w_b;
@@ -780,7 +783,7 @@ function renderTable(tbId, list, w, isA){
     return;
   }
   list.forEach(h=>{
-    const isBuy = (isFirst || !hasMyQty(h.code));
+    const isBuy = (h.status==="buy" || isFirst);
     let st;
     if(isBuy) st = ["買進","b-buy"];
     else if(h.status==="switch") st = ["轉通道","b-switch"];
