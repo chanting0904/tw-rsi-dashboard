@@ -354,16 +354,26 @@ def main():
             _fb.append(c)
     cur_codes, cur_codes_b = _fa, _fb
 
-    # 完全掉出兩通道 → 賣出；跨通道 → switch（不列入買賣）
-    _gone = [c for c in _pa_all if c not in cur_codes and c not in cur_codes_b]
+    # ===== [v7h-fix] 賣出以「回測引擎本週實際 SELL 事件」為權威（與網頁同源）=====
+    # 修復：_gone 依賴 state.json 比對，但 state 被覆寫後賣出永遠是空
+    _sold_pool = {}
+    try:
+        _trl_sell = _trl.loc[_trl["side"] == "SELL"]
+        for _r in _trl_sell.itertuples():
+            _c = str(int(_r.code)).zfill(4)
+            _sold_pool[_c] = str(_r.pool)
+    except Exception:
+        _sold_pool = {}
     switch_codes = [c for c in cur_codes if _pp.get(c) == "B"]
     switch_codes += [c for c in cur_codes_b if _pp.get(c) == "A"]
     buys  = [c for c in cur_codes if c in _new_buys]
-    sells = [c for c in _gone if _pp.get(c) == "A"]
-    holds = [c for c in cur_codes if c not in buys and _pp.get(c) == "A"]
+    _cur_all = set(cur_codes) | set(cur_codes_b)
+    # 賣出＝本週 SELL 事件且已完全出清（不在目前快照）；部分減持(1709)仍算持有
+    sells = [c for c in sorted(_sold_pool) if _sold_pool[c] == "A" and c not in _cur_all]
+    holds = [c for c in cur_codes if c not in buys]
     buys_b  = [c for c in cur_codes_b if c in _new_buys]
-    sells_b = [c for c in _gone if _pp.get(c) == "B"]
-    holds_b = [c for c in cur_codes_b if c not in buys_b and _pp.get(c) == "B"]
+    sells_b = [c for c in sorted(_sold_pool) if _sold_pool[c] == "B" and c not in _cur_all]
+    holds_b = [c for c in cur_codes_b if c not in buys_b]
 
     sig_day = pd.Timestamp(last_day).strftime("%Y-%m-%d")
 
@@ -430,23 +440,24 @@ def main():
              f"資產基準：{asset_str}　權值通道：{sw_txt}",
              f"A 每檔目標 {twA*100:.1f}%｜B 每檔 {twB*100:.1f}%{dyn_txt}\n"]
 
-    # A 通道區塊
+    # A 通道區塊（買賣持已涵蓋全部，不再重複列完整清單）
     if old_codes:
         lines.append(f"<b>🟢 A買進（{len(buys)}）</b>")
         lines += [line(c, twA, True) for c in buys] or ["（無）"]
         lines.append(f"\n<b>🔴 A賣出（{len(sells)}）</b>")
         lines += [line(c, twA) for c in sells] or ["（無）"]
         lines.append(f"\n<b>⚪ A繼續持有（{len(holds)}）</b>")
+        lines += [line(c, twA, True) for c in holds] or ["（無）"]
     else:
         lines.append("<b>📋 A通道完整持股清單（首次執行）</b>")
-    lines += [line(c, twA, True) for c in cur_codes]
+        lines += [line(c, twA, True) for c in cur_codes]
 
     # B 通道區塊（開關 ON 才顯示）
     if tsm_on:
         lines.append(f"\n<b>📌 B通道權值（40%）（{len(cur_codes_b)}）</b>")
         if old_codes_b:
             lines.append(f"　買進 {len(buys_b)}｜賣出 {len(sells_b)}｜持有 {len(holds_b)}")
-        lines += [line(c, twB, True) for c in cur_codes_b] or ["　（無權值訊號）"]
+        lines += [line(c, twB, True) for c in holds_b] or ["　（無權值訊號）"]
     else:
         lines.append("\n<b>📌 B通道：關閉</b>（台積電未站上季線，資金 100% 於 A 通道）")
 
