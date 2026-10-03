@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Web 資料產生器（B3 canonical 版）
+"""Web 資料產生器（B3 canonical 版） v3
 - 不再自行計算策略：策略唯一來源 = B3 引擎（b3_canonical.py）產出的 output/latest_signals.json
 - 本檔職責：①更新本地庫（TWSE/TPEx 官方源，零 FinLab 流量）②讀 canonical + prices → 組 DATA
           ③生成 index.html / RSI選股器.html（內嵌 DATA，file:// 與 GitHub Pages 皆可開）
