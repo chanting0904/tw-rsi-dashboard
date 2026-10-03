@@ -16,6 +16,7 @@ on:
   push:
     paths:
       - 'output/latest_signals.json'   # 手動推送 canonical → 自動跑完整 B3 流程生成 HTML
+      - 'update_data.py'               # 手動推送 Web 產生器 → 只重建 HTML（不重算 B3）
 permissions:
   contents: write
 concurrency:
@@ -41,7 +42,7 @@ jobs:
         if: >
           (github.event_name == 'schedule' && github.event.schedule == '0 22 * * 1-5')
           || (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'full')
-          || github.event_name == 'push'
+          || (github.event_name == 'push' && contains(github.event.head_commit.modified, 'output/latest_signals.json'))
         env:
           FINLAB_TOKEN: ${{ secrets.FINLAB_TOKEN }}
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
@@ -50,6 +51,14 @@ jobs:
         run: |
           python check_and_run.py
           python tw_stock_strategy_v7f.py
+      - name: 僅重建 Web（推送 update_data.py，讀既有 canonical）
+        if: >
+          github.event_name == 'push'
+          && contains(github.event.head_commit.modified, 'update_data.py')
+          && !contains(github.event.head_commit.modified, 'output/latest_signals.json')
+        env:
+          FINLAB_TOKEN: ${{ secrets.FINLAB_TOKEN }}
+        run: python update_data.py
       - name: 更新收盤股價（官方源→FinLab→yfinance）
         if: >
           (github.event_name == 'schedule' && github.event.schedule == '40 6 * * 1-5')
