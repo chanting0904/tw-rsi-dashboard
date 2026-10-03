@@ -13,6 +13,7 @@
 """
 import os, re, sys, json, ssl, shutil, urllib.request
 from datetime import datetime
+import pandas as pd
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DB = os.path.join(HERE, "local_db")
@@ -141,7 +142,6 @@ def merge_amt(db_file, day, recs, field="amt"):
 
 
 def main():
-    import pandas as pd
     force = "--force" in sys.argv
     if not os.path.isdir(DB):
         print("[本地庫] local_db 不存在（GitHub Actions 端），跳過本地更新")
@@ -173,8 +173,6 @@ def main():
             print(f"[FAIL] {name}: {e}")
 
     # 3. FinLab fallback（官方源完全失敗或缺當日）
-    if not px or (dstr and dstr != today and last_local and str(last_local.date()) == today):
-        pass  # 官方源失敗才用
     if not px:
         token = (os.environ.get("FINLAB_TOKEN") or "").strip()
         if not token:

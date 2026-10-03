@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """每日盤後更新網頁收盤價。資料源優先序：
 TWSE+TPEx 官方免費源（台灣/本機最穩）-> FinLab（國外 runner 兜底，token）-> yfinance（最後）。
-所有源皆失敗 -> exit(1) 讓 workflow 紅叉，絕不假成功。"""
+所有源皆失敗 -> exit(1) 讓 workflow 紅叉，絕不假成功。
+本版（B3 canonical）：另寫 output/prices.json 供 Web 顯示每日最新價（持股買賣不變）。"""
 import os, re, sys, json, ssl, urllib.request
 from datetime import datetime
 
@@ -116,58 +117,37 @@ def update_file(path, px, sig):
 
 
 def main():
-    token = os.environ.get("FINLAB_TOKEN")
+    token = os.environ.get("FINLAB_TOKEN", "")
     px, dstr = {}, None
-
-    try:
-        p1, d1 = twse_prices()
-        px.update(p1)
-        dstr = d1
-        print("[OK] TWSE OK", len(p1))
-    except Exception as e:
-        print("[FAIL] TWSE 失敗:", e)
-    try:
-        p2, d2 = tpex_prices()
-        px.update(p2)
-        # 日期取較新者：TPEx 盤後更新可能慢半天，不能覆蓋 TWSE 的正確日期
-        if d2:
-            dstr = max(dstr, d2) if dstr else d2
-        print("[OK] TPEx OK", len(p2))
-    except Exception as e:
-        print("[FAIL] TPEx 失敗:", e)
-
-    codes = []
-    for p in (SRC, IDX):
-        if os.path.exists(p):
-            try:
-                _, d = read_data(open(p, encoding="utf-8").read())
-                codes = codes_of(d)
-                break
-            except Exception:
-                pass
-
-    miss = [c for c in codes if c not in px]
-    if (not px or miss) and token:
-        print("-> 官方源不足，改用 FinLab 兜底（缺", len(miss) if px else "全部", "）")
+    for name, fn in (("TWSE", twse_prices), ("TPEx", tpex_prices)):
         try:
-            pf, df = finlab_prices(token)
-            for c in (miss if px else codes):
-                if c in pf:
-                    px[c] = pf[c]
-            if not dstr:
-                dstr = df
-            print("[OK] FinLab OK", len(pf), "| 資料日", df)
+            p, d = fn()
+            px.update(p)
+            if d:
+                dstr = max(dstr, d) if dstr else d
+            print(f"[OK] {name} OK {len(p)}")
         except Exception as e:
-            print("[FAIL] FinLab 失敗:", e)
-
-    miss = [c for c in codes if c not in px]
-    if miss:
-        print("-> yfinance 補:", miss)
-        px.update(yf_prices(miss))
-
-    miss = [c for c in codes if c not in px]
-    if not px or (codes and miss):
-        print("[FAIL] 致命：以下持股所有資料源皆失敗:", miss if codes else "（全市場無資料）")
+            print(f"[FAIL] {name}: {e}")
+    if not px and token:
+        try:
+            px, dstr = finlab_prices(token)
+            print(f"[OK] FinLab OK {len(px)}")
+        except Exception as e:
+            print(f"[FAIL] FinLab: {e}")
+    if not px:
+        try:
+            for p in (SRC, IDX):
+                if os.path.exists(p):
+                    _, d = read_data(open(p, encoding="utf-8").read())
+                    px = yf_prices(codes_of(d))
+                    if px:
+                        break
+            if px:
+                print(f"[OK] yfinance OK {len(px)}")
+        except Exception as e:
+            print(f"[FAIL] yfinance: {e}")
+    if not px:
+        print("[FAIL] 所有來源皆失敗")
         sys.exit(1)
 
     if not dstr:
@@ -177,6 +157,15 @@ def main():
         if os.path.exists(p):
             update_file(p, px, sig)
             print("[OK] 已更新", os.path.basename(p), "->", sig)
+    # [B3 canonical] 同步寫 output/prices.json（供 Web 每日股價顯示）
+    try:
+        op = os.path.join(HERE, "output")
+        os.makedirs(op, exist_ok=True)
+        with open(os.path.join(op, "prices.json"), "w", encoding="utf-8") as f:
+            json.dump({"px_date": sig, "prices": px}, f, ensure_ascii=False)
+        print("[OK] 已寫 output/prices.json（", len(px), "檔，", sig, "）")
+    except Exception as e:
+        print("[FAIL] 寫 prices.json:", e)
 
 
 if __name__ == "__main__":

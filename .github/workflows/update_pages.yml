@@ -1,8 +1,8 @@
 name: 更新選股器網頁
 on:
   schedule:
-    - cron: '0 22 * * 1-5'    # 每天 06:00 台北：判斷是否本週最後交易日→完整選股＋TG推播＋/CASH（09:00 開盤掛單）
-    - cron: '40 6 * * 1-5'   # 每天 14:40 台北：更新當日收盤股價
+    - cron: '0 22 * * 1-5'    # 每天 06:00 台北：判斷是否本週最後交易日→B3 完整流程＋TG推播＋/CASH（09:00 開盤掛單）
+    - cron: '40 6 * * 1-5'   # 每天 14:40 台北：更新當日收盤股價（官方源→FinLab→yfinance）
   workflow_dispatch:
     inputs:
       mode:
@@ -34,7 +34,7 @@ jobs:
           python-version: '3.12'
       - name: 安裝依賴
         run: pip install -q yfinance finlab pandas numpy
-      - name: 完整選股（最後交易日 06:00，或手動 full）＋ TG 推播
+      - name: B3 完整流程（最後交易日 06:00，或手動 full）＋ TG 推播
         if: >
           (github.event_name == 'schedule' && github.event.schedule == '0 22 * * 1-5')
           || (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'full')
@@ -57,6 +57,6 @@ jobs:
         run: |
           git config user.name "rsi-bot"
           git config user.email "bot@rsi.local"
-          git add state.json index.html RSI選股器.html holidays.json check_and_run.py update_data.py tw_stock_strategy_v7f.py ai_monitor.py ai_signals.json
+          git add state.json index.html RSI選股器.html holidays.json check_and_run.py update_data.py tw_stock_strategy_v7f.py ai_monitor.py ai_signals.json b3_canonical.py local_db_updater.py daily_update.py output/
           git commit -m "auto update page [skip ci]" || echo "無變更"
           git push
