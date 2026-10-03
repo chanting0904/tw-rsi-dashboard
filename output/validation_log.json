@@ -1,0 +1,89 @@
+{
+ "strategy_version": "B3",
+ "generated_at": "2026-10-03 04:21:07",
+ "rebalance_date": "2026-10-02",
+ "b3_consistency": true,
+ "regression_10_02": {
+  "pass": true,
+  "detail": []
+ },
+ "checks": {
+  "duplicate": {
+   "pass": 20,
+   "fail": 0,
+   "detail": []
+  },
+  "conflict": {
+   "pass": 20,
+   "fail": 0,
+   "detail": []
+  },
+  "target_sum": {
+   "pass": 20,
+   "fail": 0,
+   "detail": []
+  },
+  "cash_no_overdraft": {
+   "pass": 20,
+   "fail": 0,
+   "detail": []
+  },
+  "buffer": {
+   "pass": 20,
+   "fail": 0,
+   "detail": [
+    [
+     "2026-05-22",
+     12.9
+    ],
+    [
+     "2026-05-29",
+     23.4
+    ],
+    [
+     "2026-06-05",
+     16.4
+    ],
+    [
+     "2026-06-12",
+     9.0
+    ],
+    [
+     "2026-06-18",
+     18.2
+    ]
+   ]
+  },
+  "share_qty": {
+   "pass": 20,
+   "fail": 0,
+   "detail": []
+  },
+  "limit_up": {
+   "pass": 20,
+   "fail": 0,
+   "detail": []
+  },
+  "limit_dn": {
+   "pass": 20,
+   "fail": 0,
+   "detail": []
+  },
+  "delisted": {
+   "pass": 20,
+   "fail": 0,
+   "detail": []
+  },
+  "missing_price": {
+   "pass": 20,
+   "fail": 0,
+   "detail": []
+  },
+  "lookahead": {
+   "pass": 20,
+   "fail": 0,
+   "detail": []
+  }
+ },
+ "verdict": "PASS"
+}
