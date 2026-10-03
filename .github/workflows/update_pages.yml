@@ -15,8 +15,8 @@ on:
           - full
   push:
     paths:
-      - 'output/latest_signals.json'   # 手動推送 canonical → 自動跑完整 B3 流程生成 HTML
-      - 'update_data.py'               # 手動推送 Web 產生器 → 只重建 HTML（不重算 B3）
+      - 'output/latest_signals.json'   # 推送 canonical → 重建 Web（canonical 即 B3 結果，不重算）
+      - 'update_data.py'               # 推送 Web 產生器 → 重建 Web
 permissions:
   contents: write
 concurrency:
@@ -38,24 +38,20 @@ jobs:
           python-version: '3.12'
       - name: 安裝依賴
         run: pip install -q yfinance finlab pandas numpy
-      - name: B3 完整流程（最後交易日 06:00，或手動 full / 推送 canonical）＋ TG 推播
+      - name: B3 完整流程（最後交易日 06:00，或手動 full）＋ TG 推播
         if: >
           (github.event_name == 'schedule' && github.event.schedule == '0 22 * * 1-5')
           || (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'full')
-          || (github.event_name == 'push' && contains(github.event.head_commit.modified, 'output/latest_signals.json'))
         env:
           FINLAB_TOKEN: ${{ secrets.FINLAB_TOKEN }}
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
-          FORCE_FULL: ${{ (github.event_name == 'workflow_dispatch' && '1') || (github.event_name == 'push' && '1') || '0' }}
+          FORCE_FULL: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
         run: |
           python check_and_run.py
           python tw_stock_strategy_v7f.py
-      - name: 僅重建 Web（推送 update_data.py，讀既有 canonical）
-        if: >
-          github.event_name == 'push'
-          && contains(github.event.head_commit.modified, 'update_data.py')
-          && !contains(github.event.head_commit.modified, 'output/latest_signals.json')
+      - name: 重建 Web（push 觸發，讀既有 canonical）
+        if: github.event_name == 'push'
         env:
           FINLAB_TOKEN: ${{ secrets.FINLAB_TOKEN }}
         run: python update_data.py
