@@ -13,6 +13,9 @@ on:
         options:
           - daily
           - full
+  push:
+    paths:
+      - 'output/latest_signals.json'   # 手動推送 canonical → 自動跑完整 B3 流程生成 HTML
 permissions:
   contents: write
 concurrency:
@@ -34,15 +37,16 @@ jobs:
           python-version: '3.12'
       - name: 安裝依賴
         run: pip install -q yfinance finlab pandas numpy
-      - name: B3 完整流程（最後交易日 06:00，或手動 full）＋ TG 推播
+      - name: B3 完整流程（最後交易日 06:00，或手動 full / 推送 canonical）＋ TG 推播
         if: >
           (github.event_name == 'schedule' && github.event.schedule == '0 22 * * 1-5')
           || (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'full')
+          || github.event_name == 'push'
         env:
           FINLAB_TOKEN: ${{ secrets.FINLAB_TOKEN }}
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
-          FORCE_FULL: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
+          FORCE_FULL: ${{ (github.event_name == 'workflow_dispatch' && '1') || (github.event_name == 'push' && '1') || '0' }}
         run: |
           python check_and_run.py
           python tw_stock_strategy_v7f.py
