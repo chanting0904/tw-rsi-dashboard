@@ -322,13 +322,15 @@ function tgtSharesOf(h) {
   return EST_SH(h.target_weight || 0, entryPxOf(h));    // 目標金額 ÷ 現價（整股）
 }
 function actText(h, curSh, tgtSh) {
-  const adj = tgtSh - curSh;
+  if (h.action === "HOLD") return "不動";              // B3 判定不動 → 不因本金/估算股數變化而顯示買賣
   if (h.action === "SELL") return curSh > 0 ? "賣出 " + F(curSh,0) + " 股" : "無持股，不需操作";
+  const adj = tgtSh - curSh;
   if (adj > 0) return "買入/加碼 " + F(adj,0) + " 股";
   if (adj < 0) return "賣出/減碼 " + F(-adj,0) + " 股";
   return "不動";
 }
 function opLine(h) {
+  if (h.action === "HOLD") return "不動（權重回歸未達 25% 門檻）";
   const curSh = curShares(h.code);
   const tgtSh = tgtSharesOf(h);
   return "目前 " + F(curSh,0) + " 股｜目標 " + F(tgtSh,0) + " 股 → " + actText(h, curSh, tgtSh);
@@ -349,7 +351,7 @@ function recalcRow(tr, code) {
   const cells = tr.children;
   cells[8].textContent  = M(h.action === "SELL" ? 0 : AMT(h.target_weight || 0)); // 目標金額
   cells[9].textContent  = F(tgtSh, 0);                                           // 目標股數
-  cells[11].className   = "num " + (adj > 0 ? "adj-pos" : (adj < 0 ? "adj-neg" : "adj-zero"));
+  cells[11].className   = "num " + (h.action === "HOLD" ? "adj-zero" : (adj > 0 ? "adj-pos" : (adj < 0 ? "adj-neg" : "adj-zero")));
   cells[11].textContent = actText(h, curSh, tgtSh);                               // 調整股數（實際操作）
 }
 
@@ -425,7 +427,7 @@ function renderHoldings() {
     const tgtVal = (h.action === "SELL") ? 0 : AMT(h.target_weight || 0);
     const tgtSh = tgtSharesOf(h);
     const adj = tgtSh - curSh;
-    const adjCls = adj > 0 ? "adj-pos" : (adj < 0 ? "adj-neg" : "adj-zero");
+    const adjCls = h.action === "HOLD" ? "adj-zero" : (adj > 0 ? "adj-pos" : (adj < 0 ? "adj-neg" : "adj-zero"));
     const adjTxt = actText(h, curSh, tgtSh);
     const tgtCls = (h.action === "SELL") ? "num tgt" : "num";
     return '<tr>' +
