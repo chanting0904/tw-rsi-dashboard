@@ -324,6 +324,7 @@ function tgtSharesOf(h) {
 function actText(h, curSh, tgtSh) {
   if (h.action === "HOLD") return "不動";              // B3 判定不動 → 不因本金/估算股數變化而顯示買賣
   if (h.action === "SELL") return curSh > 0 ? "賣出 " + F(curSh,0) + " 股" : "無持股，不需操作";
+  if (h.action === "REBALANCE_SELL" && curSh <= 0) return "無持股，不需操作";   // 減碼但已無持股 → 不動
   const adj = tgtSh - curSh;
   if (adj > 0) return "買入/加碼 " + F(adj,0) + " 股";
   if (adj < 0) return "賣出/減碼 " + F(-adj,0) + " 股";
