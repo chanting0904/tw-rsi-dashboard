@@ -325,6 +325,9 @@ function actText(h, curSh, tgtSh) {
   if (h.action === "HOLD") return "不動";              // B3 判定不動 → 不因本金/估算股數變化而顯示買賣
   if (h.action === "SELL") return curSh > 0 ? "賣出 " + F(curSh,0) + " 股" : "無持股，不需操作";
   if (h.action === "REBALANCE_SELL" && curSh <= 0) return "無持股，不需操作";   // 減碼但已無持股 → 不動
+  const px = entryPxOf(h);
+  const tv = AMT(h.target_weight || 0);
+  if (tv > 0 && Math.abs(curSh * px - tv) / tv <= 0.25) return "不動";   // 權重偏離未達 25% → B3 不調倉
   const adj = tgtSh - curSh;
   if (Math.abs(adj) <= 1) return "不動";                 // ±1 股＝本金小額尾差，不構成實際操作
   if (adj > 0) return "買入/加碼 " + F(adj,0) + " 股";
@@ -353,7 +356,11 @@ function recalcRow(tr, code) {
   const cells = tr.children;
   cells[8].textContent  = M(h.action === "SELL" ? 0 : AMT(h.target_weight || 0)); // 目標金額
   cells[9].textContent  = F(tgtSh, 0);                                           // 目標股數
-  cells[11].className   = "num " + (h.action === "HOLD" || Math.abs(adj) <= 1 ? "adj-zero" : (adj > 0 ? "adj-pos" : (adj < 0 ? "adj-neg" : "adj-zero")));
+  const px = entryPxOf(h);
+  const tv = AMT(h.target_weight || 0);
+  const driftOk = (h.action === "HOLD") || Math.abs(adj) <= 1 ||
+                  (tv > 0 && Math.abs(curSh * px - tv) / tv <= 0.25);
+  cells[11].className   = "num " + (driftOk ? "adj-zero" : (adj > 0 ? "adj-pos" : (adj < 0 ? "adj-neg" : "adj-zero")));
   cells[11].textContent = actText(h, curSh, tgtSh);                               // 調整股數（實際操作）
 }
 
