@@ -49,7 +49,7 @@ jobs:
           FORCE_FULL: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
         run: |
           python check_and_run.py
-          python tw_stock_strategy_v7f.py
+          python tg_push_b3.py
       - name: 重建 Web（push 觸發，讀既有 canonical）
         if: github.event_name == 'push'
         env:
@@ -66,6 +66,6 @@ jobs:
         run: |
           git config user.name "rsi-bot"
           git config user.email "bot@rsi.local"
-          git add state.json index.html RSI選股器.html holidays.json check_and_run.py update_data.py tw_stock_strategy_v7f.py ai_monitor.py ai_signals.json b3_canonical.py local_db_updater.py daily_update.py output/
+          git add state.json index.html RSI選股器.html holidays.json check_and_run.py update_data.py tg_push_b3.py ai_monitor.py ai_signals.json b3_canonical.py local_db_updater.py daily_update.py output/
           git commit -m "auto update page [skip ci]" || echo "無變更"
           git push
