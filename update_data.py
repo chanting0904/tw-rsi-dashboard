@@ -2,7 +2,7 @@
 """Web 資料產生器（B3 canonical 版）
 - 不再自行計算策略：策略唯一來源 = B3 引擎（b3_canonical.py）產出的 output/latest_signals.json
 - 本檔職責：①更新本地庫（TWSE/TPEx 官方源，零 FinLab 流量）②讀 canonical + prices → 組 DATA
-          ③生成 index.html / RSI選股器.html（內嵌 DATA，file:// 與 GitHub Pages 皆可開）
+          ③生成 index.html（內嵌 DATA，file:// 與 GitHub Pages 皆可開）
 - daily_update.py 負責每日更新 output/prices.json（持股最新收盤價）
 - 用法：python update_data.py
 """
@@ -289,8 +289,8 @@ const ORDER = ["SELL", "REBALANCE_SELL", "BUY", "REBALANCE_BUY", "HOLD"];
 /* ================= 唯一資金基準 ================= */
 let USER_CAPITAL = parseFloat(localStorage.getItem("b3_user_capital") || "100000") || 100000;
 
-const AMT = (w) => USER_CAPITAL * (w || 0);            // 權重 → 金額
-const EST_SH = (w, px) => (px > 0) ? Math.floor(AMT(w) / px) : 0;  // 金額 → 預估股數
+const AMT = (w) => USER_CAPITAL * (w || 0);
+const EST_SH = (w, px) => (px > 0) ? Math.floor(AMT(w) / px) : 0;
 
 /* ================= 排序（B3 權重不變，僅排列） ================= */
 function cmp(a, b) { return a < b ? -1 : (a > b ? 1 : 0); }
@@ -303,11 +303,6 @@ function sortList(rows, k1, d1, k2, d2) {
     return String(x.code || "").localeCompare(String(y.code || ""));
   });
 }
-// BUY：目標權重 ↓、Rank ↑、代號 ↑
-// SELL：目前權重 ↓、Rank ↑、代號 ↑
-// REBALANCE_BUY：權重差 ↓、Rank ↑、代號 ↑
-// REBALANCE_SELL：|權重差| ↓、Rank ↑、代號 ↑
-// HOLD：目標權重 ↓、Rank ↑、代號 ↑
 const SORTER = {
   "BUY":            (r) => sortList(r, "target_weight", -1, "rank", 1),
   "SELL":           (r) => sortList(r, "current_weight", -1, "rank", 1),
@@ -341,7 +336,7 @@ function persistCap() {
 }
 $("cap").addEventListener("input", (e) => {
   const v = parseFloat(e.target.value);
-  if (v && v >= 10000) { USER_CAPITAL = v; renderAll(); }   // 即時預覽
+  if (v && v >= 10000) { USER_CAPITAL = v; renderAll(); }
 });
 $("cap-apply").addEventListener("click", persistCap);
 $("cap-reset").addEventListener("click", () => {
@@ -418,24 +413,17 @@ function entryPxOf(h) {
   return (e && e > 0) ? e : (h.px || h.price || 0);
 }
 function tgtSharesOf(h) {
-  if (h.action === "SELL") return 0;                    // SELL → 目標 0 股
-  return EST_SH(h.target_weight || 0, entryPxOf(h));    // 目標金額 ÷ 現價（整股）
+  if (h.action === "SELL") return 0;
+  return EST_SH(h.target_weight || 0, entryPxOf(h));
 }
 function actText(h, curSh, tgtSh) {
-  if (h.action === "HOLD") return "不動";              // B3 判定不動 → 不因本金/估算股數變化而顯示買賣
-  if (h.action === "SELL") return curSh > 0 ? "賣出 " + F(curSh,0) + " 股" : "無持股，不需操作";
-  if (h.action === "REBALANCE_SELL" && curSh <= 0) return "無持股，不需操作";   // 減碼但已無持股 → 不動
-  const px = entryPxOf(h);
-  const tv = AMT(h.target_weight || 0);
-  if (tv > 0 && Math.abs(curSh * px - tv) / tv <= 0.25) return "不動";   // 權重偏離未達 25% → B3 不調倉
   const adj = tgtSh - curSh;
-  if (Math.abs(adj) <= 1) return "不動";                 // ±1 股＝本金小額尾差，不構成實際操作
+  if (h.action === "SELL") return curSh > 0 ? "賣出 " + F(curSh,0) + " 股" : "無持股，不需操作";
   if (adj > 0) return "買入/加碼 " + F(adj,0) + " 股";
   if (adj < 0) return "賣出/減碼 " + F(-adj,0) + " 股";
   return "不動";
 }
 function opLine(h) {
-  if (h.action === "HOLD") return "不動（權重回歸未達 25% 門檻）";
   const curSh = curShares(h.code);
   const tgtSh = tgtSharesOf(h);
   return "目前 " + F(curSh,0) + " 股｜目標 " + F(tgtSh,0) + " 股 → " + actText(h, curSh, tgtSh);
@@ -454,14 +442,10 @@ function recalcRow(tr, code) {
   const tgtSh = tgtSharesOf(h);
   const adj = tgtSh - curSh;
   const cells = tr.children;
-  cells[8].textContent  = M(h.action === "SELL" ? 0 : AMT(h.target_weight || 0)); // 目標金額
-  cells[9].textContent  = F(tgtSh, 0);                                           // 目標股數
-  const px = entryPxOf(h);
-  const tv = AMT(h.target_weight || 0);
-  const driftOk = (h.action === "HOLD") || Math.abs(adj) <= 1 ||
-                  (tv > 0 && Math.abs(curSh * px - tv) / tv <= 0.25);
-  cells[11].className   = "num " + (driftOk ? "adj-zero" : (adj > 0 ? "adj-pos" : (adj < 0 ? "adj-neg" : "adj-zero")));
-  cells[11].textContent = actText(h, curSh, tgtSh);                               // 調整股數（實際操作）
+  cells[8].textContent  = M(h.action === "SELL" ? 0 : AMT(h.target_weight || 0));
+  cells[9].textContent  = F(tgtSh, 0);
+  cells[11].className   = "num " + (adj > 0 ? "adj-pos" : (adj < 0 ? "adj-neg" : "adj-zero"));
+  cells[11].textContent = actText(h, curSh, tgtSh);
 }
 
 /* ================= 本週操作（四區塊＋排序＋實際股數） ================= */
@@ -519,7 +503,7 @@ function renderOps() {
 /* ================= 持股明細（可輸入目前股數 / 進場價，自動算實際調整） ================= */
 function renderHoldings() {
   const tbody = document.querySelector("#holdtbl tbody");
-  const rows = HOLD_ROWS;                    // 含 SELL（目標 0 股）
+  const rows = HOLD_ROWS;
   const g = groupByAction(rows);
   const ordered = []
     .concat(SORTER["SELL"](g.SELL||[]))
@@ -636,7 +620,8 @@ renderHist();
 
 HTML = HTML.replace("__DATA_JSON__", DATA_JSON)
 
-for _name in ("index.html", "RSI選股器.html"):
+# 統一僅輸出 index.html（GitHub Pages 唯一入口）；RSI選股器.html 為舊名冗餘檔，不再生成
+for _name in ("index.html",):
     with open(_name, "w", encoding="utf-8") as f:
         f.write(HTML)
     print(f"[OK] 已生成 {_name}（{len(HTML):,} bytes | rebal {DATA.get('rebal_date')} | px {DATA.get('px_date')} | counts {DATA.get('counts')}）")
