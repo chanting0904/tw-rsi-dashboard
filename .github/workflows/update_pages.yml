@@ -1,7 +1,7 @@
 name: 更新選股器網頁
 on:
   schedule:
-    - cron: '0 22 * * 1-5'    # 每天 06:00 台北：判斷是否本週最後交易日→B3 完整流程＋TG推播＋/CASH（09:00 開盤掛單）
+    - cron: '0 22 * * 1-5'    # 每工作日 06:00 台北：判斷是否本週最後交易日→閘門→B3 完整流程＋TG推播＋/CASH（S5：14:30 盤後零股，次日09:00市價補單）
     - cron: '40 6 * * 1-5'   # 每天 14:40 台北：更新當日收盤股價（官方源→FinLab→yfinance）
   workflow_dispatch:
     inputs:
@@ -15,8 +15,8 @@ on:
           - full
   push:
     paths:
-      - 'output/latest_signals.json'   # 推送 canonical → 重建 Web（canonical 即 B3 結果，不重算）
-      - 'update_data.py'               # 推送 Web 產生器 → 重建 Web
+      - 'output/latest_signals.json'
+      - 'update_data.py'
 permissions:
   contents: write
 concurrency:
@@ -66,6 +66,6 @@ jobs:
         run: |
           git config user.name "rsi-bot"
           git config user.email "bot@rsi.local"
-          git add state.json index.html RSI選股器.html holidays.json check_and_run.py update_data.py tg_push_b3.py ai_monitor.py ai_signals.json b3_canonical.py local_db_updater.py daily_update.py output/
+          git add state.json index.html RSI選股器.html holidays.json check_and_run.py publish_gate.py update_data.py tg_push_b3.py ai_monitor.py ai_signals.json b3_canonical.py local_db_updater.py daily_update.py output/
           git commit -m "auto update page [skip ci]" || echo "無變更"
           git push
