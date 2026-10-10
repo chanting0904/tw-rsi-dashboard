@@ -681,7 +681,7 @@ function renderAll() {
   renderOps();
   renderHoldings();
 }
-$"cap".value = USER_CAPITAL;
+$("cap").value = USER_CAPITAL;
 renderAll();
 renderSellNote();
 renderCharts();
