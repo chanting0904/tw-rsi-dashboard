@@ -262,10 +262,31 @@ HTML = """<!DOCTYPE html>
   </section>
 
   <section>
-    <h2>📈 績效（B3 回測 2015~2026） <span class="tag">回測口徑｜CAGR <span id="p-cagr" class="up"></span> ｜ MDD <span id="p-mdd" class="down"></span></span></h2>
+    <h2>📊 B3 歷史績效互動計算器 <span class="tag">策略 B3｜全期 CAGR <span id="p-cagr" class="up"></span>｜全期 MDD <span id="p-mdd" class="down"></span></span></h2>
+    <div class="capbar">
+      <input type="number" id="pc-cap" min="10000" step="10000" placeholder="投入本金（例：1000000）">
+      <span style="color:var(--dim); font-size:13px;">起始</span>
+      <select id="pc-y0"></select>
+      <span style="color:var(--dim); font-size:13px;">→</span>
+      <select id="pc-y1"></select>
+      <button id="pc-apply">計算</button>
+      <button id="pc-demo" class="ghost">範例：2018 投入 100 萬到 2024</button>
+    </div>
+    <div class="cards" style="grid-template-columns:repeat(3,1fr);">
+      <div class="card"><div class="k">期初本金（投入）</div><div class="v" id="pc-start">—</div><div class="s" id="pc-start-date"></div></div>
+      <div class="card"><div class="k">累積報酬率</div><div class="v" id="pc-ret">—</div><div class="s" id="pc-years"></div></div>
+      <div class="card"><div class="k">總獲利</div><div class="v" id="pc-profit">—</div><div class="s">期末資產 − 期初本金</div></div>
+      <div class="card"><div class="k">期末資產</div><div class="v" id="pc-end">—</div><div class="s" id="pc-end-date"></div></div>
+      <div class="card"><div class="k">CAGR（年化報酬）</div><div class="v" id="pc-cagr">—</div><div class="s">NAV 端點年化，非年度報酬相加</div></div>
+      <div class="card"><div class="k">區間最大回撤 MDD</div><div class="v down" id="pc-mdd">—</div><div class="s">區間內 NAV 重算</div></div>
+    </div>
     <div id="chart-nav" class="chart"></div>
     <div id="chart-dd" class="chart small"></div>
-    <div class="note">回測基準：初始本金 100,000、2015-01 ~ 2026-10-02，最終資產 <span id="p-nav"></span>。此為歷史績效，不構成投資建議。</div>
+    <div class="note">
+      計算方式：直接讀 B3 歷史 NAV，取「起始年年初 NAV」與「結束年年末 NAV」端點相除，不重新跑回測。<span id="pc-range"></span><br>
+      回測基準：初始本金 100,000、2015-01 ~ 2026-10-02，最終資產 <span id="p-nav"></span>。<br>
+      <b style="color:var(--warn)">⚠️ 歷史回測績效，不代表未來收益。</b>
+    </div>
   </section>
 
   <footer>
@@ -289,8 +310,8 @@ const ORDER = ["SELL", "REBALANCE_SELL", "BUY", "REBALANCE_BUY", "HOLD"];
 /* ================= 唯一資金基準 ================= */
 let USER_CAPITAL = parseFloat(localStorage.getItem("b3_user_capital") || "100000") || 100000;
 
-const AMT = (w) => USER_CAPITAL * (w || 0);
-const EST_SH = (w, px) => (px > 0) ? Math.floor(AMT(w) / px) : 0;
+const AMT = (w) => USER_CAPITAL * (w || 0);            // 權重 → 金額
+const EST_SH = (w, px) => (px > 0) ? Math.floor(AMT(w) / px) : 0;  // 金額 → 預估股數
 
 /* ================= 排序（B3 權重不變，僅排列） ================= */
 function cmp(a, b) { return a < b ? -1 : (a > b ? 1 : 0); }
@@ -303,6 +324,11 @@ function sortList(rows, k1, d1, k2, d2) {
     return String(x.code || "").localeCompare(String(y.code || ""));
   });
 }
+// BUY：目標權重 ↓、Rank ↑、代號 ↑
+// SELL：目前權重 ↓、Rank ↑、代號 ↑
+// REBALANCE_BUY：權重差 ↓、Rank ↑、代號 ↑
+// REBALANCE_SELL：|權重差| ↓、Rank ↑、代號 ↑
+// HOLD：目標權重 ↓、Rank ↑、代號 ↑
 const SORTER = {
   "BUY":            (r) => sortList(r, "target_weight", -1, "rank", 1),
   "SELL":           (r) => sortList(r, "current_weight", -1, "rank", 1),
@@ -336,7 +362,7 @@ function persistCap() {
 }
 $("cap").addEventListener("input", (e) => {
   const v = parseFloat(e.target.value);
-  if (v && v >= 10000) { USER_CAPITAL = v; renderAll(); }
+  if (v && v >= 10000) { USER_CAPITAL = v; renderAll(); }   // 即時預覽
 });
 $("cap-apply").addEventListener("click", persistCap);
 $("cap-reset").addEventListener("click", () => {
@@ -413,8 +439,8 @@ function entryPxOf(h) {
   return (e && e > 0) ? e : (h.px || h.price || 0);
 }
 function tgtSharesOf(h) {
-  if (h.action === "SELL") return 0;
-  return EST_SH(h.target_weight || 0, entryPxOf(h));
+  if (h.action === "SELL") return 0;                    // SELL → 目標 0 股
+  return EST_SH(h.target_weight || 0, entryPxOf(h));    // 目標金額 ÷ 現價（整股）
 }
 function actText(h, curSh, tgtSh) {
   const adj = tgtSh - curSh;
@@ -442,10 +468,10 @@ function recalcRow(tr, code) {
   const tgtSh = tgtSharesOf(h);
   const adj = tgtSh - curSh;
   const cells = tr.children;
-  cells[8].textContent  = M(h.action === "SELL" ? 0 : AMT(h.target_weight || 0));
-  cells[9].textContent  = F(tgtSh, 0);
+  cells[8].textContent  = M(h.action === "SELL" ? 0 : AMT(h.target_weight || 0)); // 目標金額
+  cells[9].textContent  = F(tgtSh, 0);                                           // 目標股數
   cells[11].className   = "num " + (adj > 0 ? "adj-pos" : (adj < 0 ? "adj-neg" : "adj-zero"));
-  cells[11].textContent = actText(h, curSh, tgtSh);
+  cells[11].textContent = actText(h, curSh, tgtSh);                               // 調整股數（實際操作）
 }
 
 /* ================= 本週操作（四區塊＋排序＋實際股數） ================= */
@@ -503,7 +529,7 @@ function renderOps() {
 /* ================= 持股明細（可輸入目前股數 / 進場價，自動算實際調整） ================= */
 function renderHoldings() {
   const tbody = document.querySelector("#holdtbl tbody");
-  const rows = HOLD_ROWS;
+  const rows = HOLD_ROWS;                    // 含 SELL（目標 0 股）
   const g = groupByAction(rows);
   const ordered = []
     .concat(SORTER["SELL"](g.SELL||[]))
@@ -602,17 +628,65 @@ function renderHist() {
   });
 }
 
+/* ================= B3 歷史績效互動計算器（只讀 DATA.perf NAV，不重跑回測） ================= */
+function initPerfCalc() {
+  const YEARS = [2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025,2026];
+  const y0 = $("pc-y0"), y1 = $("pc-y1");
+  YEARS.forEach(y => { y0.appendChild(new Option(y, y)); y1.appendChild(new Option(y, y)); });
+  $("pc-apply").addEventListener("click", runPerfCalc);
+  $("pc-demo").addEventListener("click", () => { $("pc-cap").value = 1000000; y0.value = 2018; y1.value = 2024; runPerfCalc(); });
+  ["change","input"].forEach(ev => {
+    $("pc-cap").addEventListener(ev, runPerfCalc);
+    y0.addEventListener(ev, runPerfCalc);
+    y1.addEventListener(ev, runPerfCalc);
+  });
+  y0.value = 2018; y1.value = 2024; $("pc-cap").value = 1000000;
+  runPerfCalc();
+}
+
+function runPerfCalc() {
+  const nav = (DATA.perf && DATA.perf.nav) || [];
+  const capital = Math.max(0, parseFloat($("pc-cap").value)) || 0;
+  const y0 = parseInt($("pc-y0").value), y1 = parseInt($("pc-y1").value);
+  if (!nav.length || !y0 || !y1 || y1 < y0) { $("pc-range").textContent = "請選擇有效的起始／結束年份（起始 ≤ 結束）"; return; }
+  let i0 = 0;
+  for (let i = 0; i < nav.length; i++) { if (nav[i][0] <= y0 + "-01-01") i0 = i; else break; }
+  let i1 = nav.length - 1;
+  for (let i = 0; i < nav.length; i++) { if (nav[i][0] <= y1 + "-12-31") i1 = i; else break; }
+  const s = nav[i0][1], e = nav[i1][1];
+  const days = (new Date(nav[i1][0]) - new Date(nav[i0][0])) / 86400000;
+  const years = days / 365.25;
+  const growth = e / s;
+  const ret = growth - 1;
+  const cagr = years > 0 ? Math.pow(growth, 1 / years) - 1 : 0;
+  let peak = -Infinity, mdd = 0;
+  for (let i = i0; i <= i1; i++) { if (nav[i][1] > peak) peak = nav[i][1]; const d = nav[i][1] / peak - 1; if (d < mdd) mdd = d; }
+  const endAsset = capital * growth;
+  const setV = (id, val) => { const el = $(id); el.textContent = val; return el; };
+  setV("pc-start", M(capital));
+  setV("pc-start-date", "基準日 " + nav[i0][0] + "｜NAV " + F(s, 0));
+  const elRet = setV("pc-ret", P(ret, 2)); elRet.className = "v " + (ret >= 0 ? "up" : "down");
+  setV("pc-years", "持有 " + years.toFixed(1) + " 年（" + days.toFixed(0) + " 天）");
+  const elProfit = setV("pc-profit", M(endAsset - capital)); elProfit.className = "v " + (ret >= 0 ? "up" : "down");
+  setV("pc-end", M(endAsset));
+  setV("pc-end-date", "基準日 " + nav[i1][0] + "｜NAV " + F(e, 0));
+  const elCagr = setV("pc-cagr", P(cagr, 2)); elCagr.className = "v " + (cagr >= 0 ? "up" : "down");
+  setV("pc-mdd", P(mdd, 2));
+  $("pc-range").textContent = "目前區間：" + y0 + " 年（基準 " + nav[i0][0] + "，NAV " + F(s,0) + "）→ " + y1 + " 年（" + nav[i1][0] + "，NAV " + F(e,0) + "），NAV 成長 " + growth.toFixed(2) + " 倍";
+}
+
 /* ================= 全部渲染 ================= */
 function renderAll() {
   renderCards();
   renderOps();
   renderHoldings();
 }
-$("cap").value = USER_CAPITAL;
+$"cap".value = USER_CAPITAL;
 renderAll();
 renderSellNote();
 renderCharts();
 renderHist();
+initPerfCalc();
 </script>
 </body>
 </html>
