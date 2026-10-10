@@ -31,7 +31,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: finlab_db
-          key: finlab-db-${{ github.run_id }}
+          key: finlab-db-v1
           restore-keys: finlab-db-
       - uses: actions/setup-python@v5
         with:
@@ -66,6 +66,16 @@ jobs:
         run: |
           git config user.name "rsi-bot"
           git config user.email "bot@rsi.local"
-          git add state.json index.html RSI選股器.html holidays.json check_and_run.py publish_gate.py update_data.py tg_push_b3.py ai_monitor.py ai_signals.json b3_canonical.py local_db_updater.py daily_update.py output/
+          git add state.json index.html holidays.json check_and_run.py publish_gate.py update_data.py tg_push_b3.py ai_monitor.py ai_signals.json b3_canonical.py local_db_updater.py daily_update.py output/
           git commit -m "auto update page [skip ci]" || echo "無變更"
           git push
+      - name: 失敗看門狗告警（任一 step 失敗→TG 通知）
+        if: failure()
+        env:
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
+            -d chat_id="${TG_CHAT_ID}" \
+            -d "text=❌ B3 自動化流程失敗：${GITHUB_WORKFLOW} #${GITHUB_RUN_NUMBER} 請查 GitHub Actions logs" \
+            -d parse_mode=HTML || true
