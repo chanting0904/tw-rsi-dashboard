@@ -4,34 +4,41 @@
 - 策略不再自行計算：唯一來源 = B3 引擎（b3_canonical.py）產出的 output/latest_signals.json
 - 本檔職責：讀 canonical → 依 /CASH 資產縮放建議股數 → 組 TG 訊息 → 發送
 - 每週最後交易日 06:00(台北) 由 GitHub Actions 觸發（check_and_run 判斷本週最後交易日）
-- 保留：/CASH 資產指令、AI 紅利三指標（ai_signals.json）、09:00 開盤掛單提醒
+- 保留：/CASH 資產指令、AI 紅利三指標（ai_signals.json）
+- 執行語氣為 S5：最後交易日 14:30 盤後零股、未成交次日 09:00 開盤市價補單
+- 發布前先過 publish_gate（validation/新鮮度/結構），同一週同一組合以指紋去重只發一次
 """
 import os, sys, json, ssl, traceback, urllib.request, subprocess, datetime, time, math
 
 from zoneinfo import ZoneInfo
 
-TG_TOKEN = os.environ["TG_TOKEN"]
-TG_CHAT_ID = str(os.environ["TG_CHAT_ID"])
+from publish_gate import evaluate as gate_evaluate, fingerprint as gate_fp, load_holidays
+
+TG_TOKEN = os.environ.get("TG_TOKEN", "")
+TG_CHAT_ID = str(os.environ.get("TG_CHAT_ID", ""))
 STATE_FILE = "state.json"
 AI_FILE = "ai_signals.json"
 SIG_FILE = "output/latest_signals.json"
 PERF_FILE = "output/perf.json"
-ADJUST_THRESH = 0.25   # 與 B3 引擎一致：偏離目標 25% 才動作
-FORCE = os.environ.get("FORCE") == "1"
+ADJUST_THRESH = 0.25
+FORCE = os.environ.get("FORCE_FULL") == "1" or os.environ.get("FORCE") == "1"
+DRY_RUN = os.environ.get("DRY_RUN") == "1"
+IN_CI = os.environ.get("GITHUB_ACTIONS") == "true"
 TW = ZoneInfo("Asia/Taipei")
 
-# TWSE 官方 2026 休市日（非週末部分；每年需更新）
-HOLIDAYS_2026 = {
-    "2026-01-01", "2026-02-12", "2026-02-13",
-    "2026-02-16", "2026-02-17", "2026-02-18", "2026-02-19", "2026-02-20",
-    "2026-02-27", "2026-04-03", "2026-04-06", "2026-05-01", "2026-06-19",
-    "2026-09-25", "2026-09-28", "2026-10-09", "2026-10-26", "2026-12-25",
-}
+HOLIDAYS = load_holidays()
 
 CTX = ssl.create_default_context()
 
 
 def tg_send(text: str):
+    if DRY_RUN:
+        print("=" * 70)
+        print(text)
+        print("=" * 70)
+        return True
+    if not TG_TOKEN or not TG_CHAT_ID:
+        raise RuntimeError("缺少 TG_TOKEN / TG_CHAT_ID（且非 DRY_RUN）")
     url = f"https://api.telegram.org/bot{TG_TOKEN}/sendMessage"
     payload = {"chat_id": TG_CHAT_ID, "text": text, "parse_mode": "HTML",
                "disable_web_page_preview": True}
@@ -44,7 +51,7 @@ def tg_send(text: str):
 def is_trading_day(d: datetime.date) -> bool:
     if d.weekday() >= 5:
         return False
-    return d.strftime("%Y-%m-%d") not in HOLIDAYS_2026
+    return d.strftime("%Y-%m-%d") not in HOLIDAYS
 
 
 def prev_trading_day(today: datetime.date) -> datetime.date:
@@ -55,8 +62,10 @@ def prev_trading_day(today: datetime.date) -> datetime.date:
 
 
 def load_state():
+    empty = {"codes": [], "codes_b": [], "qty": {}, "qty_b": {},
+             "asset": None, "last_update_id": 0, "last_pushed_key": None}
     if not os.path.exists(STATE_FILE):
-        return {"codes": [], "codes_b": [], "qty": {}, "qty_b": {}, "asset": None, "last_update_id": 0}
+        return empty
     try:
         s = json.load(open(STATE_FILE, encoding="utf-8"))
         s.setdefault("codes", [])
@@ -65,16 +74,21 @@ def load_state():
         s.setdefault("qty_b", {})
         s.setdefault("asset", None)
         s.setdefault("last_update_id", 0)
+        s.setdefault("last_pushed_key", None)
         return s
     except Exception:
-        return {"codes": [], "codes_b": [], "qty": {}, "qty_b": {}, "asset": None, "last_update_id": 0}
+        return empty
 
 
-def save_state(codes, codes_b, qty, qty_b, asset, last_update_id):
+def save_state(codes, codes_b, qty, qty_b, asset, last_update_id, last_pushed_key=None):
     with open(STATE_FILE, "w", encoding="utf-8") as f:
         json.dump({"codes": codes, "codes_b": codes_b, "qty": qty, "qty_b": qty_b,
-                   "asset": asset, "last_update_id": last_update_id},
+                   "asset": asset, "last_update_id": last_update_id,
+                   "last_pushed_key": last_pushed_key},
                   f, ensure_ascii=False)
+    if IN_CI:
+        print("state.json 已寫入（CI 中由 workflow 統一提交）")
+        return
     try:
         subprocess.run(["git", "config", "user.name", "rsi-bot"], check=False)
         subprocess.run(["git", "config", "user.email", "bot@rsi.local"], check=False)
@@ -158,23 +172,30 @@ def main():
     old_codes_b = [str(c) for c in state.get("codes_b", [])]
     prev_qty = state.get("qty", {}) or {}
     prev_qty_b = state.get("qty_b", {}) or {}
+    last_pushed_key = state.get("last_pushed_key")
     asset, last_update_id, changed = fetch_cash_command(state)
+
+    def _save_cmd_only():
+        if changed:
+            save_state(old_codes, old_codes_b, prev_qty, prev_qty_b, asset,
+                       last_update_id, last_pushed_key)
 
     if not FORCE:
         today = datetime.datetime.now(TW).date()
         if not is_trading_day(today):
-            if changed:
-                save_state(old_codes, old_codes_b, prev_qty, prev_qty_b, asset, last_update_id)
+            _save_cmd_only()
             print(f"{today} 非交易日，僅處理指令")
             return
-        # [B3] 只在「本週最後交易日」推播（與回測 w5_close 一致）；週五休市→提前週四
         if is_trading_day(today + datetime.timedelta(days=1)):
-            if changed:
-                save_state(old_codes, old_codes_b, prev_qty, prev_qty_b, asset, last_update_id)
+            _save_cmd_only()
             print(f"{today} 非本週最後交易日（明天開市），僅處理指令")
             return
 
-    # ---------- 讀 canonical（B3 唯一策略結果）----------
+    gate = gate_evaluate(force=FORCE)
+    if not gate["ok"]:
+        print("[gate] 中止推播：", gate["reason"])
+        return
+
     if not os.path.exists(SIG_FILE):
         tg_send("❌ output/latest_signals.json 不存在 — 請先執行 b3_canonical.py")
         sys.exit(1)
@@ -186,11 +207,16 @@ def main():
         except Exception:
             PERF = {}
 
+    push_key = gate_fp(SIG)
+    if not FORCE and push_key == last_pushed_key and not changed:
+        print(f"rebalance={SIG.get('rebalance_date')} key={push_key} 已推播過，跳過（避免重複發送）")
+        return
+
     actions = SIG.get("actions", [])
     name_map = {a["stock_code"]: a["stock_name"] for a in actions}
     counts = SIG.get("counts", {})
     if asset is None:
-        asset = 100_000  # 未設定 /CASH 時預設 10 萬
+        asset = 100_000
 
     buys = [a for a in actions if a["action"] == "BUY"]
     sells = [a for a in actions if a["action"] == "SELL"]
@@ -209,13 +235,25 @@ def main():
     def amt_of(a):
         return asset * a.get("target_weight", 0)
 
+    def cur_of(a):
+        code = a["stock_code"]
+        if a.get("channel") == "B":
+            return int(prev_qty_b.get(code) or 0)
+        return int(prev_qty.get(code) or 0)
+
+    def delta_of(a):
+        cur = cur_of(a)
+        tgt = qty_of(a)
+        if tgt is None:
+            return None, cur, None
+        return tgt, cur, tgt - cur
+
     sig_day = SIG.get("sig_date", "—")
     rebal_day = SIG.get("rebalance_date", "—")
     sw_txt = "🟢 ON（動態A）" if SIG.get("tsm_on") else "⚪ OFF（純 A 通道）"
     dyn_txt = "\nB 空手 → 額度併入 A 通道（A 吃 95%）" if (SIG.get("tsm_on") and not codes_b) else ""
 
     def qty_txt(a):
-        """依資產縮放的建議股數；買不起（<1 股）時給說明"""
         q = qty_of(a)
         if q is None or q <= 0:
             need = amt_of(a)
@@ -223,66 +261,85 @@ def main():
         return f"{q:,} 股 約 ${amt_of(a):,.0f}"
 
     lines = [f"<b>🌩️ 天穹紅蓮三重脈衝時空追擊者 B3</b>",
-             f"訊號基準：{sig_day}｜調倉日：{rebal_day}（今日 09:00 開盤掛單，以開盤價成交）",
+             f"訊號基準：{sig_day}｜調倉日：{rebal_day}",
              f"資產基準：{asset:,.0f}　權值通道：{sw_txt}",
+             "⏰ <b>S5 執行</b>：今日 14:30 前掛『盤後零股』；未成交部份於下一交易日 09:00 開盤市價補單",
              f"A 分檔權重：Rank1-5×1.5 / 6-10×1.0 / 11-15×0.5｜B 等權{dyn_txt}\n"]
 
-    # 🟢 BUY
     lines.append(f"<b>🟢 買進（{len(buys)}）</b>")
     if buys:
         for a in sorted(buys, key=lambda x: x.get("rank") or 99):
+            tgt, cur, dlt = delta_of(a)
+            if tgt is None:
+                tail = qty_txt(a)
+            elif dlt > 0:
+                tail = f"買進 {dlt:,} 股（目標 {tgt:,}／目前 {cur:,}）約 ${amt_of(a):,.0f}"
+            elif dlt == 0:
+                tail = f"已達目標 {tgt:,} 股，無需買進"
+            else:
+                tail = f"目前 {cur:,} 股已超過目標 {tgt:,}，無需買進（請核對持股）"
             lines.append(f"• <code>{a['stock_code']}</code> {a['stock_name']}（{a['channel']}｜Rank {a['rank']}）"
-                         f"目標權重 {a['target_weight']*100:.1f}%｜建議 {qty_txt(a)}")
+                         f"目標權重 {a['target_weight']*100:.1f}%｜{tail}")
     else:
         lines.append("（無）")
     lines.append("")
 
-    # 🔴 SELL
     lines.append(f"<b>🔴 賣出（{len(sells)}）</b>")
     if sells:
         for a in sorted(sells, key=lambda x: x.get("stock_code") or ""):
-            lines.append(f"• <code>{a['stock_code']}</code> {a['stock_name']}｜原因：{a['reason']}｜"
-                         f"賣出 {a['sell_shares']:,} 股（回測） 約 ${a['estimated_sell_amount']:,.0f}")
+            cur = cur_of(a)
+            if cur > 0:
+                tail = f"賣出（清倉）{cur:,} 股（上週策略持股，請以券商實際持有為準）"
+            else:
+                tail = "賣出全部持股（無持股存檔，請以券商實際持有股數為準）"
+            lines.append(f"• <code>{a['stock_code']}</code> {a['stock_name']}｜原因：{a['reason']}｜{tail}")
     else:
         lines.append("（無）")
     lines.append("")
 
-    # 🟡 REBALANCE
     reb = reb_buy + reb_sell
     lines.append(f"<b>🟡 調整持倉（{len(reb)}）</b>")
     if reb:
         for a in sorted(reb, key=lambda x: -abs(x.get("weight_diff") or 0)):
-            q = qty_of(a)
-            mark = "加碼 +" if a["action"] == "REBALANCE_BUY" else "減碼 -"
+            tgt, cur, dlt = delta_of(a)
+            if tgt is None:
+                tail = "價格資料不足，無法估股數"
+            elif a["action"] == "REBALANCE_BUY":
+                tail = (f"加碼買進 {dlt:,} 股（目標 {tgt:,}／目前 {cur:,}）" if dlt > 0
+                        else f"目前 {cur:,} 股已達/超過目標 {tgt:,}，無需加碼")
+            else:
+                tail = (f"減碼賣出 {-dlt:,} 股（目前 {cur:,}／目標 {tgt:,}）" if dlt < 0
+                        else f"目前 {cur:,} 股已達/低於目標 {tgt:,}，無需減碼")
             lines.append(f"• <code>{a['stock_code']}</code> {a['stock_name']}（{a['channel']}）"
-                         f"目前 {a['current_weight']*100:.1f}% → 目標 {a['target_weight']*100:.1f}%｜{mark}{q:,} 股")
+                         f"目前 {a['current_weight']*100:.1f}% → 目標 {a['target_weight']*100:.1f}%｜{tail}")
     else:
         lines.append("（無）")
     lines.append("")
 
-    # ⚪ HOLD
     lines.append(f"<b>⚪ 持有不動（{len(holds)}）</b>")
     if holds:
         for a in sorted(holds, key=lambda x: x.get("rank") or 99):
-            q = qty_of(a)
-            q_str = qty_txt(a) if q and q > 0 else f"買不起（此檔需約 ${amt_of(a):,.0f}，低於 1 股）"
+            tgt, cur, dlt = delta_of(a)
+            if tgt is None:
+                tail = "價格資料不足"
+            elif dlt == 0:
+                tail = f"持有 {cur:,} 股，不動"
+            else:
+                tail = f"目前 {cur:,}／目標 {tgt:,}（差 {dlt:+,}，未達 25% 門檻，不動）"
             lines.append(f"• <code>{a['stock_code']}</code> {a['stock_name']}（{a['channel']}｜Rank {a['rank']}）"
-                         f"目標 {a['target_weight']*100:.1f}%｜建議 {q_str}")
+                         f"目標 {a['target_weight']*100:.1f}%｜{tail}")
     else:
         lines.append("（無）")
     lines.append("")
 
-    # 💰 資金狀態
     lines.append("💰 資金狀態")
     lines.append(f"我的資產：{asset:,.0f} | 回測總資產：{SIG.get('portfolio_value', 0):,.0f} | "
                  f"回測現金：{SIG.get('cash', 0):,.0f}（Buffer {SIG.get('buffer', 0)*100:.1f}%）")
     lines.append(f"本週買進約 ${SIG.get('buy_total', 0):,.0f}（回測）｜賣出約 ${SIG.get('sell_total', 0):,.0f}（回測）")
 
-    # ⚠️ B 通道集中警告
     for w in SIG.get("warnings", []):
         lines.append(f"⚠️ {w}")
 
-    # 🤖 AI 紅利監控
     ai = load_ai_signals()
     lines.append(f"\n<b>🤖 AI 紅利監控（{ai.get('updated', '—')}）</b>")
     lines.append(f"▫️ Hyperscaler capex：{ai_emoji(ai.get('capex'))} {ai.get('capex')}")
@@ -295,23 +352,22 @@ def main():
     if ai.get("note"):
         lines.append(f"ℹ️ {ai.get('note')}")
 
-    lines.append("\nℹ️ 09:00 開盤若跳空鎖漲/跌停（±9.9%）可能掛不到，沒成交下週再試、不追單")
-    lines.append("ℹ️ 建議股數依昨日收盤價試算，開盤跳空時請以 09:00 開盤價重新計算股數")
-    lines.append("ℹ️ 回覆 <code>/CASH 金額</code> 更新資產後，建議股數會自動重算")
+    lines.append("\nℹ️ <b>S5</b>：最後交易日 14:30 前掛盤後零股；未成交 remainder 於下一交易日 09:00 開盤市價補單，勿自行挑價或延後")
+    lines.append("ℹ️ 股數依訊號基準日收盤價試算，僅供估算；實際請以盤後/開盤即時價與整股（零股 1 股）成交為準")
+    lines.append("ℹ️ SELL 為清倉、股數以你券商實際持有為準；回覆 <code>/CASH 金額</code> 更新總資產後重算")
 
     tg_send("\n".join(lines))
     print(f"[{rebal_day}] sw={SIG.get('tsm_on')} "
           f"BUY{len(buys)}/SELL{len(sells)}/REBAL{len(reb)}/HOLD{len(holds)} "
           f"A={len(codes)} B={len(codes_b)}")
 
-    # 存 state：asset + 依資產縮放的目標股數（供下週對比加/減）
     new_qty = {a["stock_code"]: qty_of(a) for a in actions
                if a["action"] != "SELL" and qty_of(a)}
     new_qty_b = {}
     for a in actions:
         if a["channel"] == "B" and a["action"] != "SELL" and a["stock_code"] in new_qty:
             new_qty_b[a["stock_code"]] = new_qty.pop(a["stock_code"])
-    save_state(codes, codes_b, new_qty, new_qty_b, asset, last_update_id)
+    save_state(codes, codes_b, new_qty, new_qty_b, asset, last_update_id, push_key)
 
 
 if __name__ == "__main__":
