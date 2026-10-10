@@ -10,6 +10,8 @@
      → 引擎沒重跑（canonical 還是上週）時直接擋下，絕不發舊訊號。
   3) 結構：counts 合計 == actions 筆數、無重複 code、action 合法、
      target_weight 合計 <= 0.953、非 SELL 持股不得缺 price。
+  4) 基準常駐化：全歷史基準（baseline.json）+ 當週回歸基準（regression_history.json）
+     ——首跑建立、同週重跑比對；漂移/不符 → FAIL，不發布。
 
 FAIL：回傳 ok=False，並在有 TG env 時發一筆警報；呼叫端應中止，
 不更新 Web、不發送一般調倉訊息。
@@ -34,10 +36,11 @@ HOL_FILE = os.path.join(HERE, "holidays.json")
 TW = ZoneInfo("Asia/Taipei")
 
 VALID_ACTIONS = {"BUY", "SELL", "REBALANCE_BUY", "REBALANCE_SELL", "HOLD"}
-WEIGHT_SUM_CAP = 0.953
+WEIGHT_SUM_CAP = 0.953   # 與 b3_canonical 容差一致：>0.953 才視為超額
 
 
 def load_holidays():
+    """單一假日來源 holidays.json（與 check_and_run 共用；不再於各程式寫死）。"""
     try:
         h = json.load(open(HOL_FILE, encoding="utf-8"))
         s = set()
@@ -48,11 +51,23 @@ def load_holidays():
         return set()
 
 
+def _load_json(p, default=None):
+    try:
+        d = json.load(open(p, encoding="utf-8-sig"))
+        return d if isinstance(d, dict) else (default or {})
+    except Exception:
+        return default or {}
+
+
 def is_trading(d, hols):
     return d.weekday() < 5 and d.strftime("%Y-%m-%d") not in hols
 
 
 def last_trading_day_of_week(today, hols):
+    """回傳 today 所屬那一週的最後交易日（週五休市→提前週四，連假逐日前移）。
+
+    06:00 在最後交易日當天執行時，today 本身即最後交易日。
+    """
     if is_trading(today, hols) and not is_trading(today + datetime.timedelta(days=1), hols):
         return today
     d = today
@@ -69,6 +84,10 @@ def last_trading_day_of_week(today, hols):
 
 
 def fingerprint(sig):
+    """canonical 內容指紋：rebalance_date + 每檔 code/action/channel/rank/權重。
+
+    用於 TG 推播去重；同一週同一組合只發一次。
+    """
     rows = []
     for a in sorted(sig.get("actions", []),
                     key=lambda x: (str(x.get("channel", "")), str(x.get("stock_code", "")))):
@@ -161,6 +180,64 @@ def evaluate(force=False, today=None):
         if miss:
             reasons.append("持股缺 price：" + ",".join(sorted(set(miss))[:10]))
 
+        # --- 基準常駐化（第4關）：全歷史基準 + 當週回歸基準（讀/建/比對，隨週更新）---
+        REG_PATH = os.path.join(HERE, "output", "regression_history.json")
+        BASE_PATH = os.path.join(HERE, "output", "baseline.json")
+        reg_hist = _load_json(REG_PATH)
+        baseline = _load_json(BASE_PATH)
+        rd = sig.get("rebalance_date")
+
+        perf = _load_json(os.path.join(HERE, "output", "perf.json"))
+        if perf:
+            cagr_now = float(perf.get("cagr") or 0) * 100
+            mdd_now = float(perf.get("mdd") or 0) * 100
+            if baseline:
+                cd = abs(cagr_now - baseline.get("cagr", cagr_now))
+                md = abs(mdd_now - baseline.get("mdd", mdd_now))
+                if cd >= 1.0 or md >= 1.0:
+                    reasons.append(f"全歷史基準漂移過大：CAGR 差 {cd:.2f}pp / MDD 差 {md:.2f}pp（>1.0pp，不發布）")
+                elif cd > 0.1 or md > 0.1:
+                    baseline["cagr"], baseline["mdd"] = cagr_now, mdd_now
+                    baseline["updated"] = datetime.datetime.now(TW).strftime("%Y-%m-%d %H:%M:%S")
+            else:
+                baseline = {"cagr": cagr_now, "mdd": mdd_now,
+                            "updated": datetime.datetime.now(TW).strftime("%Y-%m-%d %H:%M:%S")}
+
+        if rd:
+            got = sig.get("counts", {})
+            rank_w = {}
+            for a in acts:
+                if a.get("channel") == "A" and a.get("rank"):
+                    rank_w[str(a["rank"])] = float(a.get("target_weight", 0) or 0)
+            this_base = {
+                "counts": {"BUY": got.get("BUY", 0), "SELL": got.get("SELL", 0),
+                           "REBAL": got.get("REBALANCE_BUY", 0) + got.get("REBALANCE_SELL", 0),
+                           "HOLD": got.get("HOLD", 0)},
+                "buy_total": sig.get("buy_total", 0), "sell_total": sig.get("sell_total", 0),
+                "cash": sig.get("cash", 0), "buffer": sig.get("buffer", 0),
+                "rank_weights": rank_w,
+            }
+            if rd == "2026-10-02" and rd not in reg_hist:
+                reg_hist[rd] = {"counts": {"BUY": 7, "SELL": 7, "REBAL": 3, "HOLD": 6},
+                                "buy_total": 2266264, "sell_total": 2778669, "cash": 790409,
+                                "buffer": 0.134, "rank_weights": {"2": 0.044, "6": 0.029, "15": 0.015}}
+            if rd in reg_hist:
+                exp = reg_hist[rd]
+                ec = exp.get("counts", {})
+                for k in ("BUY", "SELL", "REBAL", "HOLD"):
+                    if k in ec and this_base["counts"][k] != ec[k]:
+                        reasons.append(f"當週基準 {k} 期望 {ec[k]} 實際 {this_base['counts'][k]}（{rd}）")
+                for nm_ in ("buy_total", "sell_total", "cash"):
+                    if nm_ in exp and exp[nm_] and abs(this_base[nm_] - exp[nm_]) / exp[nm_] > 0.02:
+                        reasons.append(f"當週基準 {nm_} 期望 {exp[nm_]:,.0f} 實際 {this_base[nm_]:,.0f}（{rd}）")
+                if "buffer" in exp and abs(this_base["buffer"] - exp["buffer"]) > 0.006:
+                    reasons.append(f"當週基準 buffer 期望 {exp['buffer']*100:.1f}% 實際 {this_base['buffer']*100:.1f}%")
+                for rk, ev in exp.get("rank_weights", {}).items():
+                    if rk in this_base["rank_weights"] and abs(this_base["rank_weights"][rk] - ev) > 0.003:
+                        reasons.append(f"當週基準 Rank{rk} 權重期望 {ev*100:.1f}% 實際 {this_base['rank_weights'][rk]*100:.1f}%")
+            else:
+                reg_hist[rd] = this_base   # 首跑建立當週基準
+
     ok = not reasons
     result = {
         "ok": ok,
@@ -175,6 +252,16 @@ def evaluate(force=False, today=None):
             "❌ <b>B3 調倉資料未通過發布檢查</b>\n"
             + result["reason"]
             + "\n\n本次<b>不更新網頁、不發送一般調倉訊號</b>，請人工確認後再以 full 補跑。")
+    else:
+        try:
+            os.makedirs(os.path.join(HERE, "output"), exist_ok=True)
+            with open(REG_PATH, "w", encoding="utf-8") as f:
+                json.dump(reg_hist, f, ensure_ascii=False, indent=1)
+            with open(BASE_PATH, "w", encoding="utf-8") as f:
+                json.dump(baseline, f, ensure_ascii=False, indent=1)
+            result["regression_baseline"] = "已固化"
+        except Exception as e:
+            print("[gate] 基準寫回失敗：", e)
     return result
 
 
