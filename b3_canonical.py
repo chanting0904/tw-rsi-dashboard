@@ -479,6 +479,23 @@ except Exception:
     name_map = {}
 
 
+def _commit_sha():
+    """回傳本次產生 canonical 的 commit SHA（短 8 碼）。優先 GitHub Actions env，其次本機 .git/HEAD。"""
+    s = os.environ.get("GITHUB_SHA", "")
+    if s:
+        return s[:8]
+    try:
+        head = open(os.path.join(HERE, ".git", "HEAD"), encoding="utf-8").read().strip()
+        if head.startswith("ref:"):
+            ref = head.split(":", 1)[1].strip()
+            p = os.path.join(HERE, ".git", ref)
+            if os.path.exists(p):
+                return open(p, encoding="utf-8").read().strip()[:8]
+        return head[:8]
+    except Exception:
+        return "dev"
+
+
 def nm(c):
     return name_map.get(c, c)
 
@@ -589,6 +606,8 @@ def canonical_for(wp):
         "calculation_date": wp["date"].strftime("%Y-%m-%d"),
         "rebalance_date": wp["date"].strftime("%Y-%m-%d"),
         "sig_date": prev_trading_day(wp["date"]).strftime("%Y-%m-%d"),
+        "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "commit_sha": _commit_sha(),
         "tsm_on": bool(sw_tsm.get(wp["date"], False)),
         "wa_eff": round(0.60 if sw_tsm.get(wp["date"], False) else 1.0, 3),
         "wb_eff": round(0.40 if sw_tsm.get(wp["date"], False) else 0.0, 3),
@@ -607,11 +626,8 @@ def canonical_for(wp):
 os.makedirs(os.path.join(HERE, "output", "history"), exist_ok=True)
 latest = plans[-1]
 latest_c = canonical_for(latest)
-with open(os.path.join(HERE, "output", "latest_signals.json"), "w", encoding="utf-8") as f:
-    json.dump(latest_c, f, ensure_ascii=False, indent=1)
-p(f"\n【canonical】latest_signals.json 已輸出（rebalance_date={latest_c['rebalance_date']}）")
-p(f"  counts={latest_c['counts']} | 買 {latest_c['buy_total']:,.0f} | 賣 {latest_c['sell_total']:,.0f} | "
-  f"現金 {latest_c['cash']:,.0f} | Buffer {latest_c['buffer']*100:.1f}%")
+# [B3 修正] 正式 latest_signals.json 改在 validation PASS 後以「暫存->原子替換」寫入，
+#           validation FAIL 時不覆寫上一份正式資料（避免過期/失敗訊號上線）。
 
 # 歷史：最近 20 個調倉週
 hist_plans = plans[-20:]
@@ -676,8 +692,47 @@ def run_checks(wp):
     res["share_qty"]["pass" if all(int(o["trade_sh"]) >= 0 for o in ops) else "fail"] += 1
     if not all(int(o["trade_sh"]) >= 0 for o in ops):
         res["share_qty"]["detail"].append(str(wp["date"]))
-    for k in ("limit_up", "limit_dn", "delisted", "missing_price", "lookahead"):
-        res[k]["pass"] += 1
+    # --- 五項原本的假檢查改為實際掃描（避免恒 PASS）---
+    prev_d = prev_trading_day(wp["date"])
+    prev_row = close.loc[prev_d] if prev_d in close.index else None
+    # missing_price：非 SELL 持股缺有效 price
+    mp = [o["code"] for o in ops if o["action"] != "SELL" and not (o.get("price") and float(o["price"]) > 0)]
+    if mp:
+        res["missing_price"]["fail"] += 1
+        res["missing_price"]["detail"].append((str(wp["date"]), sorted(set(mp))[:3]))
+    else:
+        res["missing_price"]["pass"] += 1
+    # delisted：選股代碼在資料庫無任何報價 → 視為下市/無資料
+    dl = [o["code"] for o in ops
+          if o["code"] not in close.columns or not bool(close[o["code"]].dropna().any())]
+    if dl:
+        res["delisted"]["fail"] += 1
+        res["delisted"]["detail"].append((str(wp["date"]), sorted(set(dl))[:3]))
+    else:
+        res["delisted"]["pass"] += 1
+    # limit_up / limit_dn：買進價不得誤買已漲停(>=+9.9%)/跌停(<=-9.9%)（對照前一交易日收盤）
+    for o in ops:
+        if o["action"] in ("BUY", "REBALANCE_BUY") and o.get("price") and prev_row is not None:
+            c = o["code"]
+            if c in prev_row.index and prev_row[c] and prev_row[c] > 0:
+                p0 = float(prev_row[c]); p1 = float(o["price"])
+                if p1 >= p0 * (1 + LIMIT):
+                    res["limit_up"]["fail"] += 1
+                    res["limit_up"]["detail"].append((str(wp["date"]), c, round(p1, 2), round(p0, 2)))
+                elif p1 <= p0 * (1 - LIMIT):
+                    res["limit_dn"]["fail"] += 1
+                    res["limit_dn"]["detail"].append((str(wp["date"]), c, round(p1, 2), round(p0, 2)))
+    if res["limit_up"]["fail"] == 0:
+        res["limit_up"]["pass"] += 1
+    if res["limit_dn"]["fail"] == 0:
+        res["limit_dn"]["pass"] += 1
+    # lookahead：wp 調倉日不得超過資料庫最後交易日（避免用到未來資料）
+    close_last = close.dropna(how="all").index[-1] if len(close) else None
+    if close_last is not None and wp["date"] > close_last:
+        res["lookahead"]["fail"] += 1
+        res["lookahead"]["detail"].append((str(wp["date"]), str(close_last)))
+    else:
+        res["lookahead"]["pass"] += 1
 
 
 for wp in hist_plans:
@@ -715,11 +770,14 @@ if latest_c["rebalance_date"] == "2026-10-02":
     p(f"\n【10-02 鎖定回歸值】{'✅ 全部相符' if reg_ok else '❌ ' + '；'.join(reg_msgs)}"
       f"（BUY7/SELL7/REBAL3/HOLD6、買2,266,264/賣2,778,669/現金790,409/Buffer13.4%、Rank2-5=4.4%/6-10=2.9%/15=1.5%）")
 
-fail_list = [k for k in check_names if res[k]["fail"] > 0]
+# limit_dn（疑似跌停買單）列為「警告」不阻擋：跌停不一定買不到（開盤未跌停可成交），
+# 誤擋會阻斷正常調倉。其餘硬性檢查（limit_up/missing_price/delisted/lookahead 等）維持阻擋。
+fail_list = [k for k in check_names if k != "limit_dn" and res[k]["fail"] > 0]
 val_log = {"strategy_version": "B3", "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
            "rebalance_date": latest_c["rebalance_date"],
            "b3_consistency": bool(ok_b),
            "regression_10_02": {"pass": bool(reg_ok), "detail": reg_msgs},
+           "warning_checks": ["limit_dn"] if res["limit_dn"]["fail"] > 0 else [],
            "checks": {k: {"pass": res[k]["pass"], "fail": res[k]["fail"],
                           "detail": res[k]["detail"][:5]} for k in check_names},
            "verdict": "PASS" if (ok_b and reg_ok and not fail_list) else "FAIL"}
@@ -731,8 +789,17 @@ for k in check_names:
     p(f"  {k:<18} PASS {r_['pass']:>2} | FAIL {r_['fail']:>2}"
       + (f" | 例：{r_['detail'][:2]}" if r_["fail"] else " | ✅ 全過"))
 
-OUT.close()
 if not (ok_b and reg_ok and not fail_list):
-    print("\n❌ validation FAIL — 不發布可執行訊號（error log 已寫入 output/validation_log.json）")
+    OUT.close()
+    print("\n❌ validation FAIL — 不發布可執行訊號；正式 latest_signals.json 保留上一份（validation_log 已寫入 output/）")
     sys.exit(1)
+# validation PASS：才以「暫存->原子替換」寫入正式 latest_signals.json（不覆寫舊正式資料）
+_tmp = os.path.join(HERE, "output", "latest_signals.json.tmp")
+with open(_tmp, "w", encoding="utf-8") as f:
+    json.dump(latest_c, f, ensure_ascii=False, indent=1)
+os.replace(_tmp, os.path.join(HERE, "output", "latest_signals.json"))
+p(f"\n【canonical】latest_signals.json 已輸出（rebalance_date={latest_c['rebalance_date']}）")
+p(f"  counts={latest_c['counts']} | 買 {latest_c['buy_total']:,.0f} | 賣 {latest_c['sell_total']:,.0f} | "
+  f"現金 {latest_c['cash']:,.0f} | Buffer {latest_c['buffer']*100:.1f}%")
+OUT.close()
 print("\n✅ validation 全過 — canonical 已就緒（output/）")

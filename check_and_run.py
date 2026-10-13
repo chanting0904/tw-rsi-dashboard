@@ -29,9 +29,18 @@ def trading(d):
 
 def main():
     today = datetime.datetime.now(ZoneInfo("Asia/Taipei")).date()
+    # 本週最後交易日：今天是交易日且明天非交易日（週五休市 → 提前週四）
     is_last_td = trading(today) and not trading(today + datetime.timedelta(days=1))
     if FORCE or is_last_td:
         print(f"[full] {today} 為本週最後交易日，執行完整選股")
+        # [B3] GitHub Actions 唯一來源：先由正式引擎產生 canonical（選股邏輯/參數不變）。
+        #      validation 失敗 → b3_canonical 自身 exit(1)，這裡接住並中止、不發布。
+        r0 = subprocess.run([sys.executable, os.path.join(ROOT, "b3_canonical.py")])
+        if r0.returncode != 0:
+            print("[b3] b3_canonical FAIL — 不發布（validation 失敗或引擎錯誤）；正式 latest_signals.json 保留上一份")
+            sys.exit(3)
+        # 發布閘門：canonical 必須 validation PASS、為本週最新、結構正確，才准產生網頁。
+        # FAIL 時 publish_gate 會發 TG 警報並回傳非 0，這裡立即中止、不更新 Web。
         sys.path.insert(0, ROOT)
         from publish_gate import evaluate
         gate = evaluate(force=FORCE)

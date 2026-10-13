@@ -10,8 +10,6 @@
      → 引擎沒重跑（canonical 還是上週）時直接擋下，絕不發舊訊號。
   3) 結構：counts 合計 == actions 筆數、無重複 code、action 合法、
      target_weight 合計 <= 0.953、非 SELL 持股不得缺 price。
-  4) 基準常駐化：全歷史基準（baseline.json）+ 當週回歸基準（regression_history.json）
-     ——首跑建立、同週重跑比對；漂移/不符 → FAIL，不發布。
 
 FAIL：回傳 ok=False，並在有 TG env 時發一筆警報；呼叫端應中止，
 不更新 Web、不發送一般調倉訊息。
@@ -70,17 +68,32 @@ def last_trading_day_of_week(today, hols):
     """
     if is_trading(today, hols) and not is_trading(today + datetime.timedelta(days=1), hols):
         return today
+    # 往後掃到該週週六，找出「次日非交易日」的交易日
     d = today
     while d.weekday() < 6:
         d += datetime.timedelta(days=1)
         if is_trading(d, hols) and not is_trading(d + datetime.timedelta(days=1), hols):
             return d
+    # fallback：往回找最近一個最後交易日
     d = today
     for _ in range(10):
         d -= datetime.timedelta(days=1)
         if is_trading(d, hols) and not is_trading(d + datetime.timedelta(days=1), hols):
             return d
     return today
+
+
+def prev_trading_day_str(d, hols):
+    """回傳 d（"YYYY-MM-DD"）的前一交易日（trading 判定，休市/假日往前掃）。
+
+    資料新鮮度基準：調倉日（本週最後交易日）當天 06:00 跑，資料庫應已含「前一交易日」收盤。
+    """
+    dt = datetime.date.fromisoformat(d) if isinstance(d, str) else d
+    for _ in range(20):
+        dt -= datetime.timedelta(days=1)
+        if is_trading(dt, hols):
+            return dt.strftime("%Y-%m-%d")
+    return d
 
 
 def fingerprint(sig):
@@ -145,6 +158,7 @@ def evaluate(force=False, today=None):
             reasons.append(f"validation_log.json 無法解析：{e}")
 
     if sig is not None:
+        # --- validation 把關 ---
         if val is not None:
             if val.get("verdict") != "PASS":
                 reasons.append(f"validation verdict={val.get('verdict')}（非 PASS）")
@@ -157,10 +171,20 @@ def evaluate(force=False, today=None):
         if sig.get("strategy_version") not in (None, "B3"):
             reasons.append(f"canonical strategy_version={sig.get('strategy_version')} 非 B3")
 
+        # --- 資料新鮮度（不分 FORCE，永遠生效）---
+        # 1) 資料必須已含「本週最後交易日」：rebal_date 必須 == 本週最後交易日
+        #    （資料庫缺最後交易日收盤 → 擋，連 FORCE 補跑亦不發布，避免用過期資料出訊號）
         rebal = sig.get("rebalance_date")
-        if not force and rebal != expect:
-            reasons.append(f"canonical 非本週最新（rebalance_date={rebal}，本次最後交易日應為 {expect}）")
+        if rebal != expect:
+            reasons.append(f"canonical 非本週最新（rebalance_date={rebal}，本次最後交易日應為 {expect}；缺資料，連 FORCE 亦不發布）")
+        # 2) 資料庫連續：sig_date 必須 == rebal 的前一交易日（無缺日）
+        sigd = sig.get("sig_date")
+        if rebal and sigd:
+            expect_sig = prev_trading_day_str(rebal, hols)
+            if sigd != expect_sig:
+                reasons.append(f"資料不連續：sig_date={sigd}，應 = {rebal} 的前一交易日 {expect_sig}")
 
+        # --- 結構檢查 ---
         acts = sig.get("actions", [])
         codes = [str(a.get("stock_code")) for a in acts]
         if len(codes) != len(set(codes)):
@@ -175,6 +199,8 @@ def evaluate(force=False, today=None):
         tw = sum(float(a.get("target_weight", 0) or 0) for a in acts)
         if tw > WEIGHT_SUM_CAP:
             reasons.append(f"target_weight 合計 {tw:.4f} 超過 {WEIGHT_SUM_CAP}")
+        if not sig.get("generated_at") or not sig.get("commit_sha"):
+            reasons.append("canonical 缺 generated_at/commit_sha（版本資訊不完整，不發布）")
         miss = [str(a.get("stock_code")) for a in acts
                 if a.get("action") != "SELL" and not (float(a.get("price", 0) or 0) > 0)]
         if miss:
@@ -187,6 +213,7 @@ def evaluate(force=False, today=None):
         baseline = _load_json(BASE_PATH)
         rd = sig.get("rebalance_date")
 
+        # 全歷史基準：perf.json 的 cagr/mdd；漂移 >1.0pp → FAIL；0.1~1.0（資料演進）→ 自動更新；無檔 → 建立
         perf = _load_json(os.path.join(HERE, "output", "perf.json"))
         if perf:
             cagr_now = float(perf.get("cagr") or 0) * 100
@@ -203,6 +230,7 @@ def evaluate(force=False, today=None):
                 baseline = {"cagr": cagr_now, "mdd": mdd_now,
                             "updated": datetime.datetime.now(TW).strftime("%Y-%m-%d %H:%M:%S")}
 
+        # 當週回歸基準：key=rebalance_date；首跑建立、同週重跑比對；10-02 沿用原鎖定死值
         if rd:
             got = sig.get("counts", {})
             rank_w = {}
@@ -253,6 +281,7 @@ def evaluate(force=False, today=None):
             + result["reason"]
             + "\n\n本次<b>不更新網頁、不發送一般調倉訊號</b>，請人工確認後再以 full 補跑。")
     else:
+        # 全部通過 → 固化/更新基準（regression_history.json + baseline.json），供下次同週重跑比對
         try:
             os.makedirs(os.path.join(HERE, "output"), exist_ok=True)
             with open(REG_PATH, "w", encoding="utf-8") as f:

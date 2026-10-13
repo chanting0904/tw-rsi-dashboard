@@ -102,6 +102,8 @@ DATA = {
     "strategy_version": SIG.get("strategy_version", "B3"),
     "sig_date": SIG.get("sig_date"),
     "rebal_date": SIG.get("rebalance_date"),
+    "sig_generated_at": SIG.get("generated_at"),
+    "sig_commit_sha": SIG.get("commit_sha"),
     "px_date": px_date,
     "tsm_on": SIG.get("tsm_on", True),
     "wa_eff": SIG.get("wa_eff"), "wb_eff": SIG.get("wb_eff"),
@@ -338,7 +340,7 @@ const SORTER = {
 };
 
 /* ================= meta / 警告 / 開關 ================= */
-$("m-rebal").textContent = DATA.rebal_date ? DATA.rebal_date + "（訊號基準 " + DATA.sig_date + "）" : "—";
+$("m-rebal").textContent = DATA.rebal_date ? DATA.rebal_date + "（訊號基準 " + DATA.sig_date + "）｜版本 " + (DATA.sig_commit_sha || "—") : "—";
 $("m-px").textContent = DATA.px_date || "—";
 
 const warns = DATA.warnings || [];
