@@ -17,9 +17,7 @@ import pandas as pd
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DB = os.path.join(HERE, "local_db")
-CTX = ssl.create_default_context()
-CTX.check_hostname = False
-CTX.verify_mode = ssl.CERT_NONE
+CTX = ssl.create_default_context()  # 保留憑證驗證，避免接收被冒充的行情資料
 HDR = {"User-Agent": "Mozilla/5.0"}
 
 
