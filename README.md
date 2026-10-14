@@ -29,3 +29,22 @@ GitHub Actions 於台北週一至週五 06:00 執行；只有該週最後交易�
 價格更新、訊號產生、網頁重建及 Pages 建置失敗時，最多執行三次：第一次失敗後等 60 秒，第二次後等 180 秒。每次仍須通過原本資料驗證。Telegram 傳送不整段重試，避免部分成功後重複發送。
 
 最終失敗時，流程嘗試將失敗狀態發布到網站，保留已有訊號，再發告警。若 GitHub 或網站本身故障，失敗狀態也可能無法上網；頁面仍會依日期判斷舊清單，不能把上一週資料顯示為本週已完成。
+
+## 引擎與資金試算
+
+`b3_canonical.py` 是指令入口，計算在 `b3_engine/`：
+
+- `config.py` / `context.py`：參數與資料容器。
+- `market.py` / `selection.py`：資料與候選名單。
+- `execution.py` / `simulation.py`：先賣後買、整股與現金、配置區間。
+- `performance.py`：全部成交的盈虧、以去年年底為基準的年度報酬。
+- `canonical.py` / `validation.py` / `pipeline.py`：Web/TG 輸出、驗證、發布。
+- `allocation.py` / `capital_preview.js`：目標整股配置與模型費用試算，Python/JavaScript 有一致性檢查。
+
+研究入口 `my_backtest_v7f_final_candidate.py` 使用相同引擎，輸出到 `research_output/`（可用 `--output-dir` 指定）；保留 `daily_trade_plan.csv`、`_final_candidate_report.txt` 與績效 JSON，沒有獨立的第二套成交或績效邏輯。
+
+`python b3_canonical.py --report-only --capital 200000` 可模擬不同起始本金的完成期間績效；使用 `B3_OUTPUT_DIR` 將研究結果放在獨立目錄。非預設本金只能產生報表，不能替換共用週訊號。
+
+網頁輸入的是目前用於目標配置的總資金。目標股數、預估現金與費用依實際整股試算；高價股票不足一股或目標權重本身不足時會明列提醒，不保證任何本金都能達到 90–95%。模型費率由參數提供，實際券商費用與成交另計。
+
+盈虧比以已完成週期的實際模擬獲利金額／虧損金額计算；沒有已完成虧損時，JSON 使用 `null`，不填造假的 `999`。年度報酬包含跨年的第一週，並可與整段資產成長核對。

@@ -9,6 +9,7 @@
 import os, sys, json, datetime
 from zoneinfo import ZoneInfo
 from publish_gate import load_holidays, last_trading_day_of_week
+from b3_engine.config import StrategyConfig
 HERE = os.path.dirname(os.path.abspath(__file__))
 os.chdir(HERE)
 
@@ -121,6 +122,7 @@ DATA = {
     "signal_mode": SIG.get("signal_mode", "CLOSE_SIMULATION"),
     "price_basis_date": SIG.get("price_basis_date") or SIG.get("rebalance_date"),
     "strategy_version": SIG.get("strategy_version", "B3"),
+    "buy_fee": SIG.get("buy_fee", StrategyConfig().buy_fee),
     "sig_date": SIG.get("sig_date"),
     "rebal_date": SIG.get("rebalance_date"),
     "sig_generated_at": SIG.get("generated_at"),
@@ -238,11 +240,12 @@ HTML = """<!DOCTYPE html>
       <input type="number" id="cap" min="10000" step="10000" placeholder="請輸入實際本金">
       <button id="cap-apply">套用本金</button>
       <button id="cap-reset" class="ghost">重新設定</button>
-      <span class="cap-info">目前本金：<b id="cap-now"></b>｜可用現金（Buffer <span id="cap-bufpct"></span>）：<b id="cap-cash"></b>｜預估投入：<b id="cap-invest"></b></span>
+      <span class="cap-info">試算資金：<b id="cap-now"></b>｜配置後預估現金（<span id="cap-bufpct"></span>）：<b id="cap-cash"></b>｜整股預估投入：<b id="cap-invest"></b></span>
     </div>
     <div class="note">🔸 權重（%）是 B3 策略結果，不隨本金改變；所有目標金額／目標股數都依此本金即時計算。<br>
     🔸 輸入後按「套用本金」記住（存你瀏覽器，重新整理不會消失）；「重新設定」回預設 100,000。<br>
     🔸 本頁只給「目標清單」：每檔該持有多少股（照本金估算）。<b>實際買賣你自己對照手上持股下單</b>，系統不記錄你的持股。</div>
+    <div id="allocationnote" class="note"></div>
   </section>
 
   <div class="cards" id="cards"></div>
@@ -304,7 +307,7 @@ HTML = """<!DOCTYPE html>
     <div id="chart-dd" class="chart small"></div>
     <div class="note">
       計算方式：直接讀 B3 歷史 NAV，取「起始年年初 NAV」與「結束年年末 NAV」端點相除，不重新跑回測。<span id="pc-range"></span><br>
-      回測基準：初始本金 100,000、2015-01 ~ 2026-10-02，最終資產 <span id="p-nav"></span>。<br>
+      回測基準：初始本金 <span id="p-initial"></span>｜已完成期間 <span id="p-period"></span>｜最終資產 <span id="p-nav"></span>。<br>
       <b style="color:var(--warn)">⚠️ 歷史回測績效，不代表未來收益。</b>
     </div>
   </section>
@@ -318,6 +321,7 @@ HTML = """<!DOCTYPE html>
 <script>
 const DATA = __DATA_JSON__;
 __WEEKLY_STATUS_JS__
+__CAPITAL_PREVIEW_JS__
 
 const $ = (id) => document.getElementById(id);
 const F = (n, d) => (n==null || isNaN(n)) ? "—" : Number(n).toLocaleString("zh-TW", {minimumFractionDigits: d||0, maximumFractionDigits: d||0});
@@ -330,14 +334,19 @@ const ORDER = ["SELL", "REBALANCE_SELL", "BUY", "REBALANCE_BUY", "HOLD"];
 
 /* ================= 唯一資金基準 ================= */
 let USER_CAPITAL = parseFloat(localStorage.getItem("b3_user_capital") || "100000") || 100000;
+if (!Number.isFinite(USER_CAPITAL) || USER_CAPITAL < 10000) USER_CAPITAL = 100000;
+let CAPITAL_PREVIEW = null;
+function updateCapitalPreview() {
+  CAPITAL_PREVIEW = previewAllocation(allHolds().map(row => ({code:row.code, target_weight:row.target_weight, price:row.px || row.price})), USER_CAPITAL, DATA.buy_fee);
+}
 
 const AMT = (w) => USER_CAPITAL * (w || 0);            // 權重 → 金額
 
 // 目標股數 = 目標金額 ÷ 現價（整股；SELL→0）
 function tgtShares(h) {
   if (h.action === "SELL") return 0;
-  const px = h.px || h.price || 0;
-  return (px > 0) ? Math.floor(AMT(h.target_weight || 0) / px) : 0;
+  if (!CAPITAL_PREVIEW) updateCapitalPreview();
+  return CAPITAL_PREVIEW.quantities[h.code] || 0;
 }
 function tgtAmount(h) { return h.action === "SELL" ? 0 : AMT(h.target_weight || 0); }
 function is25(h) { return (h.action === "REBALANCE_BUY" || h.action === "REBALANCE_SELL") && !(h.reason || "").startsWith("PORTFOLIO_BAND_"); }
@@ -416,13 +425,13 @@ sw.innerHTML = DATA.tsm_on
 /* ================= 本金輸入 ================= */
 function persistCap() {
   const v = parseFloat($("cap").value);
-  if (v && v >= 10000) { USER_CAPITAL = v; localStorage.setItem("b3_user_capital", String(v)); }
+  if (Number.isFinite(v) && v >= 10000) { USER_CAPITAL = v; localStorage.setItem("b3_user_capital", String(v)); }
   $("cap").value = USER_CAPITAL;
   renderAll();
 }
 $("cap").addEventListener("input", (e) => {
   const v = parseFloat(e.target.value);
-  if (v && v >= 10000) { USER_CAPITAL = v; renderAll(); }   // 即時預覽
+  if (Number.isFinite(v) && v >= 10000) { USER_CAPITAL = v; renderAll(); }   // 即時預覽
 });
 $("cap-apply").addEventListener("click", persistCap);
 $("cap-reset").addEventListener("click", () => {
@@ -454,15 +463,16 @@ const HOLD_ROWS = allHolds().concat((DATA.sells||[]).map(s => ({
 
 /* ================= 頂部卡片（金額全依本金） ================= */
 function renderCards() {
+  updateCapitalPreview();
   const period = weeklyReadiness(DATA, taipeiDate(), publicWeeklyStatus).state === 'ready' ? '本週' : '最近一期';
   const c = DATA.counts || {};
-  const bufAmt = USER_CAPITAL * (DATA.buffer || 0);
-  const investAmt = USER_CAPITAL - bufAmt;
+  const bufAmt = CAPITAL_PREVIEW.cash;
+  const investAmt = CAPITAL_PREVIEW.invested;
   const cards = [
     ["資金試算基準", M(USER_CAPITAL), "= 你輸入的資金", ""],
-    ["模擬現金試算", M(bufAmt), "模擬現金比例 " + P(DATA.buffer, 1) + " × 資金", ""],
-    ["預估投入", M(investAmt), "總資產 − 現金", ""],
-    ["CAGR(回測)", P(DATA.perf.cagr, 2), "B3 2015~2026", "up"],
+    ["配置後預估現金", M(bufAmt), "依目標整股與模型費用估算", ""],
+    ["整股預估投入", M(investAmt), "目標股數 × 顯示價格", ""],
+    ["CAGR(回測)", P(DATA.perf.cagr, 2), "截至 " + (DATA.perf.completed_through || DATA.perf.nav?.at(-1)?.[0] || '—'), "up"],
     ["MDD(回測)", P(DATA.perf.mdd, 2), "最大回撤", "down"],
     [period + "買進", (c.BUY||0) + " 檔", "🟢 BUY", "up"],
     [period + "賣出", (c.SELL||0) + " 檔", "🔴 SELL", "down"],
@@ -473,9 +483,14 @@ function renderCards() {
     '<div class="card"><div class="k">' + x[0] + '</div><div class="v ' + x[3] + '">' + x[1] + '</div><div class="s">' + x[2] + '</div></div>'
   ).join("");
   $("cap-now").textContent = M(USER_CAPITAL);
-  $("cap-bufpct").textContent = P(DATA.buffer, 1);
+  $("cap-bufpct").textContent = P(bufAmt / CAPITAL_PREVIEW.nav, 1);
   $("cap-cash").textContent = M(bufAmt);
   $("cap-invest").textContent = M(investAmt);
+  const preview = CAPITAL_PREVIEW;
+  $("allocationnote").textContent = '本期目標權重合計 ' + P(preview.target_weight_total, 1) + '｜整股後配置 ' + P(preview.exposure, 1) + '｜預估模型買入費用 ' + M(preview.fees) + '。這是目標配置試算，實際成交另計。' +
+    ((preview.exposure < .90 || preview.exposure > .95) ? ' 目前試算未落在90～95%，請留意整股取整或報價限制。' : '') +
+    (preview.unaffordable.length ? ' 目標金額不足一股：' + preview.unaffordable.join('、') + '。' : '') +
+    (preview.missing.length ? ' 缺少價格：' + preview.missing.join('、') + '。' : '');
 }
 
 /* ================= 本週操作（四區塊＋排序＋目標股數） ================= */
@@ -592,6 +607,8 @@ function renderCharts() {
   $("p-cagr").textContent = P(DATA.perf.cagr, 2);
   $("p-mdd").textContent = P(DATA.perf.mdd, 2);
   $("p-nav").textContent = M(DATA.perf.final_nav);
+  $("p-initial").textContent = F(DATA.perf.start_capital || 100000, 0);
+  $("p-period").textContent = (DATA.perf.nav?.[0]?.[0] || '—') + ' ～ ' + (DATA.perf.completed_through || DATA.perf.nav?.at(-1)?.[0] || '—');
 }
 
 /* ================= 歷史週（金額按目前本金估算） ================= */
@@ -694,6 +711,8 @@ initPerfCalc();
 HTML = HTML.replace("__DATA_JSON__", DATA_JSON)
 with open(os.path.join(HERE, 'weekly_status.js'), encoding='utf-8') as _source:
     HTML = HTML.replace('__WEEKLY_STATUS_JS__', _source.read())
+with open(os.path.join(HERE, 'capital_preview.js'), encoding='utf-8') as _source:
+    HTML = HTML.replace('__CAPITAL_PREVIEW_JS__', _source.read())
 
 # 統一僅輸出 index.html（GitHub Pages 唯一入口）；RSI選股器.html 為舊名冗餘檔，不再生成
 for _name in ("index.html",):
