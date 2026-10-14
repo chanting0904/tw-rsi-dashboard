@@ -71,10 +71,17 @@ def load_state():
 
 
 def save_state(codes, codes_b, qty, qty_b, last_pushed_key=None):
-    with open(STATE_FILE, "w", encoding="utf-8") as f:
-        json.dump({"codes": codes, "codes_b": codes_b, "qty": qty, "qty_b": qty_b,
-                   "last_pushed_key": last_pushed_key},
-                  f, ensure_ascii=False)
+    tmp = STATE_FILE + ".tmp"
+    try:
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump({"codes": codes, "codes_b": codes_b, "qty": qty, "qty_b": qty_b,
+                       "last_pushed_key": last_pushed_key},
+                      f, ensure_ascii=False)
+        os.replace(tmp, STATE_FILE)  # 避免中斷寫入破壞 TG 推播去重狀態
+    except Exception:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+        raise
     # CI（GitHub Actions）中只寫檔，由 workflow 結尾統一 commit/push
     print("state.json 已寫入（CI 中由 workflow 統一提交）" if os.environ.get("GITHUB_ACTIONS") == "true"
           else "state.json 已寫入（非 CI，未自動 git push）")
