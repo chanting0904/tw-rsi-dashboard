@@ -27,6 +27,7 @@ BUY_FEE = 0.0004
 LIMIT = 0.099
 THRESH = 0.25
 BUFFER = 0.05
+EXPOSURE_MIN, EXPOSURE_MAX, EXPOSURE_AIM = 0.90, 0.95, 0.925
 MAX_HOLD_A = 15
 MAX_HOLD_B = 4
 W_A, W_B = 0.60, 0.40
@@ -201,6 +202,7 @@ def run(weekday, mode, coefs=(1.5, 1.0, 0.5), start=None, end=None, record=True)
             a_w, b_w = 1.0, 0.0
 
         # ---- 賣出：完全掉出兩通道者（原 Exit）----
+        blocked_exit_codes = []
         for c in list(pos.keys()):
             if c not in want_set:
                 p_ = float(px[c])
@@ -211,6 +213,7 @@ def run(weekday, mode, coefs=(1.5, 1.0, 0.5), start=None, end=None, record=True)
                     del pos[c]
                     continue
                 if c in limit_dn.columns and bool(limit_dn[c].get(wk, False)):
+                    blocked_exit_codes.append(str(c))
                     continue
                 reason = "FALL_OUT_TOP_POOL"
                 if c in ma60.columns and c in close.columns:
@@ -235,10 +238,29 @@ def run(weekday, mode, coefs=(1.5, 1.0, 0.5), start=None, end=None, record=True)
         pre_sh = {c: pos[c]["shares"] for c in pos}
         pre_total = cash + mv_at(px)
         total = pre_total
+        target_lists = {pool: list(want.get(pool, [])) for pool in ("A", "B")}
+        available_lists = {
+            pool: [c for c in codes if c in px.index and pd.notna(px[c]) and float(px[c]) > 0
+                   and (c in pos or c not in limit_up.columns or not bool(limit_up[c].get(wk, False)))]
+            for pool, codes in target_lists.items()
+        }
+        missing_price_targets = sum(1 for codes in target_lists.values() for c in codes
+                                    if c not in px.index or pd.isna(px[c]) or float(px[c]) <= 0)
+        blocked_limitup_targets = sum(1 for pool, codes in target_lists.items() for c in codes
+                                      if c in px.index and pd.notna(px[c]) and float(px[c]) > 0
+                                      and c not in pos and c in limit_up.columns
+                                      and bool(limit_up[c].get(wk, False)))
+        alloc_weights = {"A": a_w, "B": b_w}
+        if alloc_weights["A"] > 0 and not available_lists["A"] and available_lists["B"]:
+            alloc_weights["B"] += alloc_weights["A"]
+            alloc_weights["A"] = 0.0
+        if alloc_weights["B"] > 0 and not available_lists["B"] and available_lists["A"]:
+            alloc_weights["A"] += alloc_weights["B"]
+            alloc_weights["B"] = 0.0
         last_tv_pool = {}
         rebalance_plans = []
-        for pool, wgt in [("A", a_w), ("B", b_w)]:
-            lst = want.get(pool, [])
+        for pool, wgt in [("A", alloc_weights["A"]), ("B", alloc_weights["B"])]:
+            lst = available_lists[pool]
             if not lst or wgt <= 0:
                 continue
             if pool == "B" or (_c1 == 1.0 and _c3 == 1.0):
@@ -274,6 +296,8 @@ def run(weekday, mode, coefs=(1.5, 1.0, 0.5), start=None, end=None, record=True)
             if not cur or diff >= -p_ or abs(diff) <= tv_ * THRESH:
                 continue
             if c in limit_dn.columns and bool(limit_dn[c].get(wk, False)):
+                if str(c) not in blocked_exit_codes:
+                    blocked_exit_codes.append(str(c))
                 continue
             sh = min(int((-diff) // p_), cur["shares"])
             if sh <= 0:
@@ -286,6 +310,51 @@ def run(weekday, mode, coefs=(1.5, 1.0, 0.5), start=None, end=None, record=True)
             trades.append({"date": wk, "code": c, "pool": pool, "side": "SELL",
                            "price": p_, "shares": sh, "amount": sh * p_,
                            "reason": "REBALANCE_DOWN", "full": full, "is_new": False})
+
+        # Predict exposure after ordinary target buys. If that would exceed 95%,
+        # trim overweight holdings to their assigned target before executing buys.
+        projected_cash = cash
+        projected_mv = mv_at(px)
+        for pool, c, tv_, p_, _ in rebalance_plans:
+            cur = pos.get(c)
+            cur_sh = cur["shares"] if cur else 0
+            diff = tv_ - cur_sh * p_
+            if diff <= p_ or (cur and abs(diff) <= tv_ * THRESH):
+                continue
+            if c in limit_up.columns and bool(limit_up[c].get(wk, False)):
+                continue
+            sh = min(int(diff // p_), int(projected_cash // (p_ * (1 + BUY_FEE))))
+            projected_cash -= sh * p_ * (1 + BUY_FEE)
+            projected_mv += sh * p_
+        projected_nav = projected_cash + projected_mv
+        if projected_nav > 0 and projected_mv / projected_nav > EXPOSURE_MAX:
+            for pool, c, tv_, p_, _ in rebalance_plans:
+                if c not in pos or p_ <= 0:
+                    continue
+                if c in limit_dn.columns and bool(limit_dn[c].get(wk, False)):
+                    if str(c) not in blocked_exit_codes:
+                        blocked_exit_codes.append(str(c))
+                    continue
+                target_sh = int(tv_ // p_)
+                excess_sh = max(0, pos[c]["shares"] - target_sh)
+                if excess_sh <= 0:
+                    continue
+                projected_nav = projected_cash + projected_mv
+                if projected_nav <= 0 or projected_mv / projected_nav <= EXPOSURE_MAX:
+                    break
+                need = max(0.0, (projected_mv - EXPOSURE_MAX * projected_nav) /
+                           (1 - EXPOSURE_MAX * SELL_FEE))
+                sh = min(excess_sh, max(1, int(np.ceil(need / p_))))
+                cash += sh * p_ * (1 - SELL_FEE)
+                projected_cash += sh * p_ * (1 - SELL_FEE)
+                pos[c]["shares"] -= sh
+                projected_mv -= sh * p_
+                full = pos[c]["shares"] == 0
+                if full:
+                    del pos[c]
+                trades.append({"date": wk, "code": c, "pool": pool, "side": "SELL",
+                               "price": p_, "shares": sh, "amount": sh * p_,
+                               "reason": "PORTFOLIO_BAND_TRIM", "full": full, "is_new": False})
 
         # Keep the ±25% drift threshold; include buy commissions in cash and cost basis.
         for pool, c, tv_, p_, _ in rebalance_plans:
@@ -312,12 +381,53 @@ def run(weekday, mode, coefs=(1.5, 1.0, 0.5), start=None, end=None, record=True)
                            "rank": want_rank.get(c, 8), "is_new": not bool(cur),
                            "reason": ""})
 
+        # The per-stock 25% drift rule can leave too much cash across many names.
+        # Only when aggregate exposure falls below 90%, top up eligible targets in
+        # strategy order toward 92.5%, never beyond their assigned target weights.
+        mv_now = mv_at(px)
+        nav_now = cash + mv_now
+        if nav_now > 0 and mv_now / nav_now < EXPOSURE_MIN:
+            for pool, c, tv_, p_, _ in rebalance_plans:
+                if p_ <= 0:
+                    continue
+                if c in limit_up.columns and bool(limit_up[c].get(wk, False)):
+                    continue
+                cur = pos.get(c)
+                cur_sh = cur["shares"] if cur else 0
+                target_sh = int(tv_ // p_)
+                gap_sh = max(0, target_sh - cur_sh)
+                if gap_sh <= 0:
+                    continue
+                mv_now = mv_at(px)
+                nav_now = cash + mv_now
+                need = max(0.0, (EXPOSURE_AIM * nav_now - mv_now) /
+                           (1 + EXPOSURE_AIM * BUY_FEE))
+                sh = min(gap_sh, int(need // p_), int(cash // (p_ * (1 + BUY_FEE))))
+                if sh <= 0:
+                    continue
+                cash -= sh * p_ * (1 + BUY_FEE)
+                if cur:
+                    cur["shares"] = cur_sh + sh
+                    cur["avg"] = (cur_sh * cur["avg"] + sh * p_ * (1 + BUY_FEE)) / (cur_sh + sh)
+                else:
+                    pos[c] = {"shares": sh, "avg": p_ * (1 + BUY_FEE), "pool": pool,
+                              "wc": coef_of(want_rank.get(c, 8)), "rank": want_rank.get(c, 8),
+                              "entry_d": wk}
+                trades.append({"date": wk, "code": c, "pool": pool, "side": "BUY",
+                               "price": p_, "shares": sh, "amount": sh * p_,
+                               "rank": want_rank.get(c, 8), "is_new": not bool(cur),
+                               "reason": "PORTFOLIO_BAND_TOPUP"})
+                mv_now = mv_at(px)
+                nav_now = cash + mv_now
+                if mv_now / nav_now >= EXPOSURE_AIM:
+                    break
+
         # ---- 每週調倉決策明細（實盤信號輸出用）----
         if record:
             total2 = cash + mv_at(px)
             plan_recs = []
-            for pool, wgt in [("A", a_w), ("B", b_w)]:
-                lst = want.get(pool, [])
+            for pool, wgt in [("A", alloc_weights["A"]), ("B", alloc_weights["B"])]:
+                lst = available_lists[pool]
                 if not lst or wgt <= 0:
                     continue
                 if pool == "B" or (_c1 == 1.0 and _c3 == 1.0):
@@ -348,7 +458,20 @@ def run(weekday, mode, coefs=(1.5, 1.0, 0.5), start=None, end=None, record=True)
                                       "pre_sh": pre_sh_, "pre_val": pre_sh_ * p_,
                                       "pre_total": pre_total, "nav": total2,
                                       "price": p_})
-            weekly_plans.append({"date": wk, "cash": cash, "nav": total2, "recs": plan_recs})
+            exposure = mv_at(px) / total2 if total2 > 0 else 0.0
+            planned_codes = {c for _, c, _, _, _ in rebalance_plans}
+            unplanned_holdings = [
+                {"code": str(c), "market_value": round(pos[c]["shares"] * float(px[c]), 0)}
+                for c in pos if c not in planned_codes and c in px.index and pd.notna(px[c]) and float(px[c]) > 0
+            ]
+            weekly_plans.append({"date": wk, "cash": cash, "nav": total2, "recs": plan_recs,
+                                 "stock_exposure": exposure,
+                                 "exposure_in_band": EXPOSURE_MIN <= exposure <= EXPOSURE_MAX,
+                                 "missing_price_targets": missing_price_targets,
+                                 "blocked_limitup_targets": blocked_limitup_targets,
+                                 "blocked_exit_codes": blocked_exit_codes,
+                                 "unplanned_holdings": unplanned_holdings,
+                                 "wa_eff": alloc_weights["A"], "wb_eff": alloc_weights["B"]})
 
         mv = mv_at(px)
         nav_hist.append({"date": wk, "nav": cash + mv})
@@ -647,7 +770,7 @@ p("  ⑥ 非調倉日：HOLD + MARKET STATUS（無操作）")
 # 6. 安全檢查
 p("\n" + "="*100)
 p("【6. 安全檢查】（最近 20 交易日內調倉日，逐日執行）")
-check_names = ["duplicate", "conflict", "target_sum", "cash_no_overdraft", "buffer", "share_qty", "limit_up", "limit_dn", "delisted", "missing_price", "lookahead"]
+check_names = ["duplicate", "conflict", "target_sum", "cash_no_overdraft", "buffer", "exposure_band", "share_qty", "limit_up", "limit_dn", "delisted", "missing_price", "lookahead"]
 res = {k: {"pass": 0, "fail": 0, "detail": []} for k in check_names}
 for wp in recent_plans:
     ops = classify_day(wp)
@@ -681,6 +804,12 @@ for wp in recent_plans:
     else:
         res["buffer"]["fail"] += 1
         res["buffer"]["detail"].append((wp["date"].strftime("%Y-%m-%d"), round(buf*100, 1)))
+    exposure = wp.get("stock_exposure", 1 - buf)
+    if EXPOSURE_MIN <= exposure <= EXPOSURE_MAX:
+        res["exposure_band"]["pass"] += 1
+    else:
+        res["exposure_band"]["fail"] += 1
+        res["exposure_band"]["detail"].append((wp["date"].strftime("%Y-%m-%d"), round(exposure*100, 1)))
     if all(int(o["trade_sh"]) >= 0 for o in ops):
         res["share_qty"]["pass"] += 1
     else:
