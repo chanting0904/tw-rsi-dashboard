@@ -75,8 +75,8 @@ jobs:
           git add state.json index.html holidays.json check_and_run.py publish_gate.py update_data.py tg_push_b3.py ai_monitor.py ai_signals.json b3_canonical.py local_db_updater.py daily_update.py local_db/ output/
           if ! git diff --cached --quiet; then
             git commit -m "auto update page [skip ci]"
-            git pull --rebase
-            git push
+            python retry_runner.py -- git pull --rebase
+            python retry_runner.py -- git push
           fi
       - name: 明確要求 Pages 重建（bot 提交不會自行觸發 Pages）
         env:
@@ -96,8 +96,8 @@ jobs:
           git add state.json
           if ! git diff --cached --quiet; then
             git commit -m "record telegram delivery [skip ci]"
-            git pull --rebase
-            git push
+            python retry_runner.py -- git pull --rebase
+            python retry_runner.py -- git push
           fi
       - name: 失敗狀態上網（保留上一份訊號）
         if: failure()
