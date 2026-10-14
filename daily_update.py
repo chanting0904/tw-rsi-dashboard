@@ -5,6 +5,8 @@ TWSE+TPEx 官方免費源（台灣/本機最穩）-> FinLab（國外 runner 兜�
 本版（B3 canonical）：另寫 output/prices.json 供 Web 顯示每日最新價（持股買賣不變）。"""
 import os, re, sys, json, ssl, urllib.request
 from datetime import datetime
+from zoneinfo import ZoneInfo
+from publish_gate import load_holidays, last_trading_day_of_week
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(HERE, "RSI選股器.html")
@@ -98,7 +100,7 @@ def codes_of(d):
     return out
 
 
-def update_file(path, px, sig):
+def update_file(path, px, sig, expected_rebal_date):
     html = open(path, encoding="utf-8").read()
     m, d = read_data(html)
     for k in ("holdings_a", "holdings_b"):
@@ -107,6 +109,7 @@ def update_file(path, px, sig):
             if c in px:
                 h["px"] = px[c]
     d["px_date"] = sig
+    d["expected_rebal_date"] = expected_rebal_date
     d.setdefault("rebal_date", d.get("sig_date"))
     d["generated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M")
     new = json.dumps(d, ensure_ascii=False)
@@ -118,6 +121,8 @@ def update_file(path, px, sig):
 
 def main():
     token = os.environ.get("FINLAB_TOKEN", "")
+    today_tw = datetime.now(ZoneInfo("Asia/Taipei")).date()
+    expected_rebal_date = last_trading_day_of_week(today_tw, load_holidays()).strftime("%Y-%m-%d")
     px, dstr = {}, None
     for name, fn in (("TWSE", twse_prices), ("TPEx", tpex_prices)):
         try:
@@ -155,7 +160,7 @@ def main():
     sig = "%s-%s-%s" % (dstr[:4], dstr[4:6], dstr[6:8])
     for p in (SRC, IDX):
         if os.path.exists(p):
-            update_file(p, px, sig)
+            update_file(p, px, sig, expected_rebal_date)
             print("[OK] 已更新", os.path.basename(p), "->", sig)
     # [B3 canonical] 同步寫 output/prices.json（供 Web 每日股價顯示）
     try:
