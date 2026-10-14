@@ -657,7 +657,14 @@ HTML = HTML.replace("__DATA_JSON__", DATA_JSON)
 
 # 統一僅輸出 index.html（GitHub Pages 唯一入口）；RSI選股器.html 為舊名冗餘檔，不再生成
 for _name in ("index.html",):
-    with open(_name, "w", encoding="utf-8") as f:
-        f.write(HTML)
+    _tmp = _name + ".tmp"
+    try:
+        with open(_tmp, "w", encoding="utf-8") as f:
+            f.write(HTML)
+        os.replace(_tmp, _name)  # 原子替換：中斷時仍保留上一份完整網頁
+    except Exception:
+        if os.path.exists(_tmp):
+            os.remove(_tmp)
+        raise
     print(f"[OK] 已生成 {_name}（{len(HTML):,} bytes | rebal {DATA.get('rebal_date')} | px {DATA.get('px_date')} | counts {DATA.get('counts')}）")
 print("完成。")

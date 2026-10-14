@@ -11,9 +11,7 @@ from publish_gate import load_holidays, last_trading_day_of_week
 HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(HERE, "RSI選股器.html")
 IDX = os.path.join(HERE, "index.html")
-CTX = ssl.create_default_context()
-CTX.check_hostname = False
-CTX.verify_mode = ssl.CERT_NONE
+CTX = ssl.create_default_context()  # 保留憑證驗證，避免接收被冒充的行情資料
 HDR = {"User-Agent": "Mozilla/5.0"}
 
 
