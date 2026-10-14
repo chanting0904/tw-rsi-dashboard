@@ -23,7 +23,7 @@ US_WATCH = {"MSFT": "0000789019", "GOOGL": "0001652044", "META": "0001326801", "
 US_NAMES = {"MSFT": "微軟", "GOOGL": "Google", "META": "Meta", "AMZN": "亞馬遜"}
 US_TICKERS = {"MSFT": "MSFT", "GOOGL": "GOOGL", "META": "META", "AMZN": "AMZN"}
 
-CTX = ssl.create_default_context(); CTX.check_hostname = False; CTX.verify_mode = ssl.CERT_NONE
+CTX = ssl.create_default_context()
 
 
 def load_cfg():
@@ -209,9 +209,10 @@ def main():
     ai["note"] = "capex 由 ai_capex.py 每季自動更新（FinLab 台廠 + SEC 美系）；monet/cowos 每季法說會後手動更新"
     json.dump(ai, io.open(AI_FILE, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 
-    print(f"capex 狀態: {status} (chg {capex_chg*100:.1f}%)")
-    print("台廠:", {c: tw[c][1] for c in TW_WATCH})
-    print("台廠prev:", {c: tw[c][2] for c in TW_WATCH})
+    chg_text = f"{capex_chg*100:.1f}%" if capex_chg is not None else "無有效資料"
+    print(f"capex 狀態: {status} (chg {chg_text})")
+    print("台廠:", {c: tw.get(c, (None, None, None))[1] for c in TW_WATCH})
+    print("台廠prev:", {c: tw.get(c, (None, None, None))[2] for c in TW_WATCH})
     print("美系:", {k: v["v"] for k, v in us.items()})
     print("美系prev:", {k: v["prev"] for k, v in us.items()})
     print("chgs:", chgs)

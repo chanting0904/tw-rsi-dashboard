@@ -7,6 +7,7 @@ import os, re, sys, json, ssl, urllib.request
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from publish_gate import load_holidays, last_trading_day_of_week
+from market_dates import quote_date
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(HERE, "RSI選股器.html")
@@ -38,7 +39,7 @@ def twse_prices():
                     pass
     if not px:
         raise RuntimeError("TWSE 無價格")
-    return px, str(j.get("date"))
+    return px, quote_date(j.get("date")).replace("-", "")
 
 
 def tpex_prices():
@@ -56,7 +57,7 @@ def tpex_prices():
     if not px:
         raise RuntimeError("TPEx 無價格")
     if dstr:
-        dstr = "%04d%s" % (int(dstr[:3]) + 1911, dstr[3:])
+        dstr = quote_date(dstr).replace("-", "")
     return px, dstr
 
 
@@ -64,6 +65,7 @@ def finlab_prices(token):
     import finlab
     from finlab import data
     finlab.login(api_token=token)
+    data.set_storage(data.FileStorage(os.path.join(HERE, "finlab_db")))
     raw = data.get("price:收盤價")
     last = raw.dropna(how="all").index[-1]
     row = raw.loc[last]
@@ -73,17 +75,19 @@ def finlab_prices(token):
 
 def yf_prices(codes):
     import yfinance as yf
-    out = {}
+    out, dates = {}, {}
     for c in codes:
         for suf in (".TW", ".TWO"):
             try:
                 h = yf.Ticker(c + suf).history(period="5d")
                 if len(h):
                     out[c] = float(h["Close"].iloc[-1])
+                    dates[c] = h.index[-1].strftime("%Y%m%d")
                     break
             except Exception:
                 pass
-    return out
+    newest = max(dates.values()) if dates else None
+    return {c: value for c, value in out.items() if dates[c] == newest}, newest
 
 
 def read_data(html):
@@ -106,6 +110,8 @@ def update_file(path, px, sig, expected_rebal_date):
             c = str(h.get("code"))
             if c in px:
                 h["px"] = px[c]
+                h["px_date"] = sig
+    d["price_warnings"] = [f"{c} 沒有本次行情，請查看該檔價格日期" for c in codes_of(d) if c not in px]
     d["px_date"] = sig
     d["expected_rebal_date"] = expected_rebal_date
     d.setdefault("rebal_date", d.get("sig_date"))
@@ -120,17 +126,24 @@ def update_file(path, px, sig, expected_rebal_date):
 def main():
     token = os.environ.get("FINLAB_TOKEN", "")
     today_tw = datetime.now(ZoneInfo("Asia/Taipei")).date()
-    expected_rebal_date = last_trading_day_of_week(today_tw, load_holidays()).strftime("%Y-%m-%d")
+    last_day = last_trading_day_of_week(today_tw, load_holidays())
+    expected_rebal_date = last_day.isoformat() if last_day else None
     px, dstr = {}, None
+    batches = []
     for name, fn in (("TWSE", twse_prices), ("TPEx", tpex_prices)):
         try:
             p, d = fn()
-            px.update(p)
+            batches.append((p, d))
             if d:
                 dstr = max(dstr, d) if dstr else d
             print(f"[OK] {name} OK {len(p)}")
         except Exception as e:
             print(f"[FAIL] {name}: {e}")
+    for prices, day in batches:
+        if day == dstr:
+            px.update(prices)
+        else:
+            print(f"[WARN] 不混用 {day} 與 {dstr} 的行情")
     if not px and token:
         try:
             px, dstr = finlab_prices(token)
@@ -142,7 +155,7 @@ def main():
             for p in (SRC, IDX):
                 if os.path.exists(p):
                     _, d = read_data(open(p, encoding="utf-8").read())
-                    px = yf_prices(codes_of(d))
+                    px, dstr = yf_prices(codes_of(d))
                     if px:
                         break
             if px:
@@ -154,7 +167,7 @@ def main():
         sys.exit(1)
 
     if not dstr:
-        dstr = datetime.now().strftime("%Y%m%d")
+        raise RuntimeError("價格來源沒有資料日期，不將舊行情標成今天")
     sig = "%s-%s-%s" % (dstr[:4], dstr[4:6], dstr[6:8])
     for p in (SRC, IDX):
         if os.path.exists(p):

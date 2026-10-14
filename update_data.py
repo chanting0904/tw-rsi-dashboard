@@ -64,7 +64,7 @@ if os.path.isdir("output/history"):
 
 # ---------- 2. 每日股價（output/prices.json，daily_update.py 產）----------
 prices = {}
-px_date = SIG.get("rebal_date")
+px_date = SIG.get("price_basis_date") or SIG.get("rebalance_date")
 if os.path.exists("output/prices.json"):
     try:
         with open("output/prices.json", encoding="utf-8") as f:
@@ -93,17 +93,19 @@ for a in SIG.get("actions", []):
         "estimated_buy_amount": a["estimated_buy_amount"],
         "estimated_sell_amount": a["estimated_sell_amount"],
         "px": prices.get(a["stock_code"]) or a["price"],
+        "px_date": px_date if a["stock_code"] in prices else SIG.get("price_basis_date", SIG.get("rebalance_date")),
     }
     if a["channel"] == "A":
         holdings_a.append(item)
     else:
         holdings_b.append(item)
 
+week_last = last_trading_day_of_week(datetime.datetime.now(ZoneInfo("Asia/Taipei")).date(), load_holidays())
 DATA = {
     "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
-    "expected_rebal_date": last_trading_day_of_week(
-        datetime.datetime.now(ZoneInfo("Asia/Taipei")).date(), load_holidays()
-    ).strftime("%Y-%m-%d"),
+    "expected_rebal_date": week_last.isoformat() if week_last else None,
+    "signal_mode": SIG.get("signal_mode", "CLOSE_SIMULATION"),
+    "price_basis_date": SIG.get("price_basis_date") or SIG.get("rebalance_date"),
     "strategy_version": SIG.get("strategy_version", "B3"),
     "sig_date": SIG.get("sig_date"),
     "rebal_date": SIG.get("rebalance_date"),
@@ -116,7 +118,7 @@ DATA = {
     "buy_total": SIG.get("buy_total", 0), "sell_total": SIG.get("sell_total", 0),
     "cash": SIG.get("cash", 0), "buffer": SIG.get("buffer", 0),
     "portfolio_value": SIG.get("portfolio_value", 0),
-    "warnings": SIG.get("warnings", []),
+    "warnings": SIG.get("warnings", []) + [f"{a['stock_code']} 沒有最新行情，沿用訊號基準價格" for a in SIG.get("actions", []) if a["action"] != "SELL" and a["stock_code"] not in prices],
     "holdings_a": holdings_a, "holdings_b": holdings_b, "sells": sells,
     "history": history,
     "perf": perf,
@@ -320,7 +322,7 @@ function tgtShares(h) {
   return (px > 0) ? Math.floor(AMT(h.target_weight || 0) / px) : 0;
 }
 function tgtAmount(h) { return h.action === "SELL" ? 0 : AMT(h.target_weight || 0); }
-function is25(h) { return h.action === "REBALANCE_BUY" || h.action === "REBALANCE_SELL"; }
+function is25(h) { return (h.action === "REBALANCE_BUY" || h.action === "REBALANCE_SELL") && !(h.reason || "").startsWith("PORTFOLIO_BAND_"); }
 
 /* ================= 排序（B3 權重不變，僅排列） ================= */
 function cmp(a, b) { return a < b ? -1 : (a > b ? 1 : 0); }
@@ -347,7 +349,7 @@ const SORTER = {
 };
 
 /* ================= meta / 警告 / 開關 ================= */
-$("m-rebal").textContent = DATA.rebal_date ? DATA.rebal_date + "（訊號基準 " + DATA.sig_date + "）｜版本 " + (DATA.sig_commit_sha || "—") : "—";
+$("m-rebal").textContent = DATA.rebal_date ? DATA.rebal_date + "（訊號基準 " + DATA.sig_date + "）｜版本 " + (DATA.sig_commit_sha || "—") + (DATA.signal_mode === "PRE_CLOSE_PLAN" ? "｜收盤調倉計畫，股數按基準日價格試算" : "｜收盤模擬結果") : "—";
 $("m-px").textContent = DATA.px_date || "—";
 
 const warns = DATA.warnings || [];
@@ -424,8 +426,8 @@ function renderCards() {
   const bufAmt = USER_CAPITAL * (DATA.buffer || 0);
   const investAmt = USER_CAPITAL - bufAmt;
   const cards = [
-    ["實盤總資產", M(USER_CAPITAL), "= 你輸入的本金", ""],
-    ["可用現金", M(bufAmt), "Buffer " + P(DATA.buffer, 1) + " × 本金", ""],
+    ["資金試算基準", M(USER_CAPITAL), "= 你輸入的資金", ""],
+    ["模擬現金試算", M(bufAmt), "模擬現金比例 " + P(DATA.buffer, 1) + " × 資金", ""],
     ["預估投入", M(investAmt), "總資產 − 現金", ""],
     ["CAGR(回測)", P(DATA.perf.cagr, 2), "B3 2015~2026", "up"],
     ["MDD(回測)", P(DATA.perf.mdd, 2), "最大回撤", "down"],
@@ -458,7 +460,7 @@ function renderOps() {
   }))});
 
   const rebSell = SORTER["REBALANCE_SELL"](g.REBALANCE_SELL||[]);
-  if (rebSell.length) blocks.push({key:"REBALANCE_SELL", title:"🟡 再減碼（25%門檻）", rows: rebSell.map(r => ({
+  if (rebSell.length) blocks.push({key:"REBALANCE_SELL", title:"🟡 再減碼（權重／總持倉調整）", rows: rebSell.map(r => ({
     code: r.code, name: r.name, rank: r.rank, px: r.px,
     weight: Math.abs(r.weight_diff||0), cls:"reb",
     line: r.name + "｜Rank " + (r.rank||"—") + "｜目標權重 " + P(r.target_weight,2) + "｜目標股數 " + F(tgtShares(r),0) + " 股（照本金 " + M(USER_CAPITAL) + "）"
@@ -472,7 +474,7 @@ function renderOps() {
   }))});
 
   const rebBuy = SORTER["REBALANCE_BUY"](g.REBALANCE_BUY||[]);
-  if (rebBuy.length) blocks.push({key:"REBALANCE_BUY", title:"🟡 再加碼（25%門檻）", rows: rebBuy.map(r => ({
+  if (rebBuy.length) blocks.push({key:"REBALANCE_BUY", title:"🟡 再加碼（權重／總持倉調整）", rows: rebBuy.map(r => ({
     code: r.code, name: r.name, rank: r.rank, px: r.px,
     weight: r.weight_diff || 0, cls:"reb",
     line: r.name + "｜Rank " + (r.rank||"—") + "｜目標權重 " + P(r.target_weight,2) + "｜目標股數 " + F(tgtShares(r),0) + " 股（照本金 " + M(USER_CAPITAL) + "）"
@@ -512,7 +514,7 @@ function renderHoldings() {
     const tgtSh = tgtShares(h);
     const pxNow = h.px || h.price || 0;
     const tgtCls = (h.action === "SELL") ? "num tgt" : "num";
-    const actBadge = ACT_LABEL[h.action] + (is25(h) ? '<span class="badge-25">25%門檻</span>' : "");
+    const actBadge = ACT_LABEL[h.action] + (is25(h) ? '<span class="badge-25">25%門檻</span>' : ((h.reason || "").startsWith("PORTFOLIO_BAND_") ? '<span class="badge-25">90–95%配置調整</span>' : ""));
     return '<tr>' +
       '<td><span class="badge ' + ACT_CLS[h.action] + '">' + actBadge + '</span></td>' +
       '<td>' + h.code + '</td><td>' + h.name + '</td>' +
@@ -522,7 +524,7 @@ function renderHoldings() {
       '<td class="num tgt">' + P(h.weight_diff, 2) + '</td>' +
       '<td class="num">' + M(tgtVal) + '</td>' +
       '<td class="' + tgtCls + '">' + F(tgtSh, 0) + '</td>' +
-      '<td class="num">' + F(pxNow, 2) + ' <span style="color:var(--dim);font-size:11px">行情</span></td>' +
+      '<td class="num">' + F(pxNow, 2) + ' <span style="color:var(--dim);font-size:11px">' + (h.px_date || DATA.price_basis_date || DATA.px_date || "") + '</span></td>' +
     '</tr>';
   }).join("");
 }
@@ -587,11 +589,13 @@ function renderHist() {
       'BUY ' + (h.counts.BUY||0) + ' / SELL ' + (h.counts.SELL||0) + ' / REBAL ' + ((h.counts.REBALANCE_BUY||0)+(h.counts.REBALANCE_SELL||0)) + ' / HOLD ' + (h.counts.HOLD||0) + '</div>' +
       (rows || '<div class="empty">該週無明細</div>');
   });
+  sel.value = DATA.history.length - 1;
+  sel.dispatchEvent(new Event("change"));
 }
 
 /* ================= B3 歷史績效互動計算器（只讀 DATA.perf NAV，不重跑回測） ================= */
 function initPerfCalc() {
-  const YEARS = [2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025,2026];
+  const YEARS = [...new Set(((DATA.perf && DATA.perf.nav) || []).map(row => Number(row[0].slice(0,4))))].sort();
   const y0 = $("pc-y0"), y1 = $("pc-y1");
   YEARS.forEach(y => { y0.appendChild(new Option(y, y)); y1.appendChild(new Option(y, y)); });
   $("pc-apply").addEventListener("click", runPerfCalc);

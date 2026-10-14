@@ -24,7 +24,7 @@ ORDER_COLS = ["week", "signal_date", "execution_date", "pool", "side", "symbol",
               "next_day_filled_qty", "next_day_fill_rate", "final_filled_qty",
               "final_fill_rate", "after_hours_price", "next_day_open_price",
               "final_avg_price", "reference_price", "slippage", "transaction_cost", "note"]
-PORT_COLS = ["week", "execution_date", "A_target_exposure", "A_actual_exposure", "A_cash",
+PORT_COLS = ["week", "execution_date", "A_target_exposure", "A_actual_exposure", "A_closing_value", "A_cash",
              "A_target_orders", "A_filled_orders", "A_unfilled_orders", "A_after_hours_fill_rate",
              "A_final_fill_rate", "A_exposure_drift", "A_cash_drag", "A_execution_slippage",
              "A_weekly_return", "A_cumulative_return", "whole_nav", "whole_exposure",
@@ -48,7 +48,8 @@ def main():
     exec_date = datetime.strptime(d["rebalance_date"], "%Y-%m-%d").date()
     sig_date = d["sig_date"]
     # ISO 週次
-    week = "W%02d" % exec_date.isocalendar()[1]
+    iso = exec_date.isocalendar()
+    week = "%d-W%02d" % (iso.year, iso.week)
 
     rows = []
     a_target_exposure = 0.0

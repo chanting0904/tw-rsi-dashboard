@@ -56,7 +56,8 @@ def main():
             # 加權成交價
             ah_p = num(r.get("after_hours_price"))
             nd_p = num(r.get("next_day_open_price"))
-            if final > 0 and not (np.isnan(ah_p) and np.isnan(nd_p)):
+            complete_prices = (ah_filled == 0 or (not np.isnan(ah_p) and ah_p > 0)) and (nd_filled == 0 or (not np.isnan(nd_p) and nd_p > 0))
+            if final > 0 and complete_prices:
                 w_sum = 0.0
                 if not np.isnan(ah_p):
                     w_sum += ah_filled * ah_p
@@ -89,15 +90,16 @@ def main():
     port = pd.read_csv(PORT_CSV, encoding="utf-8-sig") if os.path.exists(PORT_CSV) else pd.DataFrame()
     for i, r in port.iterrows():
         wk = r["week"]
-        sub = live[live["week"] == wk]
+        sub = live[(live["week"] == wk) & (live["execution_date"].astype(str) == str(r["execution_date"]))]
         a_sub = sub[sub["pool"] == "A"]
         target_orders = int(a_sub.shape[0])
         filled_orders = int((a_sub["final_filled_qty"].astype(float) > 0).sum()) if target_orders else 0
         unfilled_orders = int((a_sub["final_filled_qty"].astype(float) < a_sub["target_qty"].astype(float)).sum()) if target_orders else 0
         ah_rate = a_sub["after_hours_fill_rate"].astype(float).mean() / 100 if target_orders else np.nan
         fin_rate = a_sub["final_fill_rate"].astype(float).mean() / 100 if target_orders else np.nan
-        # A 實際曝險估算：Σ(final_filled × ref_price) / whole_nav
-        actual_val = (a_sub["final_filled_qty"].astype(float) * a_sub["reference_price"].astype(float)).sum()
+        # Orders alone do not contain carried holdings. Require a closing market
+        # value rather than treating BUY and SELL order amounts as stock exposure.
+        actual_val = num(r.get("A_closing_value"))
         nav = num(r.get("whole_nav"))
         actual_exp = actual_val / nav if not np.isnan(nav) and nav > 0 else np.nan
         target_exp = num(r.get("A_target_exposure"))
@@ -124,12 +126,9 @@ def main():
         # 週報酬（需 next 週 nav）
         port.at[i, "A_weekly_return"] = np.nan
     # 週報酬與累計
-    navs = port["whole_nav"].astype(float)
-    rets = navs.pct_change()
-    cum = (1 + rets.fillna(0)).cumprod() - 1
-    for i, r in port.iterrows():
-        port.at[i, "A_weekly_return"] = round(float(rets.iloc[i]) * 100, 2) if i > 0 else np.nan
-        port.at[i, "A_cumulative_return"] = round(float(cum.iloc[i]) * 100, 2)
+    # Whole-strategy NAV cannot establish A-channel real return from fills alone.
+    port["A_weekly_return"] = np.nan
+    port["A_cumulative_return"] = np.nan
     port.to_csv(PORT_CSV, index=False, encoding="utf-8-sig")
     print("重算完成：%d 週，%d 筆訂單" % (port.shape[0], live.shape[0]))
     print(port[["week", "execution_date", "A_target_orders", "A_after_hours_fill_rate",
