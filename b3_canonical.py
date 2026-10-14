@@ -47,6 +47,7 @@ BUY_FEE = 0.0004
 LIMIT = 0.099
 THRESH = 0.25
 BUFFER = 0.05
+EXPOSURE_MIN, EXPOSURE_MAX, EXPOSURE_AIM = 0.90, 0.95, 0.925
 MAX_HOLD_A = 15
 MAX_HOLD_B = 4
 W_A, W_B = 0.60, 0.40
@@ -221,6 +222,7 @@ def run(weekday, mode, coefs=(1.5, 1.0, 0.5), start=None, end=None, record=True)
             a_w, b_w = 1.0, 0.0
 
         # ---- 賣出：完全掉出兩通道者（原 Exit）----
+        blocked_exit_codes = []
         for c in list(pos.keys()):
             if c not in want_set:
                 p_ = float(px[c])
@@ -231,6 +233,7 @@ def run(weekday, mode, coefs=(1.5, 1.0, 0.5), start=None, end=None, record=True)
                     del pos[c]
                     continue
                 if c in limit_dn.columns and bool(limit_dn[c].get(wk, False)):
+                    blocked_exit_codes.append(str(c))
                     continue
                 reason = "FALL_OUT_TOP_POOL"
                 if c in ma60.columns and c in close.columns:
@@ -255,10 +258,29 @@ def run(weekday, mode, coefs=(1.5, 1.0, 0.5), start=None, end=None, record=True)
         pre_sh = {c: pos[c]["shares"] for c in pos}
         pre_total = cash + mv_at(px)
         total = pre_total
+        target_lists = {pool: list(want.get(pool, [])) for pool in ("A", "B")}
+        available_lists = {
+            pool: [c for c in codes if c in px.index and pd.notna(px[c]) and float(px[c]) > 0
+                   and (c in pos or c not in limit_up.columns or not bool(limit_up[c].get(wk, False)))]
+            for pool, codes in target_lists.items()
+        }
+        missing_price_targets = sum(1 for codes in target_lists.values() for c in codes
+                                    if c not in px.index or pd.isna(px[c]) or float(px[c]) <= 0)
+        blocked_limitup_targets = sum(1 for pool, codes in target_lists.items() for c in codes
+                                      if c in px.index and pd.notna(px[c]) and float(px[c]) > 0
+                                      and c not in pos and c in limit_up.columns
+                                      and bool(limit_up[c].get(wk, False)))
+        alloc_weights = {"A": a_w, "B": b_w}
+        if alloc_weights["A"] > 0 and not available_lists["A"] and available_lists["B"]:
+            alloc_weights["B"] += alloc_weights["A"]
+            alloc_weights["A"] = 0.0
+        if alloc_weights["B"] > 0 and not available_lists["B"] and available_lists["A"]:
+            alloc_weights["A"] += alloc_weights["B"]
+            alloc_weights["B"] = 0.0
         last_tv_pool = {}
         rebalance_plans = []
-        for pool, wgt in [("A", a_w), ("B", b_w)]:
-            lst = want.get(pool, [])
+        for pool, wgt in [("A", alloc_weights["A"]), ("B", alloc_weights["B"])]:
+            lst = available_lists[pool]
             if not lst or wgt <= 0:
                 continue
             if pool == "B" or (_c1 == 1.0 and _c3 == 1.0):
@@ -293,6 +315,8 @@ def run(weekday, mode, coefs=(1.5, 1.0, 0.5), start=None, end=None, record=True)
             if not cur or diff >= -p_ or abs(diff) <= tv_ * THRESH:
                 continue
             if c in limit_dn.columns and bool(limit_dn[c].get(wk, False)):
+                if str(c) not in blocked_exit_codes:
+                    blocked_exit_codes.append(str(c))
                 continue
             sh = min(int((-diff) // p_), cur["shares"])
             if sh <= 0:
@@ -305,6 +329,51 @@ def run(weekday, mode, coefs=(1.5, 1.0, 0.5), start=None, end=None, record=True)
             trades.append({"date": wk, "code": c, "pool": pool, "side": "SELL",
                            "price": p_, "shares": sh, "amount": sh * p_,
                            "reason": "REBALANCE_DOWN", "full": full, "is_new": False})
+
+        # Predict exposure after ordinary target buys. If that would exceed 95%,
+        # trim overweight holdings to their assigned target before executing buys.
+        projected_cash = cash
+        projected_mv = mv_at(px)
+        for pool, c, tv_, p_, _ in rebalance_plans:
+            cur = pos.get(c)
+            cur_sh = cur["shares"] if cur else 0
+            diff = tv_ - cur_sh * p_
+            if diff <= p_ or (cur and abs(diff) <= tv_ * THRESH):
+                continue
+            if c in limit_up.columns and bool(limit_up[c].get(wk, False)):
+                continue
+            sh = min(int(diff // p_), int(projected_cash // (p_ * (1 + BUY_FEE))))
+            projected_cash -= sh * p_ * (1 + BUY_FEE)
+            projected_mv += sh * p_
+        projected_nav = projected_cash + projected_mv
+        if projected_nav > 0 and projected_mv / projected_nav > EXPOSURE_MAX:
+            for pool, c, tv_, p_, _ in rebalance_plans:
+                if c not in pos or p_ <= 0:
+                    continue
+                if c in limit_dn.columns and bool(limit_dn[c].get(wk, False)):
+                    if str(c) not in blocked_exit_codes:
+                        blocked_exit_codes.append(str(c))
+                    continue
+                target_sh = int(tv_ // p_)
+                excess_sh = max(0, pos[c]["shares"] - target_sh)
+                if excess_sh <= 0:
+                    continue
+                projected_nav = projected_cash + projected_mv
+                if projected_nav <= 0 or projected_mv / projected_nav <= EXPOSURE_MAX:
+                    break
+                need = max(0.0, (projected_mv - EXPOSURE_MAX * projected_nav) /
+                           (1 - EXPOSURE_MAX * SELL_FEE))
+                sh = min(excess_sh, max(1, int(np.ceil(need / p_))))
+                cash += sh * p_ * (1 - SELL_FEE)
+                projected_cash += sh * p_ * (1 - SELL_FEE)
+                pos[c]["shares"] -= sh
+                projected_mv -= sh * p_
+                full = pos[c]["shares"] == 0
+                if full:
+                    del pos[c]
+                trades.append({"date": wk, "code": c, "pool": pool, "side": "SELL",
+                               "price": p_, "shares": sh, "amount": sh * p_,
+                               "reason": "PORTFOLIO_BAND_TRIM", "full": full, "is_new": False})
 
         # Buy to target only when the existing 25% drift rule says to trade.
         # Account for the declared buy commission both in cash availability and NAV.
@@ -332,12 +401,53 @@ def run(weekday, mode, coefs=(1.5, 1.0, 0.5), start=None, end=None, record=True)
                            "rank": want_rank.get(c, 8), "is_new": not bool(cur),
                            "reason": ""})
 
+        # The per-stock 25% drift rule can leave too much cash across many names.
+        # Only when aggregate exposure falls below 90%, top up eligible targets in
+        # strategy order toward 92.5%, never beyond their assigned target weights.
+        mv_now = mv_at(px)
+        nav_now = cash + mv_now
+        if nav_now > 0 and mv_now / nav_now < EXPOSURE_MIN:
+            for pool, c, tv_, p_, _ in rebalance_plans:
+                if p_ <= 0:
+                    continue
+                if c in limit_up.columns and bool(limit_up[c].get(wk, False)):
+                    continue
+                cur = pos.get(c)
+                cur_sh = cur["shares"] if cur else 0
+                target_sh = int(tv_ // p_)
+                gap_sh = max(0, target_sh - cur_sh)
+                if gap_sh <= 0:
+                    continue
+                mv_now = mv_at(px)
+                nav_now = cash + mv_now
+                need = max(0.0, (EXPOSURE_AIM * nav_now - mv_now) /
+                           (1 + EXPOSURE_AIM * BUY_FEE))
+                sh = min(gap_sh, int(need // p_), int(cash // (p_ * (1 + BUY_FEE))))
+                if sh <= 0:
+                    continue
+                cash -= sh * p_ * (1 + BUY_FEE)
+                if cur:
+                    cur["shares"] = cur_sh + sh
+                    cur["avg"] = (cur_sh * cur["avg"] + sh * p_ * (1 + BUY_FEE)) / (cur_sh + sh)
+                else:
+                    pos[c] = {"shares": sh, "avg": p_ * (1 + BUY_FEE), "pool": pool,
+                              "wc": coef_of(want_rank.get(c, 8)), "rank": want_rank.get(c, 8),
+                              "entry_d": wk}
+                trades.append({"date": wk, "code": c, "pool": pool, "side": "BUY",
+                               "price": p_, "shares": sh, "amount": sh * p_,
+                               "rank": want_rank.get(c, 8), "is_new": not bool(cur),
+                               "reason": "PORTFOLIO_BAND_TOPUP"})
+                mv_now = mv_at(px)
+                nav_now = cash + mv_now
+                if mv_now / nav_now >= EXPOSURE_AIM:
+                    break
+
         # ---- 每週調倉決策明細（實盤信號輸出用）----
         if record:
             total2 = cash + mv_at(px)
             plan_recs = []
-            for pool, wgt in [("A", a_w), ("B", b_w)]:
-                lst = want.get(pool, [])
+            for pool, wgt in [("A", alloc_weights["A"]), ("B", alloc_weights["B"])]:
+                lst = available_lists[pool]
                 if not lst or wgt <= 0:
                     continue
                 if pool == "B" or (_c1 == 1.0 and _c3 == 1.0):
@@ -368,7 +478,20 @@ def run(weekday, mode, coefs=(1.5, 1.0, 0.5), start=None, end=None, record=True)
                                       "pre_sh": pre_sh_, "pre_val": pre_sh_ * p_,
                                       "pre_total": pre_total, "nav": total2,
                                       "price": p_})
-            weekly_plans.append({"date": wk, "cash": cash, "nav": total2, "recs": plan_recs})
+            exposure = mv_at(px) / total2 if total2 > 0 else 0.0
+            planned_codes = {c for _, c, _, _, _ in rebalance_plans}
+            unplanned_holdings = [
+                {"code": str(c), "market_value": round(pos[c]["shares"] * float(px[c]), 0)}
+                for c in pos if c not in planned_codes and c in px.index and pd.notna(px[c]) and float(px[c]) > 0
+            ]
+            weekly_plans.append({"date": wk, "cash": cash, "nav": total2, "recs": plan_recs,
+                                 "stock_exposure": exposure,
+                                 "exposure_in_band": EXPOSURE_MIN <= exposure <= EXPOSURE_MAX,
+                                 "missing_price_targets": missing_price_targets,
+                                 "blocked_limitup_targets": blocked_limitup_targets,
+                                 "blocked_exit_codes": blocked_exit_codes,
+                                 "unplanned_holdings": unplanned_holdings,
+                                 "wa_eff": alloc_weights["A"], "wb_eff": alloc_weights["B"]})
 
         mv = mv_at(px)
         nav_hist.append({"date": wk, "nav": cash + mv})
@@ -531,8 +654,8 @@ r = run(5, "close", B3)
 p(f"\n【B3 整段驗證】CAGR {r['cagr']*100:.2f}% | MDD {r['mdd']*100:.2f}% | Sharpe {r['sharpe']:.2f} | "
   f"Sortino {r['sortino']:.2f} | Calmar {r['calmar']:.2f} | PF {r['pf']:.2f} | 勝率 {r['winrate']:.1f}% | "
   f"交易 {r['trades']} | Turnover {r['turnover']:.2f}")
-ok_b = abs(r["cagr"] * 100 - 39.96) < 1.0 and abs(r["mdd"] * 100 + 35.06) < 1.0
-p(f"與 B3 含費用基準一致性：{'✅ 一致' if ok_b else '❌ 不一致（需查）'}（基準 39.96% / -35.06%，容差 ±1.0pp）")
+ok_b = abs(r["cagr"] * 100 - 38.69) < 1.0 and abs(r["mdd"] * 100 + 35.64) < 1.0
+p(f"與 B3 含費用及 90–95%曝險模擬基準一致性：{'✅ 一致' if ok_b else '❌ 不一致（需查）'}（基準 38.69% / -35.64%，容差 ±1.0pp）")
 
 trades_df = r["trades_df"]
 plans = r["weekly_plans"]
@@ -543,7 +666,18 @@ def classify_day(wp):
     day_trades = trades_df[trades_df["date"] == tdate]
     tm = {}
     for _, t in day_trades.iterrows():
-        tm[t["code"]] = t
+        code = t["code"]
+        if code in tm and tm[code]["side"] == t["side"]:
+            merged = tm[code].copy()
+            merged["shares"] = int(merged["shares"]) + int(t["shares"])
+            merged["amount"] = float(merged["amount"]) + float(t["amount"])
+            merged["full"] = bool(t.get("full", merged.get("full", False)))
+            merged["is_new"] = bool(merged.get("is_new", False) or t.get("is_new", False))
+            if t.get("reason"):
+                merged["reason"] = t["reason"]
+            tm[code] = merged
+        else:
+            tm[code] = t
     ops = []
     for rec in wp["recs"]:
         t = tm.get(rec["code"])
@@ -555,7 +689,8 @@ def classify_day(wp):
                 ops.append({**base, "action": "HOLD", "trade_sh": 0, "amount": 0, "reason": ""})
         elif t["side"] == "BUY":
             ops.append({**base, "action": "BUY" if t["is_new"] else "REBALANCE_BUY",
-                        "trade_sh": int(t["shares"]), "amount": float(t["amount"]), "reason": ""})
+                        "trade_sh": int(t["shares"]), "amount": float(t["amount"]),
+                        "reason": t.get("reason", "")})
         else:
             ops.append({**base, "action": "SELL" if t["full"] else "REBALANCE_SELL",
                         "trade_sh": int(t["shares"]), "amount": float(t["amount"]),
@@ -613,6 +748,23 @@ def canonical_for(wp):
     sell_total = sum(a["estimated_sell_amount"] for a in acts)
     nb_b = len({a["stock_code"] for a in acts if a["channel"] == "B"})
     warnings = []
+    base_a_w = 0.60 if sw_tsm.get(wp["date"], False) else 1.0
+    base_b_w = 0.40 if sw_tsm.get(wp["date"], False) else 0.0
+    exposure = float(wp.get("stock_exposure", 0.0))
+    if not (EXPOSURE_MIN <= exposure <= EXPOSURE_MAX):
+        warnings.append(f"調倉後持倉 {exposure*100:.1f}% 未落在 90–95% 目標區間；請檢查交易限制或可買目標股數")
+    if wp.get("missing_price_targets", 0):
+        warnings.append(f"有 {wp['missing_price_targets']} 檔目標股缺少有效價格，已把該通道權重重新分配給可計價標的")
+    if wp.get("blocked_limitup_targets", 0):
+        warnings.append(f"有 {wp['blocked_limitup_targets']} 檔新目標股漲停無法買進，其配置已分給其他可買標的")
+    if wp.get("blocked_exit_codes"):
+        blocked = sorted(set(wp["blocked_exit_codes"]))
+        warnings.append(f"有 {len(blocked)} 檔持股跌停賣不出，仍暫留模擬持倉：{'、'.join(blocked)}")
+    if wp.get("unplanned_holdings"):
+        codes = '、'.join(h['code'] for h in wp['unplanned_holdings'])
+        warnings.append(f"有未列入本週目標的持股仍留在模擬帳戶：{codes}")
+    if abs(float(wp.get("wa_eff", base_a_w)) - base_a_w) > 1e-9 or abs(float(wp.get("wb_eff", base_b_w)) - base_b_w) > 1e-9:
+        warnings.append(f"通道配置因另一通道沒有可計價標的而調整：A {float(wp.get('wa_eff', base_a_w))*100:.0f}% / B {float(wp.get('wb_eff', base_b_w))*100:.0f}%")
     if 0 < nb_b < 4:
         warnings.append(f"B 通道僅 {nb_b} 檔，單檔權重放大至 95%×40%/{nb_b} ≈ {0.95*0.4/nb_b*100:.1f}%，集中度較高")
     if counts["BUY"] + counts["REBALANCE_BUY"] == 0 and counts["SELL"] + counts["REBALANCE_SELL"] == 0:
@@ -625,10 +777,11 @@ def canonical_for(wp):
         "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "commit_sha": _commit_sha(),
         "tsm_on": bool(sw_tsm.get(wp["date"], False)),
-        "wa_eff": round(0.60 if sw_tsm.get(wp["date"], False) else 1.0, 3),
-        "wb_eff": round(0.40 if sw_tsm.get(wp["date"], False) else 0.0, 3),
+        "wa_eff": round(float(wp.get("wa_eff", 0.60 if sw_tsm.get(wp["date"], False) else 1.0)), 3),
+        "wb_eff": round(float(wp.get("wb_eff", 0.40 if sw_tsm.get(wp["date"], False) else 0.0)), 3),
         "cash": round(float(wp["cash"]), 0),
         "buffer": round(float(wp["cash"]) / float(wp["nav"]), 4),
+        "stock_exposure": round(exposure, 4),
         "portfolio_value": round(float(wp["nav"]), 0),
         "buy_total": round(buy_total, 0),
         "sell_total": round(sell_total, 0),
@@ -677,7 +830,7 @@ with open(os.path.join(HERE, "output", "perf.json"), "w", encoding="utf-8") as f
 p(f"【canonical】perf.json 已輸出（CAGR {perf['cagr']*100:.2f}% | MDD {perf['mdd']*100:.2f}%）")
 
 # ---- validation ----
-check_names = ["duplicate", "conflict", "target_sum", "cash_no_overdraft", "buffer",
+check_names = ["duplicate", "conflict", "target_sum", "cash_no_overdraft", "buffer", "exposure_band",
                "share_qty", "limit_up", "limit_dn", "delisted", "missing_price", "lookahead"]
 res = {k: {"pass": 0, "fail": 0, "detail": []} for k in check_names}
 
@@ -705,6 +858,10 @@ def run_checks(wp):
         res["cash_no_overdraft"]["detail"].append(str(wp["date"]))
     res["buffer"]["pass"] += 1
     res["buffer"]["detail"].append((wp["date"].strftime("%Y-%m-%d"), round(wp["cash"] / wp["nav"] * 100, 1)))
+    exposure = (wp["nav"] - wp["cash"]) / wp["nav"] if wp["nav"] > 0 else 0.0
+    res["exposure_band"]["pass" if EXPOSURE_MIN <= exposure <= EXPOSURE_MAX else "fail"] += 1
+    if not (EXPOSURE_MIN <= exposure <= EXPOSURE_MAX):
+        res["exposure_band"]["detail"].append((wp["date"].strftime("%Y-%m-%d"), round(exposure * 100, 1)))
     res["share_qty"]["pass" if all(int(o["trade_sh"]) >= 0 for o in ops) else "fail"] += 1
     if not all(int(o["trade_sh"]) >= 0 for o in ops):
         res["share_qty"]["detail"].append(str(wp["date"]))
@@ -788,12 +945,13 @@ if latest_c["rebalance_date"] == "2026-10-02":
 
 # limit_dn（疑似跌停買單）列為「警告」不阻擋：跌停不一定買不到（開盤未跌停可成交），
 # 誤擋會阻斷正常調倉。其餘硬性檢查（limit_up/missing_price/delisted/lookahead 等）維持阻擋。
-fail_list = [k for k in check_names if k != "limit_dn" and res[k]["fail"] > 0]
+fail_list = [k for k in check_names if k not in ("limit_dn", "exposure_band") and res[k]["fail"] > 0]
+warning_checks = [k for k in ("limit_dn", "exposure_band") if res[k]["fail"] > 0]
 val_log = {"strategy_version": "B3", "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
            "rebalance_date": latest_c["rebalance_date"],
            "b3_consistency": bool(ok_b),
            "regression_10_02": {"pass": bool(reg_ok), "detail": reg_msgs},
-           "warning_checks": ["limit_dn"] if res["limit_dn"]["fail"] > 0 else [],
+           "warning_checks": warning_checks,
            "checks": {k: {"pass": res[k]["pass"], "fail": res[k]["fail"],
                           "detail": res[k]["detail"][:5]} for k in check_names},
            "verdict": "PASS" if (ok_b and reg_ok and not fail_list) else "FAIL"}
@@ -816,6 +974,6 @@ with open(_tmp, "w", encoding="utf-8") as f:
 os.replace(_tmp, os.path.join(HERE, "output", "latest_signals.json"))
 p(f"\n【canonical】latest_signals.json 已輸出（rebalance_date={latest_c['rebalance_date']}）")
 p(f"  counts={latest_c['counts']} | 買 {latest_c['buy_total']:,.0f} | 賣 {latest_c['sell_total']:,.0f} | "
-  f"現金 {latest_c['cash']:,.0f} | Buffer {latest_c['buffer']*100:.1f}%")
+  f"現金 {latest_c['cash']:,.0f} | Buffer {latest_c['buffer']*100:.1f}% | 股票持倉 {latest_c['stock_exposure']*100:.1f}%")
 OUT.close()
 print("\n✅ validation 全過 — canonical 已就緒（output/）")
