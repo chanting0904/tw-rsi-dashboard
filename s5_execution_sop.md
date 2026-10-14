@@ -124,6 +124,6 @@ S5 的解法很簡單：
 | `s5_live/S5_live_20w.csv` | 20 週累計訂單紀錄 |
 | `s5_live/S5_live_20w_portfolio.csv` | 20 週累計組合層紀錄 |
 | `s5_live/s5_20w_evaluate.py` | 20 週後評估（Q1-Q10＋判定） |
-| `S5_execution_SOP.md` | 本文件 |
+| `s5_execution_sop.md` | 本文件 |
 
 所有路徑皆相對於 B3 專案根目錄；腳本會依自身位置自動找到專案，不需固定安裝在特定磁碟或資料夾。
