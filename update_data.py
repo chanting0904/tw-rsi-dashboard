@@ -386,6 +386,10 @@ function renderFreshnessStatus() {
   $("weekly-title").textContent = result.title;
   $("weekly-detail").textContent = result.detail;
   $("ops-title").textContent = result.state === 'ready' ? '📋 本週我要做什麼' : '📋 最近一期模擬清單（本週尚未確認）';
+  if ($('cards').childElementCount) {
+    renderCards();
+    renderSellNote();
+  }
 }
 renderFreshnessStatus();
 async function refreshWeeklyStatus() {
@@ -450,6 +454,7 @@ const HOLD_ROWS = allHolds().concat((DATA.sells||[]).map(s => ({
 
 /* ================= 頂部卡片（金額全依本金） ================= */
 function renderCards() {
+  const period = weeklyReadiness(DATA, taipeiDate(), publicWeeklyStatus).state === 'ready' ? '本週' : '最近一期';
   const c = DATA.counts || {};
   const bufAmt = USER_CAPITAL * (DATA.buffer || 0);
   const investAmt = USER_CAPITAL - bufAmt;
@@ -459,8 +464,8 @@ function renderCards() {
     ["預估投入", M(investAmt), "總資產 − 現金", ""],
     ["CAGR(回測)", P(DATA.perf.cagr, 2), "B3 2015~2026", "up"],
     ["MDD(回測)", P(DATA.perf.mdd, 2), "最大回撤", "down"],
-    ["本週買進", (c.BUY||0) + " 檔", "🟢 BUY", "up"],
-    ["本週賣出", (c.SELL||0) + " 檔", "🔴 SELL", "down"],
+    [period + "買進", (c.BUY||0) + " 檔", "🟢 BUY", "up"],
+    [period + "賣出", (c.SELL||0) + " 檔", "🔴 SELL", "down"],
     ["加碼/減碼", (c.REBALANCE_BUY||0) + "/" + (c.REBALANCE_SELL||0), "🟡 25%調倉", ""],
     ["持有不動", (c.HOLD||0) + " 檔", "⚪ HOLD", ""],
   ];
@@ -558,9 +563,10 @@ function renderHoldings() {
 }
 
 function renderSellNote() {
+  const period = weeklyReadiness(DATA, taipeiDate(), publicWeeklyStatus).state === 'ready' ? '本週' : '最近一期';
   $("sellnote").innerHTML = (DATA.sells||[]).length
-    ? "🔴 本週賣出 " + (DATA.sells||[]).length + " 檔：" + (DATA.sells||[]).map(s => s.name + "（" + (s.reason||"") + "）").join("、")
-    : "本週無賣出。";
+    ? "🔴 " + period + "賣出 " + (DATA.sells||[]).length + " 檔：" + (DATA.sells||[]).map(s => s.name + "（" + (s.reason||"") + "）").join("、")
+    : period + "無賣出。";
 }
 
 /* ================= 績效圖（回測口徑，不隨本金） ================= */
