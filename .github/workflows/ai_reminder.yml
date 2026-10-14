@@ -23,7 +23,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: 安裝依賴
-        run: pip install -q yfinance finlab pandas numpy
+        run: pip install -q -r requirements.txt
       - name: 自動更新 capex（FinLab 台廠 + yfinance/SEC 美系）
         env:
           FINLAB_TOKEN: ${{ secrets.FINLAB_TOKEN }}
@@ -40,4 +40,5 @@ jobs:
           git config user.email "bot@rsi.local"
           git add ai_signals.json
           git commit -m "auto update ai capex [skip ci]" || echo "無變更"
+          git pull --rebase
           git push

@@ -8,6 +8,15 @@
 """
 import os
 HERE = os.path.dirname(os.path.abspath(__file__))
+OUTPUT_DIR = os.environ.get("B3_OUTPUT_DIR", os.path.join(HERE, "output"))
+import argparse
+from zoneinfo import ZoneInfo
+from publish_gate import load_holidays
+from live_plan import prepare_prices, completed_week_days
+parser = argparse.ArgumentParser()
+parser.add_argument("--live-rebalance", help="Produce a previous-close plan for this execution date")
+args = parser.parse_args()
+LIVE_DAY = SIGNAL_DAY = None
 import pandas as pd
 import numpy as np
 import finlab, json, warnings
@@ -36,7 +45,7 @@ if not TOKEN:
 finlab.login(api_token=TOKEN)
 # [流量節省] 用本地/CI cache storage（finlab_db），避免每週全量重載爆 2000MB 上限
 try:
-    data.set_storage(data.FileStorage(os.path.join(HERE, "finlab_db")))
+    data.set_storage(data.FileStorage(os.path.join(os.environ.get("B3_DATA_ROOT", HERE), "finlab_db")))
 except Exception:
     pass
 
@@ -61,6 +70,9 @@ low = data.get("price:最低價").apply(pd.to_numeric, errors="coerce")
 roe_raw = data.get("fundamental_features:ROE稅後")
 roe_f = roe_raw.apply(pd.to_numeric, errors="coerce")
 tv = data.get("price:成交金額").apply(pd.to_numeric, errors="coerce")
+if args.live_rebalance:
+    close, open_, high, low, tv, LIVE_DAY, SIGNAL_DAY = prepare_prices(
+        close, open_, high, low, tv, args.live_rebalance, load_holidays())
 
 def common(c):
     s = str(c)
@@ -141,7 +153,7 @@ if "2330" in close.columns:
 days_all = close.index
 weeks = close.resample("W-FRI").last().index
 weeks = weeks[weeks >= pd.Timestamp(START_DATE)]
-days = pd.DatetimeIndex([days_all[days_all <= w][-1] for w in weeks if (days_all <= w).any()])
+days = completed_week_days(days_all, weeks, load_holidays())
 
 def pick_days(weekday=5):
     if weekday == 5:
@@ -201,7 +213,7 @@ def run(weekday, mode, coefs=(1.5, 1.0, 0.5), start=None, end=None, record=True)
         if b_w > 0:
             tB = targetB.loc[wk]
             codesB = [c for c in tB[tB].index.tolist() if cap_pass(c)]
-            tvw_ = tv20.loc[wk]
+            tvw_ = tv20.shift(1).loc[wk]
             scoredB = sorted(codesB, key=lambda c: float(tvw_[c]) if pd.notna(tvw_[c]) else -1, reverse=True)
             want["B"] = scoredB[:MAX_HOLD_B]
         else:
@@ -484,6 +496,16 @@ def run(weekday, mode, coefs=(1.5, 1.0, 0.5), start=None, end=None, record=True)
                 {"code": str(c), "market_value": round(pos[c]["shares"] * float(px[c]), 0)}
                 for c in pos if c not in planned_codes and c in px.index and pd.notna(px[c]) and float(px[c]) > 0
             ]
+            for holding in unplanned_holdings:
+                code = holding["code"]
+                shares = pos[code]["shares"]
+                price = float(px[code])
+                before = pre_sh.get(code, shares)
+                plan_recs.append({"date": wk, "pool": pos[code]["pool"], "code": code,
+                                  "rank": None, "cur_sh": shares, "target_sh": 0,
+                                  "cur_val": shares * price, "target_val": 0,
+                                  "pre_sh": before, "pre_val": before * price,
+                                  "pre_total": pre_total, "nav": total2, "price": price})
             weekly_plans.append({"date": wk, "cash": cash, "nav": total2, "recs": plan_recs,
                                  "stock_exposure": exposure,
                                  "exposure_in_band": EXPOSURE_MIN <= exposure <= EXPOSURE_MAX,
@@ -522,7 +544,7 @@ def run(weekday, mode, coefs=(1.5, 1.0, 0.5), start=None, end=None, record=True)
             if row["side"] == "BUY":
                 if entry_d is None:
                     entry_d = d; rank0 = row.get("rank")
-                avg = (avg*shares + row["price"]*row["shares"])/(shares+row["shares"]) if (shares+row["shares"]) else row["price"]
+                avg = (avg*shares + row["price"]*row["shares"]*(1 + BUY_FEE))/(shares+row["shares"]) if (shares+row["shares"]) else row["price"]*(1 + BUY_FEE)
                 shares += row["shares"]; pool = row["pool"]
             else:
                 if shares <= 0: continue
@@ -650,15 +672,23 @@ p("\n" + "=" * 100)
 p("B3 canonical 輸出層：整段回測 + 產生 canonical JSON + validation")
 p("=" * 100)
 
-r = run(5, "close", B3)
+r = run(5, "close", B3, end=(LIVE_DAY - pd.Timedelta(days=LIVE_DAY.weekday() + 3))
+        if LIVE_DAY is not None else None)
 p(f"\n【B3 整段驗證】CAGR {r['cagr']*100:.2f}% | MDD {r['mdd']*100:.2f}% | Sharpe {r['sharpe']:.2f} | "
   f"Sortino {r['sortino']:.2f} | Calmar {r['calmar']:.2f} | PF {r['pf']:.2f} | 勝率 {r['winrate']:.1f}% | "
   f"交易 {r['trades']} | Turnover {r['turnover']:.2f}")
-ok_b = abs(r["cagr"] * 100 - 38.69) < 1.0 and abs(r["mdd"] * 100 + 35.64) < 1.0
-p(f"與 B3 含費用及 90–95%曝險模擬基準一致性：{'✅ 一致' if ok_b else '❌ 不一致（需查）'}（基準 38.69% / -35.64%，容差 ±1.0pp）")
+anchor_day = pd.Timestamp("2026-10-02")
+anchor_nav = r["nav"].loc[:anchor_day, "nav"]
+anchor_years = (anchor_nav.index[-1] - anchor_nav.index[0]).days / 365.25
+anchor_cagr = (float(anchor_nav.iloc[-1]) / START_CAPITAL) ** (1 / anchor_years) - 1
+anchor_mdd = float((anchor_nav / anchor_nav.cummax() - 1).min())
+anchor_complete = r["nav"].index[-1] >= anchor_day
+ok_b = anchor_complete and abs(anchor_cagr * 100 - 37.85) < 1.0 and abs(anchor_mdd * 100 + 35.64) < 1.0
+p(f"與固定截至 2026-10-02 的 B3 基準一致性：{'✅ 一致' if ok_b else '❌ 不一致（需查）'}（基準 37.85% / -35.64%，容差 ±1.0pp）")
 
-trades_df = r["trades_df"]
-plans = r["weekly_plans"]
+live_run = run(5, "close", B3) if LIVE_DAY is not None else r
+trades_df = live_run["trades_df"]
+plans = live_run["weekly_plans"]
 
 
 def classify_day(wp):
@@ -686,7 +716,8 @@ def classify_day(wp):
                 "current_weight": pre_w, "weight_diff": rec["target_val"] / rec["nav"] - pre_w}
         if t is None:
             if rec["cur_sh"] > 0:
-                ops.append({**base, "action": "HOLD", "trade_sh": 0, "amount": 0, "reason": ""})
+                ops.append({**base, "action": "HOLD", "trade_sh": 0, "amount": 0,
+                            "reason": "交易受限，模擬持倉暫留" if rec["target_sh"] == 0 else ""})
         elif t["side"] == "BUY":
             ops.append({**base, "action": "BUY" if t["is_new"] else "REBALANCE_BUY",
                         "trade_sh": int(t["shares"]), "amount": float(t["amount"]),
@@ -699,7 +730,8 @@ def classify_day(wp):
         if t["side"] == "SELL" and code not in {o["code"] for o in ops}:
             ops.append({"date": tdate, "pool": t["pool"], "code": code, "rank": None,
                         "cur_sh": 0, "target_sh": 0, "cur_val": 0, "target_val": 0,
-                        "pre_sh": 0, "pre_val": 0, "pre_total": wp["nav"], "nav": wp["nav"],
+                        "pre_sh": int(t["shares"]), "pre_val": float(t["amount"]),
+                        "pre_total": wp["nav"], "nav": wp["nav"],
                         "price": float(t["price"]), "action": "SELL", "trade_sh": int(t["shares"]),
                         "amount": float(t["amount"]), "reason": t.get("reason", ""),
                         "target_weight": 0, "current_weight": 0, "weight_diff": 0})
@@ -734,6 +766,8 @@ def canonical_for(wp):
             "weight_diff": round(float(o["weight_diff"]), 5),
             "target_shares": int(o["target_sh"]),
             "current_shares": int(o["pre_sh"]),
+            "post_shares": int(o["cur_sh"]),
+            "post_weight": round(float(o["cur_val"]) / float(wp["nav"]), 5),
             "buy_shares": buy_sh,
             "sell_shares": sell_sh,
             "estimated_buy_amount": buy_amt,
@@ -771,10 +805,13 @@ def canonical_for(wp):
         warnings.append("本週無買賣動作，僅 HOLD")
     return {
         "strategy_version": "B3",
+        "signal_mode": "PRE_CLOSE_PLAN" if LIVE_DAY is not None and wp["date"] == LIVE_DAY else "CLOSE_SIMULATION",
+        "price_basis_date": (SIGNAL_DAY if LIVE_DAY is not None and wp["date"] == LIVE_DAY else wp["date"]).strftime("%Y-%m-%d"),
+        "execution_rule": "last_trading_day_close_then_next_week_first_session_remainder",
         "calculation_date": wp["date"].strftime("%Y-%m-%d"),
         "rebalance_date": wp["date"].strftime("%Y-%m-%d"),
         "sig_date": prev_trading_day(wp["date"]).strftime("%Y-%m-%d"),
-        "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generated_at": datetime.datetime.now(ZoneInfo("Asia/Taipei")).isoformat(timespec="seconds"),
         "commit_sha": _commit_sha(),
         "tsm_on": bool(sw_tsm.get(wp["date"], False)),
         "wa_eff": round(float(wp.get("wa_eff", 0.60 if sw_tsm.get(wp["date"], False) else 1.0)), 3),
@@ -792,17 +829,17 @@ def canonical_for(wp):
 
 
 # ---- 產生 canonical ----
-os.makedirs(os.path.join(HERE, "output", "history"), exist_ok=True)
+os.makedirs(os.path.join(OUTPUT_DIR, "history"), exist_ok=True)
 latest = plans[-1]
 latest_c = canonical_for(latest)
 # [B3 修正] 正式 latest_signals.json 改在 validation PASS 後以「暫存->原子替換」寫入，
 #           validation FAIL 時不覆寫上一份正式資料（避免過期/失敗訊號上線）。
 
 # 歷史：最近 20 個調倉週
-hist_plans = plans[-20:]
+hist_plans = [wp for wp in plans if LIVE_DAY is None or wp["date"] != LIVE_DAY][-20:]
 for wp in hist_plans:
     c = canonical_for(wp)
-    fp = os.path.join(HERE, "output", "history", wp["date"].strftime("%Y-%m-%d") + ".json")
+    fp = os.path.join(OUTPUT_DIR, "history", wp["date"].strftime("%Y-%m-%d") + ".json")
     with open(fp, "w", encoding="utf-8") as f:
         json.dump(c, f, ensure_ascii=False, indent=1)
 p(f"【canonical】history/ 已輸出 {len(hist_plans)} 週（{hist_plans[0]['date'].strftime('%Y-%m-%d')} ~ {latest['date'].strftime('%Y-%m-%d')}）")
@@ -824,8 +861,10 @@ perf = {"final_nav": round(float(r["final"]), 0), "cagr": round(float(r["cagr"])
         "pf": round(float(r["pf"]), 2), "winrate": round(float(r["winrate"]), 1),
         "trades": int(r["trades"]), "turnover": round(float(r["turnover"]), 2),
         "start_capital": START_CAPITAL, "strategy_version": "B3",
+        "completed_through": nav_df.index[-1].strftime("%Y-%m-%d"),
+        "fixed_anchor": {"date": "2026-10-02", "cagr": anchor_cagr, "mdd": anchor_mdd},
         "nav": nav_list, "dd": dd_list, "yearly": yearly}
-with open(os.path.join(HERE, "output", "perf.json"), "w", encoding="utf-8") as f:
+with open(os.path.join(OUTPUT_DIR, "perf.json"), "w", encoding="utf-8") as f:
     json.dump(perf, f, ensure_ascii=False, indent=1)
 p(f"【canonical】perf.json 已輸出（CAGR {perf['cagr']*100:.2f}% | MDD {perf['mdd']*100:.2f}%）")
 
@@ -908,13 +947,14 @@ def run_checks(wp):
         res["lookahead"]["pass"] += 1
 
 
-for wp in hist_plans:
+check_plans = hist_plans[-19:] + [latest] if LIVE_DAY is not None else hist_plans
+for wp in check_plans:
     run_checks(wp)
 
 # 10-02 鎖定回歸值
 reg_ok = True
 reg_msgs = []
-if latest_c["rebalance_date"] == "2026-10-02":
+if latest_c["rebalance_date"] == "2026-10-02" and latest_c["signal_mode"] == "CLOSE_SIMULATION":
     exp = {"BUY": 7, "SELL": 7, "REBAL": 3, "HOLD": 6}
     got = latest_c["counts"]
     for k, v in exp.items():
@@ -955,7 +995,7 @@ val_log = {"strategy_version": "B3", "generated_at": datetime.datetime.now().str
            "checks": {k: {"pass": res[k]["pass"], "fail": res[k]["fail"],
                           "detail": res[k]["detail"][:5]} for k in check_names},
            "verdict": "PASS" if (ok_b and reg_ok and not fail_list) else "FAIL"}
-with open(os.path.join(HERE, "output", "validation_log.json"), "w", encoding="utf-8") as f:
+with open(os.path.join(OUTPUT_DIR, "validation_log.json"), "w", encoding="utf-8") as f:
     json.dump(val_log, f, ensure_ascii=False, indent=1)
 p(f"\n【validation】verdict={val_log['verdict']} | 失敗項目={fail_list if fail_list else '無'}")
 for k in check_names:
@@ -968,10 +1008,10 @@ if not (ok_b and reg_ok and not fail_list):
     print("\n❌ validation FAIL — 不發布可執行訊號；正式 latest_signals.json 保留上一份（validation_log 已寫入 output/）")
     sys.exit(1)
 # validation PASS：才以「暫存->原子替換」寫入正式 latest_signals.json（不覆寫舊正式資料）
-_tmp = os.path.join(HERE, "output", "latest_signals.json.tmp")
+_tmp = os.path.join(OUTPUT_DIR, "latest_signals.json.tmp")
 with open(_tmp, "w", encoding="utf-8") as f:
     json.dump(latest_c, f, ensure_ascii=False, indent=1)
-os.replace(_tmp, os.path.join(HERE, "output", "latest_signals.json"))
+os.replace(_tmp, os.path.join(OUTPUT_DIR, "latest_signals.json"))
 p(f"\n【canonical】latest_signals.json 已輸出（rebalance_date={latest_c['rebalance_date']}）")
 p(f"  counts={latest_c['counts']} | 買 {latest_c['buy_total']:,.0f} | 賣 {latest_c['sell_total']:,.0f} | "
   f"現金 {latest_c['cash']:,.0f} | Buffer {latest_c['buffer']*100:.1f}% | 股票持倉 {latest_c['stock_exposure']*100:.1f}%")

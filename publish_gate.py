@@ -24,6 +24,8 @@ import json
 import ssl
 import hashlib
 import datetime
+import math
+from collections import Counter
 import urllib.request
 from zoneinfo import ZoneInfo
 
@@ -40,18 +42,23 @@ WEIGHT_SUM_CAP = 0.953   # 與 b3_canonical 容差一致：>0.953 才視為超�
 def load_holidays():
     """單一假日來源 holidays.json（與 check_and_run 共用；不再於各程式寫死）。"""
     try:
-        h = json.load(open(HOL_FILE, encoding="utf-8"))
+        with open(HOL_FILE, encoding="utf-8") as source:
+            h = json.load(source)
+        year = str(datetime.datetime.now(TW).year)
+        if year not in h:
+            raise ValueError(f"缺少 {year} 年交易所休市表")
         s = set()
         for v in h.values():
             s.update(v)
         return s
-    except Exception:
-        return set()
+    except Exception as error:
+        raise RuntimeError("交易日設定無法載入，停止發布：" + str(error)) from error
 
 
 def _load_json(p, default=None):
     try:
-        d = json.load(open(p, encoding="utf-8-sig"))
+        with open(p, encoding="utf-8-sig") as source:
+            d = json.load(source)
         return d if isinstance(d, dict) else (default or {})
     except Exception:
         return default or {}
@@ -66,21 +73,12 @@ def last_trading_day_of_week(today, hols):
 
     06:00 在最後交易日當天執行時，today 本身即最後交易日。
     """
-    if is_trading(today, hols) and not is_trading(today + datetime.timedelta(days=1), hols):
-        return today
-    # 往後掃到該週週六，找出「次日非交易日」的交易日
-    d = today
-    while d.weekday() < 6:
-        d += datetime.timedelta(days=1)
-        if is_trading(d, hols) and not is_trading(d + datetime.timedelta(days=1), hols):
-            return d
-    # fallback：往回找最近一個最後交易日
-    d = today
-    for _ in range(10):
-        d -= datetime.timedelta(days=1)
-        if is_trading(d, hols) and not is_trading(d + datetime.timedelta(days=1), hols):
-            return d
-    return today
+    monday = today - datetime.timedelta(days=today.weekday())
+    for offset in range(4, -1, -1):
+        day = monday + datetime.timedelta(days=offset)
+        if is_trading(day, hols):
+            return day
+    return None
 
 
 def prev_trading_day_str(d, hols):
@@ -108,6 +106,8 @@ def fingerprint(sig):
             a.get("stock_code"), a.get("action"), a.get("channel"), a.get("rank"),
             round(float(a.get("target_weight", 0) or 0), 6),
             round(float(a.get("current_weight", 0) or 0), 6),
+            a.get("current_shares"), a.get("post_shares"), a.get("target_shares"),
+            a.get("buy_shares"), a.get("sell_shares"), a.get("price"),
         ]))
     raw = str(sig.get("rebalance_date", "?")) + "#" + ";".join(rows)
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
@@ -134,29 +134,43 @@ def _tg_alert(text):
         print("[gate] TG 警報發送失敗：", e)
 
 
-def evaluate(force=False, today=None):
+def evaluate(force=False, today=None, output_dir=None, notify=True):
     today = today or datetime.datetime.now(TW).date()
+    output_dir = output_dir or os.path.join(HERE, "output")
+    sig_file = os.path.join(output_dir, "latest_signals.json")
+    val_file = os.path.join(output_dir, "validation_log.json")
     hols = load_holidays()
-    expect = last_trading_day_of_week(today, hols).strftime("%Y-%m-%d")
+    last_day = last_trading_day_of_week(today, hols)
+    expect = last_day.isoformat() if last_day else None
     reasons = []
+    if expect is None:
+        reasons.append("本週沒有交易日，不發布調倉訊號")
     sig = None
     val = None
 
-    if not os.path.exists(SIG_FILE):
+    if not os.path.exists(sig_file):
         reasons.append("output/latest_signals.json 不存在（B3 引擎尚未產生結果）")
     else:
         try:
-            sig = json.load(open(SIG_FILE, encoding="utf-8"))
+            with open(sig_file, encoding="utf-8") as source:
+                sig = json.load(source)
         except Exception as e:
             reasons.append(f"latest_signals.json 無法解析：{e}")
-    if not os.path.exists(VAL_FILE):
+    if not os.path.exists(val_file):
         reasons.append("output/validation_log.json 不存在")
     else:
         try:
-            val = json.load(open(VAL_FILE, encoding="utf-8"))
+            with open(val_file, encoding="utf-8") as source:
+                val = json.load(source)
         except Exception as e:
             reasons.append(f"validation_log.json 無法解析：{e}")
 
+    if sig is not None and not isinstance(sig, dict):
+        reasons.append("canonical 必須是 JSON 物件")
+        sig = None
+    if val is not None and not isinstance(val, dict):
+        reasons.append("validation 必須是 JSON 物件")
+        val = None
     if sig is not None:
         # --- validation 把關 ---
         if val is not None:
@@ -166,9 +180,9 @@ def evaluate(force=False, today=None):
                 reasons.append("validation strategy_version 非 B3")
             vr = val.get("rebalance_date")
             sr = sig.get("rebalance_date")
-            if vr and sr and vr != sr:
+            if not vr or not sr or vr != sr:
                 reasons.append(f"validation rebalance_date={vr} 與 canonical={sr} 不一致")
-        if sig.get("strategy_version") not in (None, "B3"):
+        if sig.get("strategy_version") != "B3":
             reasons.append(f"canonical strategy_version={sig.get('strategy_version')} 非 B3")
 
         # --- 資料新鮮度（不分 FORCE，永遠生效）---
@@ -179,7 +193,9 @@ def evaluate(force=False, today=None):
             reasons.append(f"canonical 非本週最新（rebalance_date={rebal}，本次最後交易日應為 {expect}；缺資料，連 FORCE 亦不發布）")
         # 2) 資料庫連續：sig_date 必須 == rebal 的前一交易日（無缺日）
         sigd = sig.get("sig_date")
-        if rebal and sigd:
+        if not sigd:
+            reasons.append("canonical 缺訊號基準日")
+        elif rebal:
             expect_sig = prev_trading_day_str(rebal, hols)
             if sigd != expect_sig:
                 reasons.append(f"資料不連續：sig_date={sigd}，應 = {rebal} 的前一交易日 {expect_sig}")
@@ -196,6 +212,16 @@ def evaluate(force=False, today=None):
                            for k in VALID_ACTIONS)
         if total_counts != len(acts):
             reasons.append(f"counts 合計 {total_counts} 與 actions 筆數 {len(acts)} 不符")
+        actual_counts = Counter(a.get("action") for a in acts)
+        if any(int(sig.get("counts", {}).get(k, 0)) != actual_counts[k] for k in VALID_ACTIONS):
+            reasons.append("counts 各動作筆數與 actions 不符")
+        for a in acts:
+            for key in ("target_weight", "current_weight", "price"):
+                value = a.get(key)
+                if value is not None and not math.isfinite(float(value)):
+                    reasons.append(f"{a.get('stock_code')} {key} 非有限數值")
+        if sig.get("signal_mode") == "PRE_CLOSE_PLAN" and sig.get("price_basis_date") != sigd:
+            reasons.append("收盤調倉計畫的參考價格日與訊號基準日不一致")
         tw = sum(float(a.get("target_weight", 0) or 0) for a in acts)
         if tw > WEIGHT_SUM_CAP:
             reasons.append(f"target_weight 合計 {tw:.4f} 超過 {WEIGHT_SUM_CAP}")
@@ -207,17 +233,28 @@ def evaluate(force=False, today=None):
             reasons.append("持股缺 price：" + ",".join(sorted(set(miss))[:10]))
 
         # --- 基準常駐化（第4關）：全歷史基準 + 當週回歸基準（讀/建/比對，隨週更新）---
-        REG_PATH = os.path.join(HERE, "output", "regression_history.json")
-        BASE_PATH = os.path.join(HERE, "output", "baseline.json")
+        REG_PATH = os.path.join(output_dir, "regression_history.json")
+        BASE_PATH = os.path.join(output_dir, "baseline.json")
         reg_hist = _load_json(REG_PATH)
         baseline = _load_json(BASE_PATH)
         rd = sig.get("rebalance_date")
+        reg_key = rd + "|PRE_CLOSE_PLAN" if rd and sig.get("signal_mode") == "PRE_CLOSE_PLAN" else rd
 
         # 全歷史基準：perf.json 的 cagr/mdd；漂移 >1.0pp → FAIL；0.1~1.0（資料演進）→ 自動更新；無檔 → 建立
-        perf = _load_json(os.path.join(HERE, "output", "perf.json"))
+        perf = _load_json(os.path.join(output_dir, "perf.json"))
+        if not perf:
+            reasons.append("缺少有效的歷史績效資料")
+        if sig.get("signal_mode") == "PRE_CLOSE_PLAN" and (not perf.get("completed_through") or perf["completed_through"] >= rd):
+            reasons.append("歷史績效必須截止於本週計畫之前的已完成交易週")
         if perf:
-            cagr_now = float(perf.get("cagr") or 0) * 100
-            mdd_now = float(perf.get("mdd") or 0) * 100
+            anchor = perf.get("fixed_anchor") or perf
+            cagr_now = float(anchor.get("cagr") or 0) * 100
+            mdd_now = float(anchor.get("mdd") or 0) * 100
+            anchor_date = anchor.get("date")
+            if anchor_date and baseline.get("anchor_date") != anchor_date:
+                baseline = {"cagr": cagr_now, "mdd": mdd_now, "anchor_date": anchor_date}
+            if not math.isfinite(cagr_now) or not math.isfinite(mdd_now):
+                reasons.append("歷史績效包含非有限數值")
             if baseline:
                 cd = abs(cagr_now - baseline.get("cagr", cagr_now))
                 md = abs(mdd_now - baseline.get("mdd", mdd_now))
@@ -245,12 +282,12 @@ def evaluate(force=False, today=None):
                 "cash": sig.get("cash", 0), "buffer": sig.get("buffer", 0),
                 "rank_weights": rank_w,
             }
-            if rd == "2026-10-02" and rd not in reg_hist:
+            if rd == "2026-10-02" and reg_key == rd and rd not in reg_hist:
                 reg_hist[rd] = {"counts": {"BUY": 7, "SELL": 7, "REBAL": 3, "HOLD": 6},
                                 "buy_total": 2042192, "sell_total": 2358084, "cash": 538072,
                                 "buffer": 0.1079, "rank_weights": {"2": 0.04388, "6": 0.02925, "15": 0.01463}}
-            if rd in reg_hist:
-                exp = reg_hist[rd]
+            if reg_key in reg_hist:
+                exp = reg_hist[reg_key]
                 ec = exp.get("counts", {})
                 for k in ("BUY", "SELL", "REBAL", "HOLD"):
                     if k in ec and this_base["counts"][k] != ec[k]:
@@ -264,7 +301,7 @@ def evaluate(force=False, today=None):
                     if rk in this_base["rank_weights"] and abs(this_base["rank_weights"][rk] - ev) > 0.003:
                         reasons.append(f"當週基準 Rank{rk} 權重期望 {ev*100:.1f}% 實際 {this_base['rank_weights'][rk]*100:.1f}%")
             else:
-                reg_hist[rd] = this_base   # 首跑建立當週基準
+                reg_hist[reg_key] = this_base   # 分開保存收盤前計畫與收盤模擬結果
 
     ok = not reasons
     result = {
@@ -275,15 +312,15 @@ def evaluate(force=False, today=None):
         "expected_rebalance_date": expect,
         "forced": bool(force),
     }
-    if not ok:
+    if not ok and notify:
         _tg_alert(
             "❌ <b>B3 調倉資料未通過發布檢查</b>\n"
             + result["reason"]
             + "\n\n本次<b>不更新網頁、不發送一般調倉訊號</b>，請人工確認後再以 full 補跑。")
-    else:
+    elif ok:
         # 全部通過 → 固化/更新基準（regression_history.json + baseline.json），供下次同週重跑比對
         try:
-            os.makedirs(os.path.join(HERE, "output"), exist_ok=True)
+            os.makedirs(output_dir, exist_ok=True)
             with open(REG_PATH, "w", encoding="utf-8") as f:
                 json.dump(reg_hist, f, ensure_ascii=False, indent=1)
             with open(BASE_PATH, "w", encoding="utf-8") as f:

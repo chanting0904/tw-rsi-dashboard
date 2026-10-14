@@ -14,6 +14,7 @@
 import os, re, sys, json, ssl, shutil, urllib.request
 from datetime import datetime
 import pandas as pd
+from market_dates import quote_date
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DB = os.path.join(HERE, "local_db")
@@ -58,8 +59,7 @@ def twse_all():
     if not out:
         raise RuntimeError("TWSE 無資料")
     d = str(j.get("date", ""))
-    if d and len(d) == 8:
-        d = "%s-%s-%s" % (d[:4], d[4:6], d[6:8])
+    d = quote_date(d)
     return out, d
 
 
@@ -81,8 +81,7 @@ def tpex_all():
             out[c] = rec
             dd = str(r.get("Date", ""))
             if dd:
-                dd = "%04d%s" % (int(dd[:3]) + 1911, dd[3:])
-                d = "%s-%s-%s" % (dd[:4], dd[4:6], dd[6:8])
+                d = quote_date(dd)
         except Exception:
             pass
     if not out:
@@ -127,13 +126,21 @@ def merge_amt(db_file, day, recs, field="amt"):
     df = pd.read_feather(db_file)
     if "date" not in df.columns:
         raise ValueError(f"{db_file} 無 date 欄")
-    if day in df["date"].astype(str).values:
-        return False, df
-    new_row = {"date": pd.Timestamp(day)}
-    for c in df.columns[1:]:
-        v = recs.get(str(c))
-        new_row[c] = v[field] if v else None
-    df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+    df["date"] = pd.to_datetime(df["date"])
+    when = pd.Timestamp(day)
+    for code in recs:
+        if code not in df.columns and str(code).isdigit() and len(str(code)) == 4:
+            df[code] = float("nan")
+    matches = df.index[df["date"] == when]
+    if len(matches):
+        index = matches[-1]
+    else:
+        index = len(df)
+        df.loc[index, "date"] = when
+    for code, record in recs.items():
+        value = record.get(field)
+        if code in df.columns and value is not None and pd.notna(value):
+            df.loc[index, code] = value
     df["date"] = pd.to_datetime(df["date"])
     df = df.sort_values("date").reset_index(drop=True)
     return True, df
@@ -160,15 +167,19 @@ def main():
 
     # 2. 官方源（TWSE + TPEx）
     px, dstr = {}, None
+    batches = []
     for name, fn in (("TWSE", twse_all), ("TPEx", tpex_all)):
         try:
             p, d = fn()
-            px.update(p)
+            batches.append((p, d))
             if d:
                 dstr = max(dstr, d) if dstr else d
             print(f"[OK] {name}: {len(p)} 檔")
         except Exception as e:
             print(f"[FAIL] {name}: {e}")
+    for records, day in batches:
+        if day == dstr:
+            px.update(records)
 
     # 3. FinLab fallback（官方源完全失敗或缺當日）
     if not px:
@@ -190,7 +201,10 @@ def main():
         sys.exit(1)
 
     # 4. 寫入本地庫（close / amount / volume）
-    day = dstr or today
+    if not dstr:
+        raise RuntimeError("來源缺少行情日期，本地庫不更新")
+    day = dstr
+    write_errors = []
     for fname, field in (("close.feather", "px"), ("amount.feather", "amt"), ("volume.feather", "vol")):
         fp = os.path.join(DB, fname)
         if not os.path.exists(fp):
@@ -206,6 +220,10 @@ def main():
                 print(f"[SKIP] {fname} {day} 已存在")
         except Exception as e:
             print(f"[ERR] {fname}: {e}")
+            write_errors.append(fname)
+
+    if write_errors:
+        raise RuntimeError("本地庫寫入失敗：" + ", ".join(write_errors))
 
     print("✅ 本地庫更新完成，資料日", day)
 

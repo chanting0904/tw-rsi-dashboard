@@ -39,8 +39,8 @@ def main():
     # ---- Q1-Q10 ----
     q1 = a["ah_fill"].mean()
     q2 = a["fin_fill"].mean() - q1
-    q3 = a[a["side"] == "BUY"]["fin_fill"].mean() - a[a["side"] == "BUY"]["ah_fill"].mean()
-    q4 = a[a["side"] == "SELL"]["fin_fill"].mean() - a[a["side"] == "SELL"]["ah_fill"].mean()
+    q3 = a[a["side"].isin(["BUY", "REBALANCE_BUY"])]["fin_fill"].mean() - a[a["side"].isin(["BUY", "REBALANCE_BUY"])]["ah_fill"].mean()
+    q4 = a[a["side"].isin(["SELL", "REBALANCE_SELL"])]["fin_fill"].mean() - a[a["side"].isin(["SELL", "REBALANCE_SELL"])]["ah_fill"].mean()
     drift = port["A_exposure_drift"].astype(float).dropna()
     q5 = drift.mean() * 100
     # cash drag proxy：未成交 BUY 的現金保留比例
@@ -66,8 +66,13 @@ def main():
         "slip_mean_le_1.5": (np.isnan(q7) or q7 <= TH["slip_mean_pass"]),
         "slip_extreme_cnt_le_2": (q8_cnt <= TH["slip_extreme_cnt_pass"]),
     }
+    checks = {key: bool(value) for key, value in checks.items()}
     passed = sum(checks.values())
-    if passed == 5:
+    if len(port) < 20 or np.isnan(q5) or not len(a):
+        verdict = "CONDITIONAL"
+    elif (not np.isnan(q7) and q7 > TH["slip_mean_fail"]) or q8_cnt >= TH["slip_extreme_cnt_fail"] or q2 < TH["fill_improve_fail_min"]:
+        verdict = "FAIL"
+    elif passed == 5:
         verdict = "PASS"
     elif passed >= 3:
         verdict = "CONDITIONAL"

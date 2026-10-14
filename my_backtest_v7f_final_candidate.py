@@ -13,6 +13,8 @@ import numpy as np
 import finlab, json, warnings
 warnings.filterwarnings("ignore")
 from finlab import data
+from live_plan import completed_week_days
+from publish_gate import load_holidays
 
 finlab.login(api_token=json.load(open(os.path.join(HERE, "config.json"), encoding="utf-8"))["FINLAB_TOKEN"])
 try:
@@ -121,7 +123,7 @@ if "2330" in close.columns:
 days_all = close.index
 weeks = close.resample("W-FRI").last().index
 weeks = weeks[weeks >= pd.Timestamp(START_DATE)]
-days = pd.DatetimeIndex([days_all[days_all <= w][-1] for w in weeks if (days_all <= w).any()])
+days = completed_week_days(days_all, weeks, load_holidays())
 
 def pick_days(weekday=5):
     if weekday == 5:
@@ -181,7 +183,7 @@ def run(weekday, mode, coefs=(1.5, 1.0, 0.5), start=None, end=None, record=True)
         if b_w > 0:
             tB = targetB.loc[wk]
             codesB = [c for c in tB[tB].index.tolist() if cap_pass(c)]
-            tvw_ = tv20.loc[wk]
+            tvw_ = tv20.shift(1).loc[wk]
             scoredB = sorted(codesB, key=lambda c: float(tvw_[c]) if pd.notna(tvw_[c]) else -1, reverse=True)
             want["B"] = scoredB[:MAX_HOLD_B]
         else:
@@ -502,7 +504,7 @@ def run(weekday, mode, coefs=(1.5, 1.0, 0.5), start=None, end=None, record=True)
             if row["side"] == "BUY":
                 if entry_d is None:
                     entry_d = d; rank0 = row.get("rank")
-                avg = (avg*shares + row["price"]*row["shares"])/(shares+row["shares"]) if (shares+row["shares"]) else row["price"]
+                avg = (avg*shares + row["price"]*row["shares"]*(1 + BUY_FEE))/(shares+row["shares"]) if (shares+row["shares"]) else row["price"]*(1 + BUY_FEE)
                 shares += row["shares"]; pool = row["pool"]
             else:
                 if shares <= 0: continue
