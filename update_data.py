@@ -7,6 +7,8 @@
 - 用法：python update_data.py
 """
 import os, sys, json, datetime
+from zoneinfo import ZoneInfo
+from publish_gate import load_holidays, last_trading_day_of_week
 HERE = os.path.dirname(os.path.abspath(__file__))
 os.chdir(HERE)
 
@@ -99,6 +101,9 @@ for a in SIG.get("actions", []):
 
 DATA = {
     "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+    "expected_rebal_date": last_trading_day_of_week(
+        datetime.datetime.now(ZoneInfo("Asia/Taipei")).date(), load_holidays()
+    ).strftime("%Y-%m-%d"),
     "strategy_version": SIG.get("strategy_version", "B3"),
     "sig_date": SIG.get("sig_date"),
     "rebal_date": SIG.get("rebalance_date"),
@@ -174,6 +179,7 @@ HTML = """<!DOCTYPE html>
   .chart.small{height:200px;}
   .note{color:var(--dim); font-size:12px; margin-top:10px; line-height:1.8;}
   .warnbox{background:rgba(245,185,66,.1); border:1px solid rgba(245,185,66,.4); color:var(--warn); padding:10px 14px; border-radius:10px; font-size:13px; margin-bottom:14px;}
+  .freshnessbox{background:rgba(255,77,79,.12); border:1px solid rgba(255,77,79,.65); color:#ff8b8d; padding:12px 14px; border-radius:10px; font-size:14px; font-weight:700; margin-bottom:14px; line-height:1.6;}
   .switch{display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border-radius:20px; font-size:13px; font-weight:600; margin-bottom:12px;}
   .sw-on{background:rgba(61,220,132,.12); color:var(--down); border:1px solid rgba(61,220,132,.4);}
   .sw-off{background:rgba(245,185,66,.1); color:var(--warn); border:1px solid rgba(245,185,66,.4);}
@@ -204,6 +210,7 @@ HTML = """<!DOCTYPE html>
   </header>
 
   <div id="warnbox" class="warnbox" style="display:none"></div>
+  <div id="freshnessbox" class="freshnessbox" style="display:none"></div>
   <div id="switchbox" style="margin-bottom:12px"></div>
 
   <section>
@@ -349,6 +356,23 @@ if (warns.length) {
   w.style.display = "block";
   w.innerHTML = warns.map(x => "⚠️ " + x).join("<br>");
 }
+
+// 僅在本週最後交易日已到、但 canonical 尚未更新時警告；不改變任何策略訊號。
+function renderFreshnessStatus() {
+  const expected = DATA.expected_rebal_date;
+  if (!expected || DATA.rebal_date === expected) return;
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit"
+  }).formatToParts(new Date());
+  const get = type => parts.find(x => x.type === type)?.value || "";
+  const today = get("year") + "-" + get("month") + "-" + get("day");
+  if (today < expected) return;
+  const box = $("freshnessbox");
+  box.style.display = "block";
+  box.textContent = "⚠️ 本週調倉訊號尚未更新或驗證。預定調倉日 " + expected +
+    "；目前仍顯示 " + (DATA.rebal_date || "無日期") + " 的訊號。請勿依這份舊清單進行本週調倉，等網頁出現本週日期的新訊號後再操作。";
+}
+renderFreshnessStatus();
 
 const sw = $("switchbox");
 sw.innerHTML = DATA.tsm_on
