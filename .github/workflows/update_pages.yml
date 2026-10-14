@@ -22,6 +22,10 @@ on:
       - 'weekly_status.js'
       - 'weekly_status.py'
       - 'retry_runner.py'
+      - 'b3_engine/**'
+      - 'b3_canonical.py'
+      - 'capital_preview.js'
+      - 'output/perf.json'
 permissions:
   contents: write
   pages: write
