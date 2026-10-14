@@ -33,11 +33,12 @@ import pandas as pd
 import numpy as np
 
 # [本地化] 盤後先自動更新本地庫（TWSE/TPEx 官方源優先、零 FinLab 流量）。失敗不阻斷。
-try:
-    from local_db_updater import main as _local_update
-    _local_update()
-except Exception as _e:
-    print(f"[本地庫更新] 跳過（{str(_e)[:80]}）")
+if os.environ.get('B3_SKIP_LOCAL_UPDATE') != '1':
+    try:
+        from local_db_updater import main as _local_update
+        _local_update()
+    except Exception as _e:
+        print(f"[本地庫更新] 跳過（{str(_e)[:80]}）")
 
 # ---------- 1. 讀 canonical（B3 唯一策略結果）----------
 sig_path = "output/latest_signals.json"
@@ -101,9 +102,22 @@ for a in SIG.get("actions", []):
         holdings_b.append(item)
 
 week_last = last_trading_day_of_week(datetime.datetime.now(ZoneInfo("Asia/Taipei")).date(), load_holidays())
+def read_optional(path):
+    try:
+        with open(path, encoding='utf-8') as source:
+            return json.load(source)
+    except (OSError, ValueError):
+        return {}
+
+_calendar = read_optional('holidays.json')
+_validation = read_optional('output/validation_log.json')
 DATA = {
     "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
     "expected_rebal_date": week_last.isoformat() if week_last else None,
+    "calendar_years": list(_calendar),
+    "holidays": sorted({day for days in _calendar.values() for day in days}),
+    "weekly_status": read_optional('output/weekly_status.json'),
+    "sig_validated": _validation.get('verdict') == 'PASS' and _validation.get('strategy_version') == 'B3' and _validation.get('rebalance_date') == SIG.get('rebalance_date'),
     "signal_mode": SIG.get("signal_mode", "CLOSE_SIMULATION"),
     "price_basis_date": SIG.get("price_basis_date") or SIG.get("rebalance_date"),
     "strategy_version": SIG.get("strategy_version", "B3"),
@@ -182,6 +196,9 @@ HTML = """<!DOCTYPE html>
   .note{color:var(--dim); font-size:12px; margin-top:10px; line-height:1.8;}
   .warnbox{background:rgba(245,185,66,.1); border:1px solid rgba(245,185,66,.4); color:var(--warn); padding:10px 14px; border-radius:10px; font-size:13px; margin-bottom:14px;}
   .freshnessbox{background:rgba(255,77,79,.12); border:1px solid rgba(255,77,79,.65); color:#ff8b8d; padding:12px 14px; border-radius:10px; font-size:14px; font-weight:700; margin-bottom:14px; line-height:1.6;}
+  .weekly-ready{background:rgba(61,220,132,.10); border-color:var(--down); color:var(--down);}
+  .weekly-waiting{background:rgba(245,185,66,.10); border-color:var(--warn); color:var(--warn);}
+  .status-detail{display:block; font-weight:400; font-size:13px; margin-top:4px;}
   .switch{display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border-radius:20px; font-size:13px; font-weight:600; margin-bottom:12px;}
   .sw-on{background:rgba(61,220,132,.12); color:var(--down); border:1px solid rgba(61,220,132,.4);}
   .sw-off{background:rgba(245,185,66,.1); color:var(--warn); border:1px solid rgba(245,185,66,.4);}
@@ -212,7 +229,7 @@ HTML = """<!DOCTYPE html>
   </header>
 
   <div id="warnbox" class="warnbox" style="display:none"></div>
-  <div id="freshnessbox" class="freshnessbox" style="display:none"></div>
+  <div id="freshnessbox" class="freshnessbox" role="status" aria-live="polite"><b id="weekly-title">正在確認本週狀態</b><span id="weekly-detail" class="status-detail"></span></div>
   <div id="switchbox" style="margin-bottom:12px"></div>
 
   <section>
@@ -231,7 +248,7 @@ HTML = """<!DOCTYPE html>
   <div class="cards" id="cards"></div>
 
   <section>
-    <h2>📋 本週我要做什麼 <span class="tag">操作順序：先賣 → 減碼 → 買 → 加碼 → 持有</span></h2>
+    <h2><span id="ops-title">📋 最近一期模擬清單</span> <span class="tag">操作順序：先賣 → 減碼 → 買 → 加碼 → 持有</span></h2>
     <div id="ops"></div>
     <div class="note">🔸 先賣出／減碼釋出現金，再買入／加碼。每檔顯示 B3 目標權重＋照目前本金算出的「目標股數」（目標金額 ÷ 現價，取整股）；<b>實際買賣股數請你自己對照手上持股決定</b>。</div>
   </section>
@@ -300,6 +317,7 @@ HTML = """<!DOCTYPE html>
 
 <script>
 const DATA = __DATA_JSON__;
+__WEEKLY_STATUS_JS__
 
 const $ = (id) => document.getElementById(id);
 const F = (n, d) => (n==null || isNaN(n)) ? "—" : Number(n).toLocaleString("zh-TW", {minimumFractionDigits: d||0, maximumFractionDigits: d||0});
@@ -359,22 +377,32 @@ if (warns.length) {
   w.innerHTML = warns.map(x => "⚠️ " + x).join("<br>");
 }
 
-// 僅在本週最後交易日已到、但 canonical 尚未更新時警告；不改變任何策略訊號。
+// Recompute from today's Taipei date, even if this HTML was built last week.
+let publicWeeklyStatus = DATA.weekly_status || {};
 function renderFreshnessStatus() {
-  const expected = DATA.expected_rebal_date;
-  if (!expected || DATA.rebal_date === expected) return;
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit"
-  }).formatToParts(new Date());
-  const get = type => parts.find(x => x.type === type)?.value || "";
-  const today = get("year") + "-" + get("month") + "-" + get("day");
-  if (today < expected) return;
+  const result = weeklyReadiness(DATA, taipeiDate(), publicWeeklyStatus);
   const box = $("freshnessbox");
-  box.style.display = "block";
-  box.textContent = "⚠️ 本週調倉訊號尚未更新或驗證。預定調倉日 " + expected +
-    "；目前仍顯示 " + (DATA.rebal_date || "無日期") + " 的訊號。請勿依這份舊清單進行本週調倉，等網頁出現本週日期的新訊號後再操作。";
+  box.className = 'freshnessbox weekly-' + result.state;
+  $("weekly-title").textContent = result.title;
+  $("weekly-detail").textContent = result.detail;
+  $("ops-title").textContent = result.state === 'ready' ? '📋 本週我要做什麼' : '📋 最近一期模擬清單（本週尚未確認）';
 }
 renderFreshnessStatus();
+async function refreshWeeklyStatus() {
+  renderFreshnessStatus();
+  if (!/^https?:$/.test(location.protocol)) return;
+  try {
+    const response = await fetch('output/weekly_status.json?t=' + Date.now(), {cache: 'no-store', signal: AbortSignal.timeout(5000)});
+    if (!response.ok) return;
+    const status = await response.json();
+    if (status && typeof status === 'object') {
+      publicWeeklyStatus = status;
+      renderFreshnessStatus();
+    }
+  } catch (_) { /* Keep the offline calendar/date check when the server is unavailable. */ }
+}
+refreshWeeklyStatus();
+setInterval(refreshWeeklyStatus, 60000);
 
 const sw = $("switchbox");
 sw.innerHTML = DATA.tsm_on
@@ -658,6 +686,8 @@ initPerfCalc();
 """
 
 HTML = HTML.replace("__DATA_JSON__", DATA_JSON)
+with open(os.path.join(HERE, 'weekly_status.js'), encoding='utf-8') as _source:
+    HTML = HTML.replace('__WEEKLY_STATUS_JS__', _source.read())
 
 # 統一僅輸出 index.html（GitHub Pages 唯一入口）；RSI選股器.html 為舊名冗餘檔，不再生成
 for _name in ("index.html",):

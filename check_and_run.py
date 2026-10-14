@@ -41,7 +41,7 @@ def main():
                                  "--live-rebalance", today.isoformat()], env=env)
             if r0.returncode != 0:
                 sys.exit(3)
-            gate = evaluate(force=FORCE, output_dir=str(staged))
+            gate = evaluate(force=FORCE, output_dir=str(staged), notify=False)
             if not gate["ok"]:
                 print("[gate] FAIL：", gate["reason"])
                 sys.exit(2)
@@ -53,6 +53,8 @@ def main():
                 if path.name not in names:
                     path.unlink()
         print(f"[gate] PASS rebalance={gate['rebalance_date']} hash={gate['canonical_hash']}")
+        from weekly_status import write_status
+        write_status('ready')
         r = subprocess.run([sys.executable, os.path.join(ROOT, "update_data.py")])
         sys.exit(r.returncode)
     else:
