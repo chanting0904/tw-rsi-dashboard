@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """B3 正式候選引擎 — repo 部署版（canonical 輸出）
-- 策略計算段與 my_backtest_v7f_final_candidate.py 逐字一致（B3 = 1.5/1.0/0.5，禁止修改）
-- 差異僅：①環境適配（token：env 優先、config.json fallback；不 chdir）②主程式改為 --canonical 輸出
+- 選股條件與 my_backtest_v7f_final_candidate.py 一致（B3 = 1.5/1.0/0.5）；成交模擬納入先賣後買與費用
+- 與研究回測同步策略及成交成本；部署差異為 token 環境適配與 canonical 輸出
 - 輸出：output/latest_signals.json（本週）、output/history/YYYY-MM-DD.json（最近20調倉週）、
          output/perf.json（整段績效）、output/validation_log.json（驗證結果）
 - validation FAIL（含 10-02 鎖定回歸值不符）→ exit(1)，不輸出可執行訊號
@@ -254,8 +254,9 @@ def run(weekday, mode, coefs=(1.5, 1.0, 0.5), start=None, end=None, record=True)
                        for c in pos if pd.notna(p[c]) and float(p[c]) > 0)
         pre_sh = {c: pos[c]["shares"] for c in pos}
         pre_total = cash + mv_at(px)
-        total = cash + mv_at(px)
+        total = pre_total
         last_tv_pool = {}
+        rebalance_plans = []
         for pool, wgt in [("A", a_w), ("B", b_w)]:
             lst = want.get(pool, [])
             if not lst or wgt <= 0:
@@ -280,41 +281,56 @@ def run(weekday, mode, coefs=(1.5, 1.0, 0.5), start=None, end=None, record=True)
                     continue
                 cur = pos.get(c)
                 cur_sh = cur["shares"] if cur else 0
+                diff = tv_ - cur_sh * p_
                 if cur:
                     cur["pool"] = pool
-                diff = tv_ - cur_sh * p_
-                if cur and abs(diff) <= tv_ * THRESH:
-                    continue
-                if diff > p_:
-                    if c in limit_up.columns and bool(limit_up[c].get(wk, False)):
-                        continue
-                    sh = min(int(diff // p_), int(cash // p_))
-                    if sh > 0:
-                        cash -= sh * p_
-                        if cur:
-                            cur["shares"] = cur_sh + sh
-                            cur["avg"] = (cur_sh * cur["avg"] + sh * p_) / (cur_sh + sh)
-                        else:
-                            pos[c] = {"shares": sh, "avg": p_, "pool": pool,
-                                      "wc": coef_of(want_rank.get(c, 8)), "rank": want_rank.get(c, 8),
-                                      "entry_d": wk}
-                        trades.append({"date": wk, "code": c, "pool": pool, "side": "BUY",
-                                       "price": p_, "shares": sh, "amount": sh * p_,
-                                       "rank": want_rank.get(c, 8), "is_new": not bool(cur),
-                                       "reason": ""})
-                elif diff < -p_:
-                    if c in limit_dn.columns and bool(limit_dn[c].get(wk, False)):
-                        continue
-                    sh = min(int(-diff // p_), cur_sh)
-                    if sh > 0:
-                        cash += sh * p_ * (1 - SELL_FEE)
-                        cur["shares"] = cur_sh - sh
-                        _full = cur["shares"] == 0
-                        if _full:
-                            del pos[c]
-                        trades.append({"date": wk, "code": c, "pool": pool, "side": "SELL",
-                                       "price": p_, "shares": sh, "amount": sh * p_,
-                                       "reason": "REBALANCE_DOWN", "full": _full, "is_new": False})
+                rebalance_plans.append((pool, c, tv_, p_, diff))
+
+        # Execute all overweight trims before any additions. This makes sale proceeds
+        # available to the buy pass on the same rebalance date.
+        for pool, c, tv_, p_, diff in rebalance_plans:
+            cur = pos.get(c)
+            if not cur or diff >= -p_ or abs(diff) <= tv_ * THRESH:
+                continue
+            if c in limit_dn.columns and bool(limit_dn[c].get(wk, False)):
+                continue
+            sh = min(int((-diff) // p_), cur["shares"])
+            if sh <= 0:
+                continue
+            cash += sh * p_ * (1 - SELL_FEE)
+            cur["shares"] -= sh
+            full = cur["shares"] == 0
+            if full:
+                del pos[c]
+            trades.append({"date": wk, "code": c, "pool": pool, "side": "SELL",
+                           "price": p_, "shares": sh, "amount": sh * p_,
+                           "reason": "REBALANCE_DOWN", "full": full, "is_new": False})
+
+        # Buy to target only when the existing 25% drift rule says to trade.
+        # Account for the declared buy commission both in cash availability and NAV.
+        for pool, c, tv_, p_, _ in rebalance_plans:
+            cur = pos.get(c)
+            cur_sh = cur["shares"] if cur else 0
+            diff = tv_ - cur_sh * p_
+            if diff <= p_ or (cur and abs(diff) <= tv_ * THRESH):
+                continue
+            if c in limit_up.columns and bool(limit_up[c].get(wk, False)):
+                continue
+            sh = min(int(diff // p_), int(cash // (p_ * (1 + BUY_FEE))))
+            if sh <= 0:
+                continue
+            cash -= sh * p_ * (1 + BUY_FEE)
+            if cur:
+                cur["shares"] = cur_sh + sh
+                cur["avg"] = (cur_sh * cur["avg"] + sh * p_ * (1 + BUY_FEE)) / (cur_sh + sh)
+            else:
+                pos[c] = {"shares": sh, "avg": p_ * (1 + BUY_FEE), "pool": pool,
+                          "wc": coef_of(want_rank.get(c, 8)), "rank": want_rank.get(c, 8),
+                          "entry_d": wk}
+            trades.append({"date": wk, "code": c, "pool": pool, "side": "BUY",
+                           "price": p_, "shares": sh, "amount": sh * p_,
+                           "rank": want_rank.get(c, 8), "is_new": not bool(cur),
+                           "reason": ""})
 
         # ---- 每週調倉決策明細（實盤信號輸出用）----
         if record:
@@ -390,7 +406,7 @@ def run(weekday, mode, coefs=(1.5, 1.0, 0.5), start=None, end=None, record=True)
                 ns = shares - row["shares"]
                 if ns <= 0:
                     days_n = len(close[cs].loc[entry_d:d].dropna()) if entry_d in close[cs].index else 0
-                    ret = row["price"]/avg - 1 if avg > 0 else 0
+                    ret = row["price"] * (1 - SELL_FEE) / avg - 1 if avg > 0 else 0
                     mfe = mae = float("nan")
                     try:
                         seg = close[cs].loc[entry_d:d].dropna()
@@ -515,8 +531,8 @@ r = run(5, "close", B3)
 p(f"\n【B3 整段驗證】CAGR {r['cagr']*100:.2f}% | MDD {r['mdd']*100:.2f}% | Sharpe {r['sharpe']:.2f} | "
   f"Sortino {r['sortino']:.2f} | Calmar {r['calmar']:.2f} | PF {r['pf']:.2f} | 勝率 {r['winrate']:.1f}% | "
   f"交易 {r['trades']} | Turnover {r['turnover']:.2f}")
-ok_b = abs(r["cagr"] * 100 - 42.10) < 1.0 and abs(r["mdd"] * 100 + 34.19) < 1.0
-p(f"與 B3 基準一致性：{'✅ 一致' if ok_b else '❌ 不一致（需查）'}（基準 42.10% / -34.19%，容差 ±1.0pp）")
+ok_b = abs(r["cagr"] * 100 - 39.96) < 1.0 and abs(r["mdd"] * 100 + 35.06) < 1.0
+p(f"與 B3 含費用基準一致性：{'✅ 一致' if ok_b else '❌ 不一致（需查）'}（基準 39.96% / -35.06%，容差 ±1.0pp）")
 
 trades_df = r["trades_df"]
 plans = r["weekly_plans"]
@@ -749,15 +765,15 @@ if latest_c["rebalance_date"] == "2026-10-02":
         if g != v:
             reg_ok = False
             reg_msgs.append(f"{k} 期望 {v} 實際 {g}")
-    for name, expv, tol in [("buy_total", 2266264, 0.02), ("sell_total", 2778669, 0.02),
-                            ("cash", 790409, 0.02)]:
+    for name, expv, tol in [("buy_total", 2042192, 0.02), ("sell_total", 2358084, 0.02),
+                            ("cash", 538072, 0.02)]:
         gv = latest_c[name]
         if abs(gv - expv) / expv > tol:
             reg_ok = False
             reg_msgs.append(f"{name} 期望 {expv:,} 實際 {gv:,.0f}")
-    if abs(latest_c["buffer"] * 100 - 13.4) > 0.6:
+    if abs(latest_c["buffer"] * 100 - 10.8) > 0.6:
         reg_ok = False
-        reg_msgs.append(f"buffer 期望 13.4% 實際 {latest_c['buffer']*100:.1f}%")
+        reg_msgs.append(f"buffer 期望 10.8% 實際 {latest_c['buffer']*100:.1f}%")
     rank_w = {}
     for a in latest_c["actions"]:
         if a["channel"] == "A" and a["rank"]:
@@ -768,7 +784,7 @@ if latest_c["rebalance_date"] == "2026-10-02":
                 reg_ok = False
                 reg_msgs.append(f"Rank{rank} 權重期望 {expv*100:.1f}% 實際 {rank_w[rank]*100:.1f}%")
     p(f"\n【10-02 鎖定回歸值】{'✅ 全部相符' if reg_ok else '❌ ' + '；'.join(reg_msgs)}"
-      f"（BUY7/SELL7/REBAL3/HOLD6、買2,266,264/賣2,778,669/現金790,409/Buffer13.4%、Rank2-5=4.4%/6-10=2.9%/15=1.5%）")
+      f"（BUY7/SELL7/REBAL3/HOLD6、買2,042,192/賣2,358,084/現金538,072/Buffer10.8%、Rank2-5=4.4%/6-10=2.9%/15=1.5%）")
 
 # limit_dn（疑似跌停買單）列為「警告」不阻擋：跌停不一定買不到（開盤未跌停可成交），
 # 誤擋會阻斷正常調倉。其餘硬性檢查（limit_up/missing_price/delisted/lookahead 等）維持阻擋。
