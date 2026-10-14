@@ -13,6 +13,8 @@ on:
           - daily
           - full
   push:
+    branches:
+      - main
     paths:
       - 'output/latest_signals.json'   # 推送 canonical → 重建 Web（canonical 即 B3 結果，不重算）
       - 'update_data.py'               # 推送 Web 產生器 → 重建 Web
