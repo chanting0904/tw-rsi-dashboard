@@ -19,6 +19,9 @@ on:
       - 'output/latest_signals.json'   # 推送 canonical → 重建 Web（canonical 即 B3 結果，不重算）
       - 'update_data.py'               # 推送 Web 產生器 → 重建 Web
       - '.github/workflows/update_pages.yml'
+      - 'weekly_status.js'
+      - 'weekly_status.py'
+      - 'retry_runner.py'
 permissions:
   contents: write
   pages: write
@@ -28,6 +31,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - name: Cache finlab_db
@@ -47,7 +51,7 @@ jobs:
           || github.event_name == 'workflow_dispatch'
         env:
           FINLAB_TOKEN: ${{ secrets.FINLAB_TOKEN }}
-        run: python daily_update.py
+        run: python retry_runner.py -- python daily_update.py
       - name: B3 收盤調倉計畫（本週最後交易日，使用前一交易日資料）
         if: >
           (github.event_name == 'schedule' && github.event.schedule == '0 22 * * 0-4')
@@ -58,12 +62,12 @@ jobs:
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
           FORCE_FULL: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
         run: |
-          python check_and_run.py
+          python retry_runner.py --weekly -- python check_and_run.py
       - name: 重建 Web（push 觸發，讀既有 canonical）
         if: github.event_name == 'push'
         env:
           FINLAB_TOKEN: ${{ secrets.FINLAB_TOKEN }}
-        run: python update_data.py
+        run: python retry_runner.py -- python update_data.py
       - name: 提交網頁與本地價格庫回 main
         run: |
           git config user.name "rsi-bot"
@@ -77,7 +81,7 @@ jobs:
       - name: 明確要求 Pages 重建（bot 提交不會自行觸發 Pages）
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python pages_publish.py
+        run: python retry_runner.py -- python pages_publish.py
       - name: 網站上線後發送同一份 Telegram 訊號
         if: >
           github.event_name == 'schedule'
@@ -95,7 +99,27 @@ jobs:
             git pull --rebase
             git push
           fi
-      - name: 失敗看門狗告警（任一 step 失敗→TG 通知）
+      - name: 失敗狀態上網（保留上一份訊號）
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          B3_SKIP_LOCAL_UPDATE: '1'
+        run: |
+          python weekly_status.py failed
+          python update_data.py || echo "網頁重建失敗，保留原頁面並單獨發布狀態檔"
+          git config user.name "rsi-bot"
+          git config user.email "bot@rsi.local"
+          git add index.html
+          if [ -f output/weekly_status.json ]; then
+            git add output/weekly_status.json
+          fi
+          if ! git diff --cached --quiet; then
+            git commit -m "record update failure [skip ci]"
+            git pull --rebase --autostash
+            git push
+          fi
+          python pages_publish.py
+      - name: 重試仍失敗才告警（任一 step 最終失敗→TG 通知）
         if: failure()
         env:
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
