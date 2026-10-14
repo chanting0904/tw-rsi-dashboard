@@ -18,6 +18,7 @@ on:
     paths:
       - 'output/latest_signals.json'   # 推送 canonical → 重建 Web（canonical 即 B3 結果，不重算）
       - 'update_data.py'               # 推送 Web 產生器 → 重建 Web
+      - '.github/workflows/update_pages.yml'
 permissions:
   contents: write
   pages: write
@@ -63,11 +64,11 @@ jobs:
         env:
           FINLAB_TOKEN: ${{ secrets.FINLAB_TOKEN }}
         run: python update_data.py
-      - name: 提交回 main（Pages 自動重建）
+      - name: 提交網頁與本地價格庫回 main
         run: |
           git config user.name "rsi-bot"
           git config user.email "bot@rsi.local"
-          git add state.json index.html holidays.json check_and_run.py publish_gate.py update_data.py tg_push_b3.py ai_monitor.py ai_signals.json b3_canonical.py local_db_updater.py daily_update.py output/
+          git add state.json index.html holidays.json check_and_run.py publish_gate.py update_data.py tg_push_b3.py ai_monitor.py ai_signals.json b3_canonical.py local_db_updater.py daily_update.py local_db/ output/
           if ! git diff --cached --quiet; then
             git commit -m "auto update page [skip ci]"
             git pull --rebase
