@@ -230,7 +230,7 @@ def evaluate(force=False, today=None):
                 baseline = {"cagr": cagr_now, "mdd": mdd_now,
                             "updated": datetime.datetime.now(TW).strftime("%Y-%m-%d %H:%M:%S")}
 
-        # 當週回歸基準：key=rebalance_date；首跑建立、同週重跑比對；10-02 沿用原鎖定死值
+        # 當週回歸基準：key=rebalance_date；首跑建立、同週重跑比對；10-02 使用新成本口徑鎖定值
         if rd:
             got = sig.get("counts", {})
             rank_w = {}
@@ -247,8 +247,8 @@ def evaluate(force=False, today=None):
             }
             if rd == "2026-10-02" and rd not in reg_hist:
                 reg_hist[rd] = {"counts": {"BUY": 7, "SELL": 7, "REBAL": 3, "HOLD": 6},
-                                "buy_total": 2266264, "sell_total": 2778669, "cash": 790409,
-                                "buffer": 0.134, "rank_weights": {"2": 0.044, "6": 0.029, "15": 0.015}}
+                                "buy_total": 2042192, "sell_total": 2358084, "cash": 538072,
+                                "buffer": 0.1079, "rank_weights": {"2": 0.04388, "6": 0.02925, "15": 0.01463}}
             if rd in reg_hist:
                 exp = reg_hist[rd]
                 ec = exp.get("counts", {})
