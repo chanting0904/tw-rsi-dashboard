@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-"""Web 資料產生器（B3 canonical 版）
-- 不再自行計算策略：策略唯一來源 = B3 引擎（b3_canonical.py）產出的 output/latest_signals.json
+"""Web 資料產生器（V4 canonical 版）
+- 不再自行計算策略：策略唯一來源 = V4 引擎（v4_canonical.py）產出的 output/latest_signals.json
 - 本檔職責：①更新本地庫（TWSE/TPEx 官方源，零 FinLab 流量）②讀 canonical + prices → 組 DATA
           ③生成 index.html（內嵌 DATA，file:// 與 GitHub Pages 皆可開）
 - daily_update.py 負責每日更新 output/prices.json（持股最新收盤價）
@@ -9,7 +9,8 @@
 import os, sys, json, datetime
 from zoneinfo import ZoneInfo
 from publish_gate import load_holidays, last_trading_day_of_week
-from b3_engine.config import StrategyConfig
+from v4_engine.config import StrategyConfig
+from version import RELEASE_VERSION
 HERE = os.path.dirname(os.path.abspath(__file__))
 os.chdir(HERE)
 
@@ -34,17 +35,17 @@ import pandas as pd
 import numpy as np
 
 # [本地化] 盤後先自動更新本地庫（TWSE/TPEx 官方源優先、零 FinLab 流量）。失敗不阻斷。
-if os.environ.get('B3_SKIP_LOCAL_UPDATE') != '1':
+if os.environ.get('V4_SKIP_LOCAL_UPDATE') != '1':
     try:
         from local_db_updater import main as _local_update
         _local_update()
     except Exception as _e:
         print(f"[本地庫更新] 跳過（{str(_e)[:80]}）")
 
-# ---------- 1. 讀 canonical（B3 唯一策略結果）----------
+# ---------- 1. 讀 canonical（V4 唯一策略結果）----------
 sig_path = "output/latest_signals.json"
 if not os.path.exists(sig_path):
-    print(f"❌ 找不到 {sig_path} — 請先執行 b3_canonical.py 產生策略結果")
+    print(f"❌ 找不到 {sig_path} — 請先執行 v4_canonical.py 產生策略結果")
     sys.exit(1)
 with open(sig_path, encoding="utf-8") as f:
     SIG = json.load(f)
@@ -118,10 +119,12 @@ DATA = {
     "calendar_years": list(_calendar),
     "holidays": sorted({day for days in _calendar.values() for day in days}),
     "weekly_status": read_optional('output/weekly_status.json'),
-    "sig_validated": _validation.get('verdict') == 'PASS' and _validation.get('strategy_version') == 'B3' and _validation.get('rebalance_date') == SIG.get('rebalance_date'),
+    "sig_validated": _validation.get('verdict') == 'PASS' and _validation.get('strategy_version') == 'V4' and _validation.get('rebalance_date') == SIG.get('rebalance_date') and _validation.get('release_version') == SIG.get('release_version') == RELEASE_VERSION,
     "signal_mode": SIG.get("signal_mode", "CLOSE_SIMULATION"),
     "price_basis_date": SIG.get("price_basis_date") or SIG.get("rebalance_date"),
-    "strategy_version": SIG.get("strategy_version", "B3"),
+    "strategy_version": SIG.get("strategy_version", "V4"),
+    "release_version": SIG.get("release_version"),
+    "receivables": SIG.get("receivables", 0),
     "buy_fee": SIG.get("buy_fee", StrategyConfig().buy_fee),
     "sig_date": SIG.get("sig_date"),
     "rebal_date": SIG.get("rebalance_date"),
@@ -148,7 +151,7 @@ HTML = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>天穹紅蓮三重脈衝時空追擊者 B3（動態A·雙通道 60/40）</title>
+<title>V4.0.0｜天穹紅蓮三重脈衝時空追擊者 V4（動態A·雙通道 60/40）</title>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
 <style>
   :root{
@@ -223,9 +226,9 @@ HTML = """<!DOCTYPE html>
 <body>
 <div class="wrap">
   <header>
-    <h1>🌩️ 天穹紅蓮三重脈衝時空追擊者<small>B3 實盤 Dashboard｜動態A·雙通道 60/40</small></h1>
+    <h1>🌩️ 天穹紅蓮三重脈衝時空追擊者<small>V4.0.0 模擬 Dashboard｜動態A·雙通道 60/40</small></h1>
     <div class="meta">
-      策略版本：<b>B3</b>｜最近調倉日：<b id="m-rebal"></b><br>
+      策略版本：<b>V4.0.0</b>｜最近調倉日：<b id="m-rebal"></b><br>
       股價更新：<b id="m-px"></b>（每日收盤）
     </div>
   </header>
@@ -242,7 +245,7 @@ HTML = """<!DOCTYPE html>
       <button id="cap-reset" class="ghost">重新設定</button>
       <span class="cap-info">試算資金：<b id="cap-now"></b>｜配置後預估現金（<span id="cap-bufpct"></span>）：<b id="cap-cash"></b>｜整股預估投入：<b id="cap-invest"></b></span>
     </div>
-    <div class="note">🔸 權重（%）是 B3 策略結果，不隨本金改變；所有目標金額／目標股數都依此本金即時計算。<br>
+    <div class="note">🔸 權重（%）是 V4.0.0 策略結果，不隨本金改變；所有目標金額／目標股數都依此本金即時計算。<br>
     🔸 輸入後按「套用本金」記住（存你瀏覽器，重新整理不會消失）；「重新設定」回預設 100,000。<br>
     🔸 本頁只給「目標清單」：每檔該持有多少股（照本金估算）。<b>實際買賣你自己對照手上持股下單</b>，系統不記錄你的持股。</div>
     <div id="allocationnote" class="note"></div>
@@ -253,11 +256,11 @@ HTML = """<!DOCTYPE html>
   <section>
     <h2><span id="ops-title">📋 最近一期模擬清單</span> <span class="tag">操作順序：先賣 → 減碼 → 買 → 加碼 → 持有</span></h2>
     <div id="ops"></div>
-    <div class="note">🔸 先賣出／減碼釋出現金，再買入／加碼。每檔顯示 B3 目標權重＋照目前本金算出的「目標股數」（目標金額 ÷ 現價，取整股）；<b>實際買賣股數請你自己對照手上持股決定</b>。</div>
+    <div class="note">🔸 先賣出／減碼釋出現金，再買入／加碼。每檔顯示 V4 模擬調倉後建議權重＋照目前本金算出的「目標股數」（目標金額 ÷ 現價，取整股）；<b>實際買賣股數請你自己對照手上持股決定</b>。</div>
   </section>
 
   <section>
-    <h2>💼 持股與買賣明細 <span class="tag">B3 分檔權重（Rank1-5×1.5 / 6-10×1.0 / 11-15×0.5）</span></h2>
+    <h2>💼 持股與買賣明細 <span class="tag">V4 分檔權重（Rank1-5×1.5 / 6-10×1.0 / 11-15×0.5）</span></h2>
     <div style="overflow-x:auto">
     <table id="holdtbl">
       <thead><tr>
@@ -271,7 +274,7 @@ HTML = """<!DOCTYPE html>
     <div id="sellnote" class="note"></div>
     <div class="note">🔸 動作說明：BUY=買入｜SELL=賣出｜REBALANCE_BUY=加碼｜REBALANCE_SELL=減碼｜HOLD=不動（買紅賣綠＝台股習慣）。<br>
     🔸 目標金額 = 實盤本金 × 目標權重；目標股數為「預估」（目標金額 ÷ 現價，無條件取整數股，實際成交價可能不同）。<br>
-    🔸 <b style="color:var(--warn)">🟡 加碼／減碼（REBALANCE）= 該檔持倉權重偏離目標超過 B3 的 ±25% 門檻，才需要調</b>。這是「權重偏離 25%」，不是股價漲跌 25%。<br>
+    🔸 <b style="color:var(--warn)">🟡 加碼／減碼（REBALANCE）= 該檔持倉權重偏離目標超過 V4 的一般 100% 差距門檻，或整體倉位需要修復，才需要調</b>。舊持股減少一般加減碼；退出、新股加入、90～95% 倉位修復仍執行。<br>
     🔸 系統不記錄你的實際持股；「目標股數」是你照本金應該持有的量，實際買賣你自己對照手上持股下單。</div>
   </section>
 
@@ -285,7 +288,7 @@ HTML = """<!DOCTYPE html>
   </section>
 
   <section>
-    <h2>📊 B3 歷史績效互動計算器 <span class="tag">策略 B3｜全期 CAGR <span id="p-cagr" class="up"></span>｜全期 MDD <span id="p-mdd" class="down"></span></span></h2>
+    <h2>📊 V4 歷史績效互動計算器 <span class="tag">策略 V4｜全期 CAGR <span id="p-cagr" class="up"></span>｜全期 MDD <span id="p-mdd" class="down"></span></span></h2>
     <div class="capbar">
       <input type="number" id="pc-cap" min="10000" step="10000" placeholder="投入本金（例：1000000）">
       <span style="color:var(--dim); font-size:13px;">起始</span>
@@ -306,14 +309,14 @@ HTML = """<!DOCTYPE html>
     <div id="chart-nav" class="chart"></div>
     <div id="chart-dd" class="chart small"></div>
     <div class="note">
-      計算方式：直接讀 B3 歷史 NAV，取「起始年年初 NAV」與「結束年年末 NAV」端點相除，不重新跑回測。<span id="pc-range"></span><br>
+      計算方式：直接讀 V4 歷史 NAV，取「起始年年初 NAV」與「結束年年末 NAV」端點相除，不重新跑回測。<span id="pc-range"></span><br>
       回測基準：初始本金 <span id="p-initial"></span>｜已完成期間 <span id="p-period"></span>｜最終資產 <span id="p-nav"></span>。<br>
       <b style="color:var(--warn)">⚠️ 歷史回測績效，不代表未來收益。</b>
     </div>
   </section>
 
   <footer>
-    資料由 B3 引擎（b3_canonical.py）計算，Web / TG / Replay 讀同一份 canonical 結果；本頁只顯示與依本金估算，不重算策略。<br>
+    資料由 V4 引擎（v4_canonical.py）計算，Web / TG / Replay 讀同一份 canonical 結果；本頁只顯示與依本金估算，不重算策略。<br>股利先列應收、發放後才可買股；未知付款日持續列應收。配股採除權日可交易的模型假設，畸零權益暫列應收；不含個人股利稅負。<br>
     本頁僅供資訊展示，不構成投資建議。
   </footer>
 </div>
@@ -333,7 +336,7 @@ const ACT_CLS = {BUY:"b-buy", SELL:"b-sell", REBALANCE_BUY:"b-rebup", REBALANCE_
 const ORDER = ["SELL", "REBALANCE_SELL", "BUY", "REBALANCE_BUY", "HOLD"];
 
 /* ================= 唯一資金基準 ================= */
-let USER_CAPITAL = parseFloat(localStorage.getItem("b3_user_capital") || "100000") || 100000;
+let USER_CAPITAL = parseFloat(localStorage.getItem("v4_user_capital") || "100000") || 100000;
 if (!Number.isFinite(USER_CAPITAL) || USER_CAPITAL < 10000) USER_CAPITAL = 100000;
 let CAPITAL_PREVIEW = null;
 function updateCapitalPreview() {
@@ -351,7 +354,7 @@ function tgtShares(h) {
 function tgtAmount(h) { return h.action === "SELL" ? 0 : AMT(h.target_weight || 0); }
 function is25(h) { return (h.action === "REBALANCE_BUY" || h.action === "REBALANCE_SELL") && !(h.reason || "").startsWith("PORTFOLIO_BAND_"); }
 
-/* ================= 排序（B3 權重不變，僅排列） ================= */
+/* ================= 排序（V4 權重不變，僅排列） ================= */
 function cmp(a, b) { return a < b ? -1 : (a > b ? 1 : 0); }
 function sortList(rows, k1, d1, k2, d2) {
   return rows.slice().sort((x, y) => {
@@ -425,7 +428,7 @@ sw.innerHTML = DATA.tsm_on
 /* ================= 本金輸入 ================= */
 function persistCap() {
   const v = parseFloat($("cap").value);
-  if (Number.isFinite(v) && v >= 10000) { USER_CAPITAL = v; localStorage.setItem("b3_user_capital", String(v)); }
+  if (Number.isFinite(v) && v >= 10000) { USER_CAPITAL = v; localStorage.setItem("v4_user_capital", String(v)); }
   $("cap").value = USER_CAPITAL;
   renderAll();
 }
@@ -435,7 +438,7 @@ $("cap").addEventListener("input", (e) => {
 });
 $("cap-apply").addEventListener("click", persistCap);
 $("cap-reset").addEventListener("click", () => {
-  localStorage.removeItem("b3_user_capital");
+  localStorage.removeItem("v4_user_capital");
   USER_CAPITAL = 100000;
   $("cap").value = 100000;
   renderAll();
@@ -476,7 +479,7 @@ function renderCards() {
     ["MDD(回測)", P(DATA.perf.mdd, 2), "最大回撤", "down"],
     [period + "買進", (c.BUY||0) + " 檔", "🟢 BUY", "up"],
     [period + "賣出", (c.SELL||0) + " 檔", "🔴 SELL", "down"],
-    ["加碼/減碼", (c.REBALANCE_BUY||0) + "/" + (c.REBALANCE_SELL||0), "🟡 25%調倉", ""],
+    ["加碼/減碼", (c.REBALANCE_BUY||0) + "/" + (c.REBALANCE_SELL||0), "🟡 減少加減碼", ""],
     ["持有不動", (c.HOLD||0) + " 檔", "⚪ HOLD", ""],
   ];
   $("cards").innerHTML = cards.map(x =>
@@ -562,7 +565,7 @@ function renderHoldings() {
     const tgtSh = tgtShares(h);
     const pxNow = h.px || h.price || 0;
     const tgtCls = (h.action === "SELL") ? "num tgt" : "num";
-    const actBadge = ACT_LABEL[h.action] + (is25(h) ? '<span class="badge-25">25%門檻</span>' : ((h.reason || "").startsWith("PORTFOLIO_BAND_") ? '<span class="badge-25">90–95%配置調整</span>' : ""));
+    const actBadge = ACT_LABEL[h.action] + (is25(h) ? '<span class="badge-25">100%差距門檻</span>' : ((h.reason || "").startsWith("PORTFOLIO_BAND_") ? '<span class="badge-25">90–95%配置調整</span>' : ""));
     return '<tr>' +
       '<td><span class="badge ' + ACT_CLS[h.action] + '">' + actBadge + '</span></td>' +
       '<td>' + h.code + '</td><td>' + h.name + '</td>' +
@@ -644,7 +647,7 @@ function renderHist() {
   sel.dispatchEvent(new Event("change"));
 }
 
-/* ================= B3 歷史績效互動計算器（只讀 DATA.perf NAV，不重跑回測） ================= */
+/* ================= V4 歷史績效互動計算器（只讀 DATA.perf NAV，不重跑回測） ================= */
 function initPerfCalc() {
   const YEARS = [...new Set(((DATA.perf && DATA.perf.nav) || []).map(row => Number(row[0].slice(0,4))))].sort();
   const y0 = $("pc-y0"), y1 = $("pc-y1");
@@ -708,6 +711,7 @@ initPerfCalc();
 </html>
 """
 
+HTML = HTML.replace("V4.0.0", RELEASE_VERSION)
 HTML = HTML.replace("__DATA_JSON__", DATA_JSON)
 with open(os.path.join(HERE, 'weekly_status.js'), encoding='utf-8') as _source:
     HTML = HTML.replace('__WEEKLY_STATUS_JS__', _source.read())

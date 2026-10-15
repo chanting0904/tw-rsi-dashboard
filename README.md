@@ -1,4 +1,17 @@
-# B3 台股策略儀表板
+# V4.0.0 台股策略儀表板
+
+程式版本及每次改動：[VERSION_HISTORY.txt](VERSION_HISTORY.txt)。任何正式程式修改必須更新版本紀錄，CI 會檢查。
+
+V4 將一般個股加減碼差距門檻由 25% 放寬到 100%，仍會處理退出、新加入與整體 90～95% 配置。網頁建議權重採模擬調倉後持倉，另保存原始排名目標，避免畫面把減少加減碼的規則取消。
+
+## 股利與公司行動會計
+
+成交與整股使用原始價格；RSI、均線與成交漲跌幅使用還原價格。股利在除息時列應收、已知發放日才可作買股現金，不重複把還原價報酬加進資產。現金減資依交易所參考價格與面額推算保留比例；未知發放日期保留應收。配股視為除權日可交易是模型假設，畸零股權益以事件日價格列為不可用應收；不含個人所得稅與補充保費。遇無法對帳的持股公司行動即停止，不把價格跳空填造成收益。暫停交易期間以最後可得價格估值且不能成交。
+
+2015～2026-10-08 重算：V4 年化 42.96%、週 MDD 32.54%；同一會計口徑、25% 門檻版本年化 43.08%、週 MDD 35.73%。V4 並非在修正後同時提高兩項指標。這些是模型結果，不保證未來績效。
+
+舊 B3 公開輸出封存於 output/archive/b3_before_v4/，保留原始歷史版本，不改標成 V4。
+
 
 網頁：https://chanting0904.github.io/tw-rsi-dashboard/
 
@@ -32,7 +45,7 @@ GitHub Actions 於台北週一至週五 06:00 執行；只有該週最後交易�
 
 ## 引擎與資金試算
 
-`b3_canonical.py` 是指令入口，計算在 `b3_engine/`：
+`v4_canonical.py` 是指令入口，計算在 `v4_engine/`：
 
 - `config.py` / `context.py`：參數與資料容器。
 - `market.py` / `selection.py`：資料與候選名單。
@@ -41,9 +54,9 @@ GitHub Actions 於台北週一至週五 06:00 執行；只有該週最後交易�
 - `canonical.py` / `validation.py` / `pipeline.py`：Web/TG 輸出、驗證、發布。
 - `allocation.py` / `capital_preview.js`：目標整股配置與模型費用試算，Python/JavaScript 有一致性檢查。
 
-研究入口 `my_backtest_v7f_final_candidate.py` 使用相同引擎，輸出到 `research_output/`（可用 `--output-dir` 指定）；保留 `daily_trade_plan.csv`、`_final_candidate_report.txt` 與績效 JSON，沒有獨立的第二套成交或績效邏輯。
+研究入口 `v4_backtest.py` 使用相同引擎，輸出到 `research_output/`（可用 `--output-dir` 指定）；保留 `daily_trade_plan.csv`、`_final_candidate_report.txt` 與績效 JSON，沒有獨立的第二套成交或績效邏輯。
 
-`python b3_canonical.py --report-only --capital 200000` 可模擬不同起始本金的完成期間績效；使用 `B3_OUTPUT_DIR` 將研究結果放在獨立目錄。非預設本金只能產生報表，不能替換共用週訊號。
+`python v4_canonical.py --report-only --capital 200000` 可模擬不同起始本金的完成期間績效；使用 `V4_OUTPUT_DIR` 將研究結果放在獨立目錄。非預設本金只能產生報表，不能替換共用週訊號。
 
 網頁輸入的是目前用於目標配置的總資金。目標股數、預估現金與費用依實際整股試算；高價股票不足一股或目標權重本身不足時會明列提醒，不保證任何本金都能達到 90–95%。模型費率由參數提供，實際券商費用與成交另計。
 

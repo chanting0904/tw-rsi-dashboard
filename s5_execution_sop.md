@@ -1,4 +1,4 @@
-# B3 每週調倉與 S5 補單
+# V4 每週調倉與 S5 補單
 
 更新：2026-10-14，依使用者確認的執行方式。
 
@@ -29,10 +29,10 @@
 
 ## 檔案
 
-- `b3_canonical.py`：正式引擎、模擬持倉與訊號。
+- `v4_canonical.py`：正式引擎、模擬持倉與訊號。
 - `live_plan.py`：以昨日收盤資料準備本週收盤計畫。
 - `publish_gate.py`：交易日與發布檢查。
-- `update_data.py` / `tg_push_b3.py`：同一訊號的網頁與訊息顯示。
+- `update_data.py` / `tg_push_v4.py`：同一訊號的網頁與訊息顯示。
 - `output/history/`：已完成交易週的模擬結果。
 - `s5_live/`：選用的成交研究工具；僅有買賣訂單不能推算實際整體持倉或 A 通道報酬。
 - `preflight.py` / `tests/`：不連網、不發訊息的程式檢查。

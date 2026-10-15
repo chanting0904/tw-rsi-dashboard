@@ -3,7 +3,8 @@ finlab_db/
 __pycache__/
 *.pyc
 *.tmp
-_b3_canonical.log.txt
-b3-stage-*/
+_v4_canonical.log.txt
+v4-stage-*/
 audit_*/
 research_output/
+release_audit/

@@ -1,3 +1,4 @@
+from version import RELEASE_VERSION
 # -*- coding: utf-8 -*-
 """Publish the canonical simulation plan; brokerage holdings are not tracked."""
 import datetime
@@ -24,10 +25,12 @@ LABELS = {"SELL": "🔴 賣出", "REBALANCE_SELL": "🟡 減碼", "BUY": "🟢 �
 def build_message(signal):
     escape = lambda value: html.escape(str(value))
     exposure = signal.get("stock_exposure", 1 - signal.get("buffer", 0))
-    lines = ["<b>🌩️ B3 本週模擬調倉計畫</b>",
+    lines = ["<b>🌩️ V4 本週模擬調倉計畫</b>",
              f"訊號基準：{escape(signal.get('sig_date'))}｜收盤調倉日：{escape(signal.get('rebalance_date'))}",
-             f"版本：{escape(signal.get('commit_sha', '—'))}",
+             f"版本：{escape(signal.get('release_version', RELEASE_VERSION))}｜{escape(signal.get('commit_sha', '—'))}",
              f"模擬配置：股票 {exposure:.1%}｜現金 {signal.get('buffer', 0):.1%}"]
+    if signal.get('receivables', 0):
+        lines.append(f"應收股利／權益：{signal['receivables']:,.0f} 元，尚未列入可用現金。")
     if signal.get("signal_mode") == "PRE_CLOSE_PLAN":
         lines.append("股數以基準日收盤價試算；當日收盤成交價會影響最終模擬結果。")
     for action, label in LABELS.items():
@@ -35,7 +38,7 @@ def build_message(signal):
         lines.append(f"\n<b>{label}（{len(rows)}）</b>")
         for row in sorted(rows, key=lambda a: (a.get("rank") or 99, str(a["stock_code"]))):
             lines.append(f"• <code>{escape(row['stock_code'])}</code> {escape(row['stock_name'])}"
-                         f"（{escape(row['channel'])}）｜策略目標 {row['target_weight']:.2%}"
+                         f"（{escape(row['channel'])}）｜建議持有 {row['target_weight']:.2%}"
                          f"｜調倉前模擬 {row['current_weight']:.2%}")
             if row.get("reason"):
                 lines.append("  原因：" + escape(row["reason"])[:500])

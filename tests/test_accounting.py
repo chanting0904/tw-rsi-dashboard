@@ -5,12 +5,12 @@ from pathlib import Path
 import tempfile
 import unittest
 import pandas as pd
-from b3_engine.config import StrategyConfig
-from b3_engine.context import MarketContext
-from b3_engine.jsonio import write_json
-from b3_engine.performance import trade_cycles, profit_factor, annual_performance
-from b3_engine.simulation import run
-from b3_engine.allocation import preview_allocation
+from v4_engine.config import StrategyConfig
+from v4_engine.context import MarketContext
+from v4_engine.jsonio import write_json
+from v4_engine.performance import trade_cycles, profit_factor, annual_performance
+from v4_engine.simulation import run
+from v4_engine.allocation import preview_allocation
 
 
 def sample_context(capital=100_000, no_targets=False):
@@ -124,22 +124,22 @@ class AccountingTests(unittest.TestCase):
             preview_allocation([{'code': '2330', 'target_weight': 1.1, 'price': 100}], 1000)
 
     def test_research_reports_use_shared_model_without_public_signal_writes(self):
-        from my_backtest_v7f_final_candidate import write_report
+        from v4_backtest import write_report
         context = sample_context()
         result = run(context)
         with tempfile.TemporaryDirectory() as folder:
             write_report(context, result, folder, folder)
             root = Path(folder)
             self.assertTrue((root / 'daily_trade_plan.csv').exists())
-            self.assertEqual(json.loads((root / 'perf.json').read_text(encoding='utf-8'))['accounting_version'], 'all_fills_and_prior_year_nav')
+            self.assertEqual(json.loads((root / 'perf.json').read_text(encoding='utf-8'))['accounting_version'], 'v4_cash_entitlements_and_share_actions')
             self.assertFalse((root / 'latest_signals.json').exists())
 
     def test_importing_cli_does_not_load_market_or_write(self):
         import importlib
-        import b3_canonical
+        import v4_canonical
         from unittest.mock import patch
-        with patch('b3_engine.market.load_market') as load:
-            importlib.reload(b3_canonical)
+        with patch('v4_engine.market.load_market') as load:
+            importlib.reload(v4_canonical)
             load.assert_not_called()
 
 

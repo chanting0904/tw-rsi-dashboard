@@ -1,17 +1,17 @@
-"""Research report entry point using the same B3 model as weekly publication."""
+"""Research report entry point using the same V4 model as weekly publication."""
 import argparse
 import csv
 import os
 from pathlib import Path
-from b3_engine.config import StrategyConfig
+from v4_engine.config import StrategyConfig
 
 
 def write_report(ctx, result, destination, root):
-    from b3_engine.canonical import classify_day, canonical_for
-    from b3_engine.jsonio import write_json
-    from b3_engine.performance import perf_document
-    from b3_engine.pipeline import commit_sha
-    from tg_push_b3 import build_message
+    from v4_engine.canonical import classify_day, canonical_for
+    from v4_engine.jsonio import write_json
+    from v4_engine.performance import perf_document
+    from v4_engine.pipeline import commit_sha
+    from tg_push_v4 import build_message
     destination = Path(destination)
     destination.mkdir(parents=True, exist_ok=True)
     write_json(destination / 'perf.json', perf_document(result, ctx.config))
@@ -33,7 +33,7 @@ def write_report(ctx, result, destination, root):
                     'weight_diff': action['weight_diff'], 'current_shares': action['pre_sh'],
                     'target_shares': action['target_sh'], 'trade_shares': action['trade_sh'],
                     'estimated_price': action['price'], 'estimated_amount': action['amount'], 'cash_after_trade': plan['cash']})
-    lines = [f"B3 completed simulation through {result['nav'].index[-1].date()}",
+    lines = [f"V4 completed simulation through {result['nav'].index[-1].date()}",
              f"CAGR {result['cagr']:.2%} | MDD {result['mdd']:.2%} | PF {result['pf']:.2f} | Win rate {result['winrate']:.1f}%",
              'All fills and fees included in completed cycles; yearly returns use the prior-year closing NAV.',
              'Below are simulated historical message examples; nothing is sent.']
@@ -43,14 +43,14 @@ def write_report(ctx, result, destination, root):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description='B3 research reports; no public signal writes or Telegram delivery')
+    parser = argparse.ArgumentParser(description='V4 research reports; no public signal writes or Telegram delivery')
     parser.add_argument('--capital', type=float, default=100_000)
     parser.add_argument('--output-dir')
     args = parser.parse_args(argv)
-    from b3_engine.market import load_market
-    from b3_engine.simulation import run
+    from v4_engine.market import load_market
+    from v4_engine.simulation import run
     root = Path(__file__).resolve().parent
-    ctx = load_market(StrategyConfig(start_capital=args.capital), root, data_root=os.environ.get('B3_DATA_ROOT'))
+    ctx = load_market(StrategyConfig(start_capital=args.capital), root, data_root=os.environ.get('V4_DATA_ROOT'))
     result = run(ctx)
     destination = Path(args.output_dir) if args.output_dir else root / 'research_output'
     write_report(ctx, result, destination, root)

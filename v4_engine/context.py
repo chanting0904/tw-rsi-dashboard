@@ -23,6 +23,9 @@ class MarketContext:
     live_day: Any = None
     signal_day: Any = None
     name_map: dict = None
+    adjusted_close: Any = None
+    corporate_events: dict = None
+    receivable_total: float = 0.
 
     def pick_days(self, weekday=5):
         import pandas as pd

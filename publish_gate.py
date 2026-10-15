@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-"""B3 發布閘門（管線安全層；不計算策略、不修改 b3_canonical.py）。
+"""V4 發布閘門（管線安全層；不計算策略、不修改 v4_canonical.py）。
 
-在「產生網頁 (update_data.py)」與「發送 TG (tg_push_b3.py)」之前執行，
+在「產生網頁 (update_data.py)」與「發送 TG (tg_push_v4.py)」之前執行，
 確保只會發布「本週最新、validation PASS、結構正確」的同一份 canonical：
 
-  1) output/validation_log.json：verdict == PASS、strategy_version == B3、
+  1) output/validation_log.json：verdict == PASS、strategy_version == V4、
      且 validation 的 rebalance_date 與 canonical 一致。
   2) 新鮮度（非 FORCE）：canonical.rebalance_date 必須等於「本週最後交易日」。
      → 引擎沒重跑（canonical 還是上週）時直接擋下，絕不發舊訊號。
@@ -28,6 +28,7 @@ import math
 from collections import Counter
 import urllib.request
 from zoneinfo import ZoneInfo
+from version import STRATEGY_VERSION, RELEASE_VERSION
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SIG_FILE = os.path.join(HERE, "output", "latest_signals.json")
@@ -36,7 +37,7 @@ HOL_FILE = os.path.join(HERE, "holidays.json")
 TW = ZoneInfo("Asia/Taipei")
 
 VALID_ACTIONS = {"BUY", "SELL", "REBALANCE_BUY", "REBALANCE_SELL", "HOLD"}
-WEIGHT_SUM_CAP = 0.953   # 與 b3_canonical 容差一致：>0.953 才視為超額
+WEIGHT_SUM_CAP = 0.953   # 與 v4_canonical 容差一致：>0.953 才視為超額
 
 
 def load_holidays():
@@ -109,7 +110,7 @@ def fingerprint(sig):
             a.get("current_shares"), a.get("post_shares"), a.get("target_shares"),
             a.get("buy_shares"), a.get("sell_shares"), a.get("price"),
         ]))
-    raw = str(sig.get("rebalance_date", "?")) + "#" + ";".join(rows)
+    raw = str(sig.get("release_version", sig.get("strategy_version", "?"))) + "#" + str(sig.get("rebalance_date", "?")) + "#" + ";".join(rows)
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
 
 
@@ -149,7 +150,7 @@ def evaluate(force=False, today=None, output_dir=None, notify=True):
     val = None
 
     if not os.path.exists(sig_file):
-        reasons.append("output/latest_signals.json 不存在（B3 引擎尚未產生結果）")
+        reasons.append("output/latest_signals.json 不存在（V4 引擎尚未產生結果）")
     else:
         try:
             with open(sig_file, encoding="utf-8") as source:
@@ -176,15 +177,17 @@ def evaluate(force=False, today=None, output_dir=None, notify=True):
         if val is not None:
             if val.get("verdict") != "PASS":
                 reasons.append(f"validation verdict={val.get('verdict')}（非 PASS）")
-            if val.get("strategy_version") != "B3":
-                reasons.append("validation strategy_version 非 B3")
+            if val.get("strategy_version") != STRATEGY_VERSION:
+                reasons.append("validation strategy_version 非 V4")
             vr = val.get("rebalance_date")
             sr = sig.get("rebalance_date")
             if not vr or not sr or vr != sr:
                 reasons.append(f"validation rebalance_date={vr} 與 canonical={sr} 不一致")
-        if sig.get("strategy_version") != "B3":
-            reasons.append(f"canonical strategy_version={sig.get('strategy_version')} 非 B3")
+        if sig.get("strategy_version") != STRATEGY_VERSION:
+            reasons.append(f"canonical strategy_version={sig.get('strategy_version')} 非 V4")
 
+        if sig.get('release_version') != RELEASE_VERSION or (val or {}).get('release_version') != RELEASE_VERSION:
+            reasons.append('訊號／驗證程式版本與目前版本不一致')
         # --- 資料新鮮度（不分 FORCE，永遠生效）---
         # 1) 資料必須已含「本週最後交易日」：rebal_date 必須 == 本週最後交易日
         #    （資料庫缺最後交易日收盤 → 擋，連 FORCE 補跑亦不發布，避免用過期資料出訊號）
@@ -246,6 +249,8 @@ def evaluate(force=False, today=None, output_dir=None, notify=True):
             reasons.append("缺少有效的歷史績效資料")
         if sig.get("signal_mode") == "PRE_CLOSE_PLAN" and (not perf.get("completed_through") or perf["completed_through"] >= rd):
             reasons.append("歷史績效必須截止於本週計畫之前的已完成交易週")
+        if perf and perf.get('release_version') != RELEASE_VERSION:
+            reasons.append('績效與訊號版本不一致')
         if perf:
             anchor = perf.get("fixed_anchor") or perf
             cagr_now = float(anchor.get("cagr") or 0) * 100
@@ -282,10 +287,6 @@ def evaluate(force=False, today=None, output_dir=None, notify=True):
                 "cash": sig.get("cash", 0), "buffer": sig.get("buffer", 0),
                 "rank_weights": rank_w,
             }
-            if rd == "2026-10-02" and reg_key == rd and rd not in reg_hist:
-                reg_hist[rd] = {"counts": {"BUY": 7, "SELL": 7, "REBAL": 3, "HOLD": 6},
-                                "buy_total": 2042192, "sell_total": 2358084, "cash": 538072,
-                                "buffer": 0.1079, "rank_weights": {"2": 0.04388, "6": 0.02925, "15": 0.01463}}
             if reg_key in reg_hist:
                 exp = reg_hist[reg_key]
                 ec = exp.get("counts", {})
@@ -314,7 +315,7 @@ def evaluate(force=False, today=None, output_dir=None, notify=True):
     }
     if not ok and notify:
         _tg_alert(
-            "❌ <b>B3 調倉資料未通過發布檢查</b>\n"
+            "❌ <b>V4 調倉資料未通過發布檢查</b>\n"
             + result["reason"]
             + "\n\n本次<b>不更新網頁、不發送一般調倉訊號</b>，請人工確認後再以 full 補跑。")
     elif ok:
