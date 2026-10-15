@@ -41,6 +41,9 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
       - name: Cache finlab_db
         uses: actions/cache@v4
         with:
@@ -77,6 +80,12 @@ jobs:
         run: python retry_runner.py -- python update_data.py
       - name: 提交網頁與本地價格庫回 main
         run: |
+          git fetch origin main
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
+            echo "主分支已有較新資料，略過這份過期部署"
+            echo "V4_SKIP_DEPLOY=1" >> "$GITHUB_ENV"
+            exit 0
+          fi
           git config user.name "rsi-bot"
           git config user.email "bot@rsi.local"
           git add state.json index.html holidays.json check_and_run.py publish_gate.py update_data.py tg_push_v4.py ai_monitor.py ai_signals.json v4_canonical.py local_db_updater.py daily_update.py local_db/ output/
@@ -86,19 +95,21 @@ jobs:
             python retry_runner.py -- git push
           fi
       - name: 明確要求 Pages 重建（bot 提交不會自行觸發 Pages）
+        if: env.V4_SKIP_DEPLOY != '1'
         env:
           GH_TOKEN: ${{ github.token }}
         run: python retry_runner.py -- python pages_publish.py
       - name: 網站上線後發送同一份 Telegram 訊號
         if: >
-          github.event_name == 'schedule'
-          || (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'full')
+          env.V4_SKIP_DEPLOY != '1' && (github.event_name == 'schedule'
+          || (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'full'))
         env:
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
           FORCE_FULL: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
         run: python tg_push_v4.py
       - name: 保存成功推播的去重狀態
+        if: env.V4_SKIP_DEPLOY != '1'
         run: |
           git add state.json
           if ! git diff --cached --quiet; then

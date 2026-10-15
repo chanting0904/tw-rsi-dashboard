@@ -11,7 +11,7 @@
  "turnover": 442.85,
  "start_capital": 100000,
  "strategy_version": "V4",
- "release_version": "V4.0.0",
+ "release_version": "V4.0.1",
  "buy_fee": 0.0004,
  "sell_fee": 0.003,
  "completed_through": "2026-10-08",
