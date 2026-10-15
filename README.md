@@ -1,4 +1,4 @@
-# V4.0.0 台股策略儀表板
+# V4 台股策略儀表板
 
 程式版本及每次改動：[VERSION_HISTORY.txt](VERSION_HISTORY.txt)。任何正式程式修改必須更新版本紀錄，CI 會檢查。
 
