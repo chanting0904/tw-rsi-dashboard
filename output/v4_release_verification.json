@@ -1,5 +1,5 @@
 {
- "release_version": "V4.0.1",
+ "release_version": "V4.0.2",
  "weekly_observations": 607,
  "cash_reconciliation_max_error": 1.4406396076083183e-07,
  "nav_reconciliation_max_error": 9.313225746154785e-10,
@@ -16,7 +16,7 @@
   "ok": true,
   "reason": "PASS",
   "rebalance_date": "2026-10-08",
-  "canonical_hash": "b8f67cb73fcfd229",
+  "canonical_hash": "0916289e9f7397c6",
   "expected_rebalance_date": "2026-10-08",
   "forced": false,
   "regression_baseline": "已固化"

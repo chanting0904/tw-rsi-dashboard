@@ -8,9 +8,12 @@ import os
 from pathlib import Path
 import ssl
 import urllib.request
+import urllib.error
 from zoneinfo import ZoneInfo
 
 from publish_gate import evaluate, fingerprint, load_holidays, last_trading_day_of_week
+from publication_check import verify_public_index
+from delivery_state import deliver_parts, save_state, RejectedDelivery
 
 ROOT = Path(__file__).resolve().parent
 STATE_FILE = ROOT / "state.json"
@@ -78,9 +81,21 @@ def tg_send(text):
     request = urllib.request.Request(f"https://api.telegram.org/bot{token}/sendMessage",
                                      data=json.dumps(payload).encode("utf-8"),
                                      headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(request, timeout=30, context=ssl.create_default_context()) as response:
-        if not json.load(response).get("ok"):
-            raise RuntimeError("Telegram 未確認訊息發送成功")
+    try:
+        with urllib.request.urlopen(request, timeout=30, context=ssl.create_default_context()) as response:
+            result = json.load(response)
+    except urllib.error.HTTPError as error:
+        if 400 <= error.code < 500:
+            raise RejectedDelivery(f"Telegram 拒絕訊息（HTTP {error.code}）") from None
+        raise RuntimeError("Telegram 回應不明，停止自動重發") from None
+    except (OSError, ValueError):
+        raise RuntimeError("Telegram 送達狀態不明，停止自動重發") from None
+    if not result.get("ok"):
+        raise RejectedDelivery("Telegram 未接受訊息")
+    message_id = result.get("result", {}).get("message_id")
+    if not message_id:
+        raise RuntimeError("Telegram 缺少送達編號，停止自動重發")
+    return message_id
 
 
 def main():
@@ -94,16 +109,18 @@ def main():
     signal = json.loads(SIG_FILE.read_text(encoding="utf-8"))
     state = json.loads(STATE_FILE.read_text(encoding="utf-8")) if STATE_FILE.exists() else {}
     key = fingerprint(signal)
-    if not FORCE and state.get("last_pushed_key") == key:
+    if state.get("last_pushed_key") == key:
         print("相同訊號已推播，跳過")
         return
-    for chunk in message_chunks(build_message(signal)):
-        tg_send(chunk)
-    if not DRY_RUN:
-        state["last_pushed_key"] = key
-        temp = STATE_FILE.with_suffix(".json.tmp")
-        temp.write_text(json.dumps(state, ensure_ascii=False), encoding="utf-8")
-        temp.replace(STATE_FILE)
+    chunks = list(message_chunks(build_message(signal)))
+    chunks = [f"V4 通知 {index}/{len(chunks)}\n" + chunk for index, chunk in enumerate(chunks, 1)]
+    if DRY_RUN:
+        for chunk in chunks:
+            tg_send(chunk)
+        return
+    verify_public_index(attempts=3)
+    deliver_parts(chunks, key, state, send=tg_send,
+                  save=lambda value: save_state(value, STATE_FILE))
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@ import os
 import subprocess
 import time
 import urllib.request
+from publication_check import verify_public_index
 
 
 def request_json(url, token, method="GET"):
@@ -32,6 +33,7 @@ def main():
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
     result = publish(os.environ["GH_TOKEN"], os.environ["GITHUB_REPOSITORY"], commit)
     print("Pages 已上線：", result["commit"])
+    verify_public_index()
 
 
 if __name__ == "__main__":

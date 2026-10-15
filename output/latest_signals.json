@@ -1,6 +1,6 @@
 {
  "strategy_version": "V4",
- "release_version": "V4.0.1",
+ "release_version": "V4.0.2",
  "start_capital": 100000,
  "buy_fee": 0.0004,
  "sell_fee": 0.003,
@@ -585,5 +585,5 @@
   "有 2 檔新目標股漲停無法買進，其配置已分給其他可買標的",
   "V4.0.0 模型已更新，持倉與過往 B3 不同；這是最近已完成週的模擬結果，本週計畫待最後交易日更新。"
  ],
- "deployment_revision": "V4.0.1-queue-fix"
+ "deployment_revision": "V4.0.2-queue-fix"
 }
