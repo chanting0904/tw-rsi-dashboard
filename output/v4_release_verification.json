@@ -16,7 +16,7 @@
   "ok": true,
   "reason": "PASS",
   "rebalance_date": "2026-10-08",
-  "canonical_hash": "52b708ef2e5845c7",
+  "canonical_hash": "b8f67cb73fcfd229",
   "expected_rebalance_date": "2026-10-08",
   "forced": false,
   "regression_baseline": "已固化"
