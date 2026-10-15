@@ -25,13 +25,15 @@ def write_report(ctx, result, destination, root):
         writer = csv.DictWriter(stream, fieldnames=fields)
         writer.writeheader()
         for plan in recent:
+            recommendations = {row['stock_code']: row for row in canonical_for(ctx, plan, result['trades_df'], commit_sha(root))['actions']}
             for action in classify_day(plan, result['trades_df']):
+                recommended = recommendations[action['code']]
                 writer.writerow({'date': plan['date'].strftime('%Y-%m-%d'), 'action': action['action'],
                     'stock_id': action['code'], 'stock_name': names.get(action['code'], action['code']),
                     'channel': action['pool'], 'rank': action.get('rank'), 'reason': action.get('reason', ''),
-                    'current_weight': action['current_weight'], 'target_weight': action['target_weight'],
-                    'weight_diff': action['weight_diff'], 'current_shares': action['pre_sh'],
-                    'target_shares': action['target_sh'], 'trade_shares': action['trade_sh'],
+                    'current_weight': action['current_weight'], 'target_weight': recommended['target_weight'],
+                    'weight_diff': recommended['weight_diff'], 'current_shares': action['pre_sh'],
+                    'target_shares': recommended['target_shares'], 'trade_shares': action['trade_sh'],
                     'estimated_price': action['price'], 'estimated_amount': action['amount'], 'cash_after_trade': plan['cash']})
     lines = [f"V4 completed simulation through {result['nav'].index[-1].date()}",
              f"CAGR {result['cagr']:.2%} | MDD {result['mdd']:.2%} | PF {result['pf']:.2f} | Win rate {result['winrate']:.1f}%",
