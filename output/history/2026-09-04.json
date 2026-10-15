@@ -11,7 +11,7 @@
  "rebalance_date": "2026-09-04",
  "sig_date": "2026-09-03",
  "generated_at": "2026-10-15T12:12:01+08:00",
- "commit_sha": "v4-release",
+ "commit_sha": "fe9cfd3e0856d6680d508f3079a60fd0c33cff40",
  "tsm_on": true,
  "wa_eff": 0.6,
  "wb_eff": 0.4,
