@@ -8,7 +8,7 @@
 """
 import os, sys, json, datetime
 from zoneinfo import ZoneInfo
-from publish_gate import load_holidays, last_trading_day_of_week
+from publish_gate import load_holidays, last_trading_day_of_week, fingerprint
 from v4_engine.config import StrategyConfig
 from version import RELEASE_VERSION
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -114,6 +114,7 @@ def read_optional(path):
 _calendar = read_optional('holidays.json')
 _validation = read_optional('output/validation_log.json')
 DATA = {
+    "canonical_hash": fingerprint(SIG),
     "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
     "expected_rebal_date": week_last.isoformat() if week_last else None,
     "calendar_years": list(_calendar),
@@ -249,6 +250,7 @@ HTML = """<!DOCTYPE html>
     🔸 輸入後按「套用本金」記住（存你瀏覽器，重新整理不會消失）；「重新設定」回預設 100,000。<br>
     🔸 本頁只給「目標清單」：每檔該持有多少股（照本金估算）。<b>實際買賣你自己對照手上持股下單</b>，系統不記錄你的持股。</div>
     <div id="allocationnote" class="note"></div>
+    <details id="allocationdetails" class="note"><summary>查看配置差額：哪些股票少了多少</summary><div id="allocationrows" style="overflow-x:auto"></div></details>
   </section>
 
   <div class="cards" id="cards"></div>
@@ -491,9 +493,33 @@ function renderCards() {
   $("cap-invest").textContent = M(investAmt);
   const preview = CAPITAL_PREVIEW;
   $("allocationnote").textContent = '本期目標權重合計 ' + P(preview.target_weight_total, 1) + '｜整股後配置 ' + P(preview.exposure, 1) + '｜預估模型買入費用 ' + M(preview.fees) + '。這是目標配置試算，實際成交另計。' +
+    ' 相較目標少投入 ' + M(preview.shortfall) + '（占輸入資金 ' + P(preview.shortfall / USER_CAPITAL, 2) + '）。' +
+    (preview.below_band_amount > 0 ? ' 距離90%配置下緣約差 ' + M(preview.below_band_amount) + '。' : '') +
     ((preview.exposure < .90 || preview.exposure > .95) ? ' 目前試算未落在90～95%，請留意整股取整或報價限制。' : '') +
     (preview.unaffordable.length ? ' 目標金額不足一股：' + preview.unaffordable.join('、') + '。' : '') +
-    (preview.missing.length ? ' 缺少價格：' + preview.missing.join('、') + '。' : '');
+    (preview.missing.length ? ' 缺少價格：' + preview.missing.join('、') + '。' : '') +
+    ' 差額保留為現金，不會自動轉買其他股票。';
+  renderAllocationDetails(preview);
+}
+
+function renderAllocationDetails(preview) {
+  const container = $("allocationrows");
+  container.replaceChildren();
+  const table = document.createElement('table');
+  const head = table.createTHead().insertRow();
+  for (const title of ['股票', '目標金額', '試算股數', '預估投入', '配置差額', '原因']) {
+    const cell = document.createElement('th'); cell.textContent = title; head.appendChild(cell);
+  }
+  const body = table.createTBody();
+  const names = new Map(allHolds().map(row => [String(row.code), row.name]));
+  for (const row of preview.details.filter(row => row.shortfall > .005)) {
+    const tr = body.insertRow();
+    const reason = {missing_price:'缺少可用價格', under_one_share:'目標金額不足一股', cash_limit:'可用資金需預留費用', rounding:'股數取整，餘額不足再買一股'}[row.reason] || '—';
+    for (const value of [row.code + ' ' + (names.get(row.code) || ''), M(row.target_amount), F(row.quantity, 0), M(row.invested), M(row.shortfall), reason]) {
+      tr.insertCell().textContent = value;
+    }
+  }
+  container.appendChild(table);
 }
 
 /* ================= 本週操作（四區塊＋排序＋目標股數） ================= */

@@ -2,6 +2,7 @@ name: 更新選股器網頁
 on:
   schedule:
     - cron: '0 22 * * 0-4'    # 台北週一至週五 06:00（UTC 前一天 22:00）
+    - cron: '0 23 * * 0-4'    # 台北 07:00：僅本週最後交易日檢查與補做未完成部分
   workflow_dispatch:
     inputs:
       mode:
@@ -28,6 +29,11 @@ on:
       - 'version.py'
       - 'VERSION_HISTORY.txt'
       - 'v4_baseline.json'
+      - 'tg_push_v4.py'
+      - 'publication_check.py'
+      - 'recovery_check.py'
+      - 'delivery_state.py'
+      - 'pages_publish.py'
       - 'output/perf.json'
 permissions:
   contents: write
@@ -44,28 +50,35 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 07:00 檢查本週訊號、公開網站及通知是否完成
+        id: recovery
+        if: github.event_name == 'schedule' && github.event.schedule == '0 23 * * 0-4'
+        run: python recovery_check.py
       - name: Cache finlab_db
+        if: steps.recovery.outputs.mode != 'skip' && steps.recovery.outputs.mode != 'publish'
         uses: actions/cache@v4
         with:
           path: finlab_db
           key: finlab-db-v4-${{ github.run_id }}
           restore-keys: finlab-db-v4-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
       - name: 安裝依賴
+        if: steps.recovery.outputs.mode != 'skip'
         run: pip install -q -r requirements.txt
       - name: 更新收盤股價（官方源→FinLab→yfinance；每日 06:00 補昨日收盤）
         if: >
-          (github.event_name == 'schedule' && github.event.schedule == '0 22 * * 0-4')
-          || github.event_name == 'workflow_dispatch'
+          (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+          && steps.recovery.outputs.mode != 'skip' && steps.recovery.outputs.mode != 'publish'
         env:
           FINLAB_TOKEN: ${{ secrets.FINLAB_TOKEN }}
         run: python retry_runner.py -- python daily_update.py
       - name: V4 收盤調倉計畫（本週最後交易日，使用前一交易日資料）
         if: >
-          (github.event_name == 'schedule' && github.event.schedule == '0 22 * * 0-4')
-          || (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'full')
+          (github.event_name == 'schedule'
+          || (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'full'))
+          && steps.recovery.outputs.mode != 'skip' && steps.recovery.outputs.mode != 'publish'
         env:
           FINLAB_TOKEN: ${{ secrets.FINLAB_TOKEN }}
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
@@ -78,7 +91,15 @@ jobs:
         env:
           FINLAB_TOKEN: ${{ secrets.FINLAB_TOKEN }}
         run: python retry_runner.py -- python update_data.py
+      - name: 補做發布時恢復已驗證訊號狀態並重建網頁
+        if: steps.recovery.outputs.mode == 'publish'
+        env:
+          V4_SKIP_LOCAL_UPDATE: '1'
+        run: |
+          python weekly_status.py ready
+          python update_data.py
       - name: 提交網頁與本地價格庫回 main
+        if: steps.recovery.outputs.mode != 'skip'
         run: |
           git fetch origin main
           if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
@@ -95,25 +116,31 @@ jobs:
             python retry_runner.py -- git push
           fi
       - name: 明確要求 Pages 重建（bot 提交不會自行觸發 Pages）
-        if: env.V4_SKIP_DEPLOY != '1'
+        if: env.V4_SKIP_DEPLOY != '1' && steps.recovery.outputs.mode != 'skip'
         env:
           GH_TOKEN: ${{ github.token }}
         run: python retry_runner.py -- python pages_publish.py
       - name: 網站上線後發送同一份 Telegram 訊號
         if: >
-          env.V4_SKIP_DEPLOY != '1' && (github.event_name == 'schedule'
+          env.V4_SKIP_DEPLOY != '1' && steps.recovery.outputs.mode != 'skip' && (github.event_name == 'schedule'
           || (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'full'))
         env:
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
           FORCE_FULL: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
+          TG_PROGRESS_GIT: '1'
         run: python tg_push_v4.py
-      - name: 保存成功推播的去重狀態
-        if: env.V4_SKIP_DEPLOY != '1'
+      - name: 保存公開核對結果及已確認的推播進度（失敗時也保留）
+        if: always() && env.V4_SKIP_DEPLOY != '1' && steps.recovery.outputs.mode != 'skip'
         run: |
+          git config user.name "rsi-bot"
+          git config user.email "bot@rsi.local"
           git add state.json
+          if [ -f output/publication_verified.json ]; then
+            git add output/publication_verified.json
+          fi
           if ! git diff --cached --quiet; then
-            git commit -m "record telegram delivery [skip ci]"
+            git commit -m "record publication and telegram delivery [skip ci]"
             python retry_runner.py -- git pull --rebase
             python retry_runner.py -- git push
           fi
