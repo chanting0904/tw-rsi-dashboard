@@ -4,13 +4,14 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from version import RELEASE_VERSION
 from unittest.mock import patch
 
 import pandas as pd
 import publish_gate as gate
 from live_plan import prepare_prices, completed_week_days
 from market_dates import quote_date
-from tg_push_b3 import build_message, message_chunks
+from tg_push_v4 import build_message, message_chunks
 from s5_live import recalc_weekly as recalc
 from local_db_updater import merge_amt
 import pages_publish
@@ -79,7 +80,7 @@ class LivePlanTests(unittest.TestCase):
 
 class PublishTests(unittest.TestCase):
     def signal(self):
-        return {"strategy_version": "B3", "rebalance_date": "2026-10-08", "sig_date": "2026-10-07",
+        return {"strategy_version": "V4", "release_version": RELEASE_VERSION, "rebalance_date": "2026-10-08", "sig_date": "2026-10-07",
                 "price_basis_date": "2026-10-07", "signal_mode": "PRE_CLOSE_PLAN",
                 "generated_at": "2026-10-08T06:00:00+08:00", "commit_sha": "test1234",
                 "cash": 7500, "portfolio_value": 100000, "buffer": .075, "stock_exposure": .925,
@@ -92,8 +93,10 @@ class PublishTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "latest_signals.json").write_text(json.dumps(signal), encoding="utf-8")
-            (root / "validation_log.json").write_text(json.dumps({"strategy_version": "B3", "verdict": "PASS", "rebalance_date": signal["rebalance_date"]}), encoding="utf-8")
-            (root / "perf.json").write_text(json.dumps(perf or {"cagr": .3869, "mdd": -.3564, "completed_through": "2026-10-02"}), encoding="utf-8")
+            (root / "validation_log.json").write_text(json.dumps({"strategy_version": "V4", "release_version": RELEASE_VERSION, "verdict": "PASS", "rebalance_date": signal["rebalance_date"]}), encoding="utf-8")
+            performance = dict(perf or {"cagr": .3869, "mdd": -.3564, "completed_through": "2026-10-02"})
+            performance.setdefault('release_version', RELEASE_VERSION)
+            (root / "perf.json").write_text(json.dumps(performance), encoding="utf-8")
             if baseline:
                 (root / "baseline.json").write_text(json.dumps(baseline), encoding="utf-8")
             return gate.evaluate(today=dt.date(2026, 10, 8), output_dir=directory, notify=False)

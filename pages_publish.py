@@ -9,7 +9,7 @@ import urllib.request
 def request_json(url, token, method="GET"):
     request = urllib.request.Request(url, method=method,
         headers={"Accept": "application/vnd.github+json", "Authorization": f"Bearer {token}",
-                 "User-Agent": "B3-Pages-publisher"})
+                 "User-Agent": "V4-Pages-publisher"})
     with urllib.request.urlopen(request, timeout=30) as response:
         return json.load(response)
 

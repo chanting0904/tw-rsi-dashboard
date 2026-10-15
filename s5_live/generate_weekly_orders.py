@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """S5 每週下單清單產生器
-從 output/latest_signals.json（B3 canonical）產生當週 A、B 通道下單清單，
+從 output/latest_signals.json（V4 canonical）產生當週 A、B 通道下單清單，
 其中 A 通道依 S5 執行，B 通道維持原本下單方式；
 並 append 到 20 週累計檔 S5_live_20w.csv 與 portfolio 檔。
 

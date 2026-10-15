@@ -2,7 +2,7 @@
 """每日盤後更新網頁收盤價。資料源優先序：
 TWSE+TPEx 官方免費源（台灣/本機最穩）-> FinLab（國外 runner 兜底，token）-> yfinance（最後）。
 所有源皆失敗 -> exit(1) 讓 workflow 紅叉，絕不假成功。
-本版（B3 canonical）：另寫 output/prices.json 供 Web 顯示每日最新價（持股買賣不變）。"""
+本版（V4 canonical）：另寫 output/prices.json 供 Web 顯示每日最新價（持股買賣不變）。"""
 import os, re, sys, json, ssl, urllib.request
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -173,7 +173,7 @@ def main():
         if os.path.exists(p):
             update_file(p, px, sig, expected_rebal_date)
             print("[OK] 已更新", os.path.basename(p), "->", sig)
-    # [B3 canonical] 同步寫 output/prices.json（供 Web 每日股價顯示）
+    # [V4 canonical] 同步寫 output/prices.json（供 Web 每日股價顯示）
     try:
         op = os.path.join(HERE, "output")
         os.makedirs(op, exist_ok=True)

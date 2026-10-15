@@ -16,15 +16,18 @@ on:
     branches:
       - main
     paths:
-      - 'output/latest_signals.json'   # 推送 canonical → 重建 Web（canonical 即 B3 結果，不重算）
+      - 'output/latest_signals.json'   # 推送 canonical → 重建 Web（canonical 即 V4 結果，不重算）
       - 'update_data.py'               # 推送 Web 產生器 → 重建 Web
       - '.github/workflows/update_pages.yml'
       - 'weekly_status.js'
       - 'weekly_status.py'
       - 'retry_runner.py'
-      - 'b3_engine/**'
-      - 'b3_canonical.py'
+      - 'v4_engine/**'
+      - 'v4_canonical.py'
       - 'capital_preview.js'
+      - 'version.py'
+      - 'VERSION_HISTORY.txt'
+      - 'v4_baseline.json'
       - 'output/perf.json'
 permissions:
   contents: write
@@ -42,8 +45,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: finlab_db
-          key: finlab-db-v2-${{ github.run_id }}
-          restore-keys: finlab-db-
+          key: finlab-db-v4-${{ github.run_id }}
+          restore-keys: finlab-db-v4-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -56,7 +59,7 @@ jobs:
         env:
           FINLAB_TOKEN: ${{ secrets.FINLAB_TOKEN }}
         run: python retry_runner.py -- python daily_update.py
-      - name: B3 收盤調倉計畫（本週最後交易日，使用前一交易日資料）
+      - name: V4 收盤調倉計畫（本週最後交易日，使用前一交易日資料）
         if: >
           (github.event_name == 'schedule' && github.event.schedule == '0 22 * * 0-4')
           || (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'full')
@@ -76,7 +79,7 @@ jobs:
         run: |
           git config user.name "rsi-bot"
           git config user.email "bot@rsi.local"
-          git add state.json index.html holidays.json check_and_run.py publish_gate.py update_data.py tg_push_b3.py ai_monitor.py ai_signals.json b3_canonical.py local_db_updater.py daily_update.py local_db/ output/
+          git add state.json index.html holidays.json check_and_run.py publish_gate.py update_data.py tg_push_v4.py ai_monitor.py ai_signals.json v4_canonical.py local_db_updater.py daily_update.py local_db/ output/
           if ! git diff --cached --quiet; then
             git commit -m "auto update page [skip ci]"
             python retry_runner.py -- git pull --rebase
@@ -94,7 +97,7 @@ jobs:
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
           FORCE_FULL: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
-        run: python tg_push_b3.py
+        run: python tg_push_v4.py
       - name: 保存成功推播的去重狀態
         run: |
           git add state.json
@@ -107,7 +110,7 @@ jobs:
         if: failure()
         env:
           GH_TOKEN: ${{ github.token }}
-          B3_SKIP_LOCAL_UPDATE: '1'
+          V4_SKIP_LOCAL_UPDATE: '1'
         run: |
           python weekly_status.py failed
           python update_data.py || echo "網頁重建失敗，保留原頁面並單獨發布狀態檔"
@@ -131,5 +134,5 @@ jobs:
         run: |
           curl -s -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
             -d chat_id="${TG_CHAT_ID}" \
-            -d "text=❌ B3 自動化流程失敗：${GITHUB_WORKFLOW} #${GITHUB_RUN_NUMBER} 請查 GitHub Actions logs" \
+            -d "text=❌ V4 自動化流程失敗：${GITHUB_WORKFLOW} #${GITHUB_RUN_NUMBER} 請查 GitHub Actions logs" \
             -d parse_mode=HTML || true

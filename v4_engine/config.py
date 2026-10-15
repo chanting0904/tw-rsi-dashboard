@@ -9,7 +9,7 @@ class StrategyConfig:
     buy_fee: float = .0004
     sell_fee: float = .003
     limit: float = .099
-    threshold: float = .25
+    threshold: float = 1.0
     buffer: float = .05
     exposure_min: float = .90
     exposure_max: float = .95
@@ -28,4 +28,4 @@ class StrategyConfig:
             raise ValueError('Invalid modeled transaction fees')
 
 
-B3_COEFFICIENTS = (1.5, 1.0, .5)
+V4_COEFFICIENTS = (1.5, 1.0, .5)
