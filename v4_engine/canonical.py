@@ -2,6 +2,7 @@ from version import STRATEGY_VERSION, RELEASE_VERSION
 """Serialize verified simulated positions and fills for Web/TG."""
 import datetime
 from zoneinfo import ZoneInfo
+from .recommendations import recommendation_metadata
 
 def classify_day(wp, trades_df):
     tdate = wp["date"]
@@ -101,6 +102,16 @@ def canonical_for(ctx, wp, trades_df, commit_sha):
         acts[-1]['target_weight'] = acts[-1]['post_weight']
         acts[-1]['target_shares'] = acts[-1]['post_shares']
         acts[-1]['weight_diff'] = round(acts[-1]['target_weight']-acts[-1]['current_weight'],5)
+        metadata = recommendation_metadata(ctx, wp, o)
+        known_name = metadata.pop('known_name')
+        if acts[-1]['stock_name'] == o['code'] and known_name:
+            acts[-1]['stock_name'] = known_name
+        acts[-1].update(metadata)
+        if not metadata['allocation_eligible']:
+            acts[-1]['target_weight'] = 0.0
+            acts[-1]['target_shares'] = 0
+            # A restriction is not a simulated fill or a recommendation to sell.
+            acts[-1]['weight_diff'] = 0.0 if o['action'] == 'HOLD' else acts[-1]['weight_diff']
     counts = {"BUY": 0, "SELL": 0, "REBALANCE_BUY": 0, "REBALANCE_SELL": 0, "HOLD": 0}
     for a in acts:
         counts[a["action"]] += 1
@@ -152,6 +163,8 @@ def canonical_for(ctx, wp, trades_df, commit_sha):
         "cash": round(float(wp["cash"]), 0),
         "buffer": round(float(wp["cash"]) / float(wp["nav"]), 4),
         "stock_exposure": round(exposure, 4),
+        "allocation_exposure": round(sum(a['post_weight'] for a in acts if a['allocation_eligible']), 5),
+        "restricted_exposure": round(sum(a['post_weight'] for a in acts if not a['allocation_eligible']), 5),
         "exposure_cap_blocked_codes": list(wp.get('exposure_cap_blocked_codes', [])),
         "portfolio_value": round(float(wp["nav"]), 0),
         "buy_total": round(buy_total, 0),

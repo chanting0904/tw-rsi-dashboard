@@ -78,7 +78,7 @@ if os.path.exists("output/prices.json"):
         print(f"[prices.json] 讀取失敗（{_e}），沿用調倉價")
 
 # ---------- 3. 組 DATA（結構：Web 只顯示，不重算）----------
-holdings_a, holdings_b, sells = [], [], []
+holdings_a, holdings_b, sells, restricted_holdings = [], [], [], []
 for a in SIG.get("actions", []):
     if a["action"] == "SELL":
         sells.append({"code": a["stock_code"], "name": a["stock_name"], "pool": a["channel"],
@@ -86,6 +86,8 @@ for a in SIG.get("actions", []):
                       "amount": a["estimated_sell_amount"], "price": a["price"],
                       "current_weight": a.get("current_weight", 0), "rank": a.get("rank")})
         continue
+    quote_date = a.get('price_date') or SIG.get('price_basis_date', SIG.get('rebalance_date'))
+    use_latest_quote = a['stock_code'] in prices and px_date >= quote_date and a.get('allocation_eligible', True)
     item = {
         "code": a["stock_code"], "name": a["stock_name"], "channel": a["channel"],
         "rank": a["rank"], "action": a["action"], "reason": a["reason"],
@@ -95,9 +97,18 @@ for a in SIG.get("actions", []):
         "buy_shares": a["buy_shares"], "sell_shares": a["sell_shares"],
         "estimated_buy_amount": a["estimated_buy_amount"],
         "estimated_sell_amount": a["estimated_sell_amount"],
-        "px": prices.get(a["stock_code"]) or a["price"],
-        "px_date": px_date if a["stock_code"] in prices else SIG.get("price_basis_date", SIG.get("rebalance_date")),
+        "px": prices.get(a["stock_code"]) if use_latest_quote else a["price"],
+        "px_date": px_date if use_latest_quote else quote_date,
+        "post_weight": a.get('post_weight', a['target_weight']),
+        "post_shares": a.get('post_shares', a['target_shares']),
+        "recommendation_note": a.get('recommendation_note', ''),
+        "allocation_eligible": a.get('allocation_eligible', True),
+        "trading_status": a.get('trading_status', 'TRADABLE'),
     }
+    if not item['allocation_eligible']:
+        if item['post_shares'] > 0:
+            restricted_holdings.append(item)
+        continue
     if a["channel"] == "A":
         holdings_a.append(item)
     else:
@@ -135,12 +146,14 @@ DATA = {
     "px_date": px_date,
     "tsm_on": SIG.get("tsm_on", True),
     "wa_eff": SIG.get("wa_eff"), "wb_eff": SIG.get("wb_eff"),
-    "counts": SIG.get("counts", {}),
+    "counts": {action:sum(row['action'] == action for row in holdings_a + holdings_b) + (len(sells) if action == 'SELL' else 0)
+               for action in ['BUY', 'SELL', 'REBALANCE_BUY', 'REBALANCE_SELL', 'HOLD']},
     "buy_total": SIG.get("buy_total", 0), "sell_total": SIG.get("sell_total", 0),
     "cash": SIG.get("cash", 0), "buffer": SIG.get("buffer", 0),
     "portfolio_value": SIG.get("portfolio_value", 0),
-    "warnings": SIG.get("warnings", []) + [f"{a['stock_code']} 沒有最新行情，沿用訊號基準價格" for a in SIG.get("actions", []) if a["action"] != "SELL" and a["stock_code"] not in prices],
+    "warnings": SIG.get("warnings", []) + [f"{a['stock_code']} 沒有最新行情，沿用訊號基準價格" for a in SIG.get("actions", []) if a["action"] != "SELL" and a.get('allocation_eligible', True) and a["stock_code"] not in prices],
     "holdings_a": holdings_a, "holdings_b": holdings_b, "sells": sells,
+    "restricted_holdings": restricted_holdings,
     "history": history,
     "perf": perf,
 }
@@ -260,6 +273,7 @@ HTML = """<!DOCTYPE html>
   <section>
     <h2><span id="ops-title">📋 最近一期模擬清單</span> <span class="tag">操作順序：先賣 → 減碼 → 買 → 加碼 → 持有</span></h2>
     <div id="ops"></div>
+    <div id="restrictednote" class="note"></div>
     <div class="note">🔸 先賣出／減碼釋出現金，再買入／加碼。每檔顯示 V4 模擬調倉後建議權重＋照目前本金算出的「目標股數」（目標金額 ÷ 現價，取整股）；<b>實際買賣股數請你自己對照手上持股決定</b>。</div>
   </section>
 
@@ -568,6 +582,10 @@ function renderOps() {
     line: r.name + "｜Rank " + (r.rank||"—") + "｜目標權重 " + P(r.target_weight,2) + "｜目標股數 " + F(tgtShares(r),0) + " 股"
   }))});
 
+  blocks.forEach(block => block.rows.forEach(row => {
+    const original = rows.find(item => item.code === row.code);
+    if (original?.recommendation_note) row.line += '｜⚠️ ' + original.recommendation_note;
+  }));
   const box = $("ops");
   if (!blocks.length) { box.innerHTML = '<div class="empty">本週無任何買賣動作</div>'; return; }
   box.innerHTML = blocks.map(b =>
@@ -598,7 +616,7 @@ function renderHoldings() {
     const actBadge = ACT_LABEL[h.action] + (is25(h) ? '<span class="badge-25">100%差距門檻</span>' : ((h.reason || "").startsWith("PORTFOLIO_BAND_") ? '<span class="badge-25">90–95%配置調整</span>' : ""));
     return '<tr>' +
       '<td><span class="badge ' + ACT_CLS[h.action] + '">' + actBadge + '</span></td>' +
-      '<td>' + h.code + '</td><td>' + h.name + '</td>' +
+      '<td>' + h.code + '</td><td>' + h.name + (h.recommendation_note ? '<div class="note">⚠️ ' + h.recommendation_note + '</div>' : '') + '</td>' +
       '<td>' + h.channel + '</td><td>' + (h.rank || "—") + '</td>' +
       '<td class="num">' + P(h.target_weight, 2) + '</td>' +
       '<td class="num">' + P(h.current_weight, 2) + '</td>' +
@@ -615,6 +633,14 @@ function renderSellNote() {
   $("sellnote").innerHTML = (DATA.sells||[]).length
     ? "🔴 " + period + "賣出 " + (DATA.sells||[]).length + " 檔：" + (DATA.sells||[]).map(s => s.name + "（" + (s.reason||"") + "）").join("、")
     : period + "無賣出。";
+}
+
+function renderRestrictedHoldings() {
+  const rows = DATA.restricted_holdings || [];
+  const box = $("restrictednote");
+  box.innerHTML = rows.length ? '<b>歷史受限資產（不列入下單或本金試算）</b><br>' + rows.map(row =>
+    row.code + ' ' + row.name + '｜' + row.recommendation_note + '｜最後報價 ' + F(row.px, 2) + '（' + (row.px_date || '日期未知') + '）'
+  ).join('<br>') + '<br>這些部位仍保留於歷史模擬估值，未假設可以賣出換成現金。' : '';
 }
 
 /* ================= 績效圖（回測口徑，不隨本金） ================= */
@@ -657,7 +683,7 @@ function renderHist() {
   sel.addEventListener("change", () => {
     const h = DATA.history[parseInt(sel.value)];
     if (!h) return;
-    const g = groupByAction(h.actions || []);
+    const g = groupByAction((h.actions || []).filter(a => a.action === 'SELL' || a.allocation_eligible !== false));
     const rows = []
       .concat(SORTER["SELL"](g.SELL||[]))
       .concat(SORTER["REBALANCE_SELL"](g.REBALANCE_SELL||[]))
@@ -671,7 +697,8 @@ function renderHist() {
       }).join("");
     $("histview").innerHTML = '<div class="note">調倉日：' + h.rebalance_date + '｜訊號基準：' + h.sig_date + '｜' +
       'BUY ' + (h.counts.BUY||0) + ' / SELL ' + (h.counts.SELL||0) + ' / REBAL ' + ((h.counts.REBALANCE_BUY||0)+(h.counts.REBALANCE_SELL||0)) + ' / HOLD ' + (h.counts.HOLD||0) + '</div>' +
-      (rows || '<div class="empty">該週無明細</div>');
+      (rows || '<div class="empty">該週無明細</div>') +
+      ((h.actions || []).some(a => a.action !== 'SELL' && a.allocation_eligible === false) ? '<div class="note">另有歷史受限資產，未列入可下單明細。</div>' : '');
   });
   sel.value = DATA.history.length - 1;
   sel.dispatchEvent(new Event("change"));
@@ -729,6 +756,7 @@ function renderAll() {
   renderCards();
   renderOps();
   renderHoldings();
+  renderRestrictedHoldings();
 }
 $("cap").value = USER_CAPITAL;
 renderAll();

@@ -1,6 +1,6 @@
 {
  "strategy_version": "V4",
- "release_version": "V4.1.0",
+ "release_version": "V4.1.1",
  "selection_rules": {
   "a_rank_days": 3,
   "a_entry_rank": 15,
@@ -16,8 +16,8 @@
  "calculation_date": "2026-06-18",
  "rebalance_date": "2026-06-18",
  "sig_date": "2026-06-17",
- "generated_at": "2026-10-16T20:19:38+08:00",
- "commit_sha": "be1ced81",
+ "generated_at": "2026-10-16T20:48:32+08:00",
+ "commit_sha": "5b164d06",
  "tsm_on": true,
  "wa_eff": 0.6,
  "wb_eff": 0.4,
@@ -25,6 +25,8 @@
  "cash": 684645.0,
  "buffer": 0.0674,
  "stock_exposure": 0.9293,
+ "allocation_exposure": 0.91845,
+ "restricted_exposure": 0.01081,
  "exposure_cap_blocked_codes": [],
  "portfolio_value": 10155980.0,
  "buy_total": 1736460.0,
@@ -57,7 +59,12 @@
    "estimated_buy_amount": 0,
    "estimated_sell_amount": 0,
    "price": 234.0,
-   "reason": ""
+   "reason": "",
+   "allocation_eligible": true,
+   "trading_status": "TRADABLE",
+   "price_date": "2026-06-18",
+   "recommendation_note": "",
+   "security_status_source": null
   },
   {
    "stock_code": "1714",
@@ -79,7 +86,12 @@
    "estimated_buy_amount": 578917.0,
    "estimated_sell_amount": 0,
    "price": 20.35,
-   "reason": ""
+   "reason": "",
+   "allocation_eligible": true,
+   "trading_status": "TRADABLE",
+   "price_date": "2026-06-18",
+   "recommendation_note": "",
+   "security_status_source": null
   },
   {
    "stock_code": "3026",
@@ -101,7 +113,12 @@
    "estimated_buy_amount": 0,
    "estimated_sell_amount": 0,
    "price": 902.0,
-   "reason": ""
+   "reason": "",
+   "allocation_eligible": true,
+   "trading_status": "TRADABLE",
+   "price_date": "2026-06-18",
+   "recommendation_note": "",
+   "security_status_source": null
   },
   {
    "stock_code": "6585",
@@ -123,7 +140,12 @@
    "estimated_buy_amount": 0,
    "estimated_sell_amount": 0,
    "price": 138.0,
-   "reason": ""
+   "reason": "",
+   "allocation_eligible": true,
+   "trading_status": "TRADABLE",
+   "price_date": "2026-06-18",
+   "recommendation_note": "",
+   "security_status_source": null
   },
   {
    "stock_code": "2327",
@@ -145,7 +167,12 @@
    "estimated_buy_amount": 0,
    "estimated_sell_amount": 0,
    "price": 1080.0,
-   "reason": ""
+   "reason": "",
+   "allocation_eligible": true,
+   "trading_status": "TRADABLE",
+   "price_date": "2026-06-18",
+   "recommendation_note": "",
+   "security_status_source": null
   },
   {
    "stock_code": "2535",
@@ -167,7 +194,12 @@
    "estimated_buy_amount": 385950.0,
    "estimated_sell_amount": 0,
    "price": 93.7,
-   "reason": ""
+   "reason": "",
+   "allocation_eligible": true,
+   "trading_status": "TRADABLE",
+   "price_date": "2026-06-18",
+   "recommendation_note": "",
+   "security_status_source": null
   },
   {
    "stock_code": "5426",
@@ -189,7 +221,12 @@
    "estimated_buy_amount": 0,
    "estimated_sell_amount": 0,
    "price": 37.9,
-   "reason": ""
+   "reason": "",
+   "allocation_eligible": true,
+   "trading_status": "TRADABLE",
+   "price_date": "2026-06-18",
+   "recommendation_note": "",
+   "security_status_source": null
   },
   {
    "stock_code": "4306",
@@ -211,7 +248,12 @@
    "estimated_buy_amount": 385948.0,
    "estimated_sell_amount": 0,
    "price": 15.85,
-   "reason": ""
+   "reason": "",
+   "allocation_eligible": true,
+   "trading_status": "TRADABLE",
+   "price_date": "2026-06-18",
+   "recommendation_note": "",
+   "security_status_source": null
   },
   {
    "stock_code": "2881",
@@ -233,7 +275,12 @@
    "estimated_buy_amount": 0,
    "estimated_sell_amount": 0,
    "price": 138.0,
-   "reason": ""
+   "reason": "",
+   "allocation_eligible": true,
+   "trading_status": "TRADABLE",
+   "price_date": "2026-06-18",
+   "recommendation_note": "",
+   "security_status_source": null
   },
   {
    "stock_code": "6173",
@@ -255,7 +302,12 @@
    "estimated_buy_amount": 192760.0,
    "estimated_sell_amount": 0,
    "price": 316.0,
-   "reason": ""
+   "reason": "",
+   "allocation_eligible": true,
+   "trading_status": "TRADABLE",
+   "price_date": "2026-06-18",
+   "recommendation_note": "",
+   "security_status_source": null
   },
   {
    "stock_code": "2882",
@@ -277,7 +329,12 @@
    "estimated_buy_amount": 192885.0,
    "estimated_sell_amount": 0,
    "price": 115.5,
-   "reason": ""
+   "reason": "",
+   "allocation_eligible": true,
+   "trading_status": "TRADABLE",
+   "price_date": "2026-06-18",
+   "recommendation_note": "",
+   "security_status_source": null
   },
   {
    "stock_code": "2492",
@@ -299,7 +356,12 @@
    "estimated_buy_amount": 0,
    "estimated_sell_amount": 0,
    "price": 561.0,
-   "reason": ""
+   "reason": "",
+   "allocation_eligible": true,
+   "trading_status": "TRADABLE",
+   "price_date": "2026-06-18",
+   "recommendation_note": "",
+   "security_status_source": null
   },
   {
    "stock_code": "3114",
@@ -321,7 +383,12 @@
    "estimated_buy_amount": 0,
    "estimated_sell_amount": 0,
    "price": 47.75,
-   "reason": ""
+   "reason": "",
+   "allocation_eligible": true,
+   "trading_status": "TRADABLE",
+   "price_date": "2026-06-18",
+   "recommendation_note": "",
+   "security_status_source": null
   },
   {
    "stock_code": "2454",
@@ -343,7 +410,12 @@
    "estimated_buy_amount": 0,
    "estimated_sell_amount": 0,
    "price": 4390.0,
-   "reason": ""
+   "reason": "",
+   "allocation_eligible": true,
+   "trading_status": "TRADABLE",
+   "price_date": "2026-06-18",
+   "recommendation_note": "",
+   "security_status_source": null
   },
   {
    "stock_code": "2303",
@@ -365,7 +437,12 @@
    "estimated_buy_amount": 0,
    "estimated_sell_amount": 0,
    "price": 145.5,
-   "reason": ""
+   "reason": "",
+   "allocation_eligible": true,
+   "trading_status": "TRADABLE",
+   "price_date": "2026-06-18",
+   "recommendation_note": "",
+   "security_status_source": null
   },
   {
    "stock_code": "3481",
@@ -387,19 +464,24 @@
    "estimated_buy_amount": 0,
    "estimated_sell_amount": 0,
    "price": 64.4,
-   "reason": ""
+   "reason": "",
+   "allocation_eligible": true,
+   "trading_status": "TRADABLE",
+   "price_date": "2026-06-18",
+   "recommendation_note": "",
+   "security_status_source": null
   },
   {
    "stock_code": "3089",
-   "stock_name": "3089",
+   "stock_name": "億杰",
    "channel": "A",
    "rank": null,
    "action": "HOLD",
-   "target_weight": 0.01081,
+   "target_weight": 0.0,
    "strategy_target_weight": 0.0,
    "current_weight": 0.01081,
    "weight_diff": 0.0,
-   "target_shares": 1355,
+   "target_shares": 0,
    "strategy_target_shares": 0,
    "current_shares": 1355,
    "post_shares": 1355,
@@ -409,7 +491,12 @@
    "estimated_buy_amount": 0,
    "estimated_sell_amount": 0,
    "price": 81.0,
-   "reason": "交易受限，模擬持倉暫留"
+   "reason": "交易受限，模擬持倉暫留",
+   "allocation_eligible": false,
+   "trading_status": "DELISTED",
+   "price_date": "2023-07-19",
+   "recommendation_note": "終止上櫃；僅保留歷史模擬紀錄，不列入下單或本金試算。",
+   "security_status_source": "https://www.tpex.org.tw/storage/eb_data/11301/11302002111.html"
   },
   {
    "stock_code": "8454",
@@ -431,7 +518,12 @@
    "estimated_buy_amount": 0,
    "estimated_sell_amount": 444664.0,
    "price": 341.0,
-   "reason": "FALL_OUT_TOP_POOL"
+   "reason": "FALL_OUT_TOP_POOL",
+   "allocation_eligible": false,
+   "trading_status": "TRADABLE",
+   "price_date": "2026-06-18",
+   "recommendation_note": "",
+   "security_status_source": null
   },
   {
    "stock_code": "6890",
@@ -453,7 +545,12 @@
    "estimated_buy_amount": 0,
    "estimated_sell_amount": 432208.0,
    "price": 238.0,
-   "reason": "FALL_OUT_TOP_POOL"
+   "reason": "FALL_OUT_TOP_POOL",
+   "allocation_eligible": false,
+   "trading_status": "TRADABLE",
+   "price_date": "2026-06-18",
+   "recommendation_note": "",
+   "security_status_source": null
   },
   {
    "stock_code": "2414",
@@ -475,7 +572,12 @@
    "estimated_buy_amount": 0,
    "estimated_sell_amount": 318019.0,
    "price": 62.8,
-   "reason": "FALL_OUT_TOP_POOL"
+   "reason": "FALL_OUT_TOP_POOL",
+   "allocation_eligible": false,
+   "trading_status": "TRADABLE",
+   "price_date": "2026-06-18",
+   "recommendation_note": "",
+   "security_status_source": null
   },
   {
    "stock_code": "4973",
@@ -497,7 +599,12 @@
    "estimated_buy_amount": 0,
    "estimated_sell_amount": 313857.0,
    "price": 193.5,
-   "reason": "FALL_OUT_TOP_POOL"
+   "reason": "FALL_OUT_TOP_POOL",
+   "allocation_eligible": false,
+   "trading_status": "TRADABLE",
+   "price_date": "2026-06-18",
+   "recommendation_note": "",
+   "security_status_source": null
   },
   {
    "stock_code": "2883",
@@ -519,7 +626,12 @@
    "estimated_buy_amount": 0,
    "estimated_sell_amount": 173614.0,
    "price": 30.75,
-   "reason": "FALL_OUT_TOP_POOL"
+   "reason": "FALL_OUT_TOP_POOL",
+   "allocation_eligible": false,
+   "trading_status": "TRADABLE",
+   "price_date": "2026-06-18",
+   "recommendation_note": "",
+   "security_status_source": null
   },
   {
    "stock_code": "6197",
@@ -541,7 +653,12 @@
    "estimated_buy_amount": 0,
    "estimated_sell_amount": 164368.0,
    "price": 347.5,
-   "reason": "FALL_OUT_TOP_POOL"
+   "reason": "FALL_OUT_TOP_POOL",
+   "allocation_eligible": false,
+   "trading_status": "TRADABLE",
+   "price_date": "2026-06-18",
+   "recommendation_note": "",
+   "security_status_source": null
   }
  ],
  "warnings": [

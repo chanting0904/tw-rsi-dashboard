@@ -1,5 +1,5 @@
 {
- "release_version": "V4.1.0",
+ "release_version": "V4.1.1",
  "date": "2026-10-16",
  "config": {
   "start_capital": 100000,
@@ -35,7 +35,7 @@
  "production_anchor": {
   "date": "2026-10-08",
   "strategy_version": "V4",
-  "release_version": "V4.1.0",
+  "release_version": "V4.1.1",
   "parameters": {
    "threshold": 1.0,
    "buy_fee": 0.0004,
@@ -63,63 +63,61 @@
    "REBALANCE_SELL": 6,
    "HOLD": 5
   },
-  "fingerprint": "b21002867e0d8325"
+  "fingerprint": "0bb914172dd867bc"
  },
  "publication_gate": {
   "ok": true,
   "reason": "PASS",
   "rebalance_date": "2026-10-16",
-  "canonical_hash": "b21002867e0d8325",
+  "canonical_hash": "0bb914172dd867bc",
   "expected_rebalance_date": "2026-10-16",
   "forced": false,
   "regression_baseline": "已固化"
  },
- "previous_release": "V4.0.3",
- "archived_previous_outputs": "output\\archive\\v4_0_3_before_v4_1_0",
+ "previous_release": "V4.1.0",
+ "archived_previous_outputs": "output\\archive\\v4_1_0_before_v4_1_1",
  "selection_bias": "This history was used for comparison; neither release is certified free from historical overfitting.",
- "generated_at": "2026-10-16T20:19:38.460455+08:00",
- "code_commit": "be1ced81df0fda304b00a4ffd587b775c367a91e",
+ "generated_at": "2026-10-16T20:48:33.280103+08:00",
+ "code_commit": "5b164d0627accdab287e5db52ca538348f0bd2cc",
  "removed_stale_history": [],
  "source_hashes": {
-  "VERSION_HISTORY.txt": "22a1a1a7727d69872880943e1be05f64177ceead0e3f47247658bbfce1899d34",
-  "README.md": "92cba15b4cedcb1c8bc00701f8ae3483319f5d8ddf91f8d4410596ed17a63570",
-  "v4_engine/config.py": "980f6998b9790d8ec4bd96d7113f4cc6ea3963604cfe1933eedebe0a7744a17a",
-  "v4_engine/context.py": "be80394d7376dcfc3c1a38c7630073729a1ae5cc52257376a2a635563ecfd11d",
-  "v4_engine/market.py": "35b271a0fb6d1ab2b29c88fc5d8d6ff4ef761522749a45558ac3591aff8a82fe",
-  "v4_engine/selection.py": "52b37ca695c843f42d254fb71ca3acc409b6ea7bf3e1a46fc347382d9b760007",
-  "v4_engine/canonical.py": "57d644af137f35c269393fd98be76031808f0fd262f0937734739d40dbe3e6f1",
-  "v4_engine/pipeline.py": "fff4b268084b234458253a7902ddb2b2530792d6e8dee21398c7a6d37cc3eada",
-  "tg_push_v4.py": "d24be482f4ffd6f05cd8c12209346e48d1bd05d977b04529f54b5cfbfb8faed2",
-  "update_data.py": "12562ed87f4ac1eb8189377c6c863fb531f6407f0157b7153df7ddcc223722d4",
-  "tests/test_selection.py": "49bc4343615e289f6441b5d84ffa89a79c93377207aa1464d945f01c5df47683",
-  "v4_baseline.json": "376b9b92b1f52489d52f09581d3cf00b4843317887331d86f8d49c8f9bc299cb"
+  "VERSION_HISTORY.txt": "68288218b357acb5167f9133a87f5ccd60faf22fdf33dd277ecb8c43cdbedf3e",
+  "README.md": "9dbee7ba59c280ca1e3bbbff1688c6d24514f02a8a863f8189acff9f6b0e69a5",
+  "v4_engine/canonical.py": "2defa36b3d106094fe72eebf3a4fe42befe532eb15eaa2f87828bd5636cc4f3a",
+  "v4_engine/recommendations.py": "5a1eca6e8c44381389e65e37e0fa3450bb36f194d232337cd58c2ca572f44114",
+  "v4_engine/security_events.json": "e4fcefe7fe62bc8842d0c3bb72e00bb7d65611014be5d3abee11bfac38be915e",
+  "publish_gate.py": "01b630b9eb2fd9b3879920a9f427d2bf2f2a63c43b635739e5ca759cae689cc6",
+  "tg_push_v4.py": "2b18ddba0174735cd8fa5189a10cb2fded36e101b778d3c95db19071cf03ebc8",
+  "update_data.py": "0de80d0d6cd0c5a22ee95508c8e86f121e686a0dfa8a7f0663c9ce896f8750a5",
+  "tests/test_recommendations.py": "e6be9de6cd74833ba23a3c46c11cf382b4624d31be49ee949ad60a9a8896fe6c",
+  "v4_baseline.json": "031098fb347bb03eaac56f16ab11ca1ad71ffa18e1338f155621765c2c0e977c"
  },
  "actual_capital_previews": {
   "100000": {
-   "cash": 9986.458979999996,
-   "invested": 89977.55,
-   "fees": 35.99102,
-   "exposure": 0.9000994549748599
+   "cash": 11282.977379999997,
+   "invested": 88681.55,
+   "fees": 35.47262,
+   "exposure": 0.8871301883206083
   },
   "200000": {
-   "cash": 18086.51370000004,
-   "invested": 181840.75,
-   "fees": 72.73630000000001,
-   "exposure": 0.9095345308824929
+   "cash": 20760.582900000038,
+   "invested": 179167.75,
+   "fees": 71.66710000000002,
+   "exposure": 0.8961598758972094
   },
   "1000000": {
-   "cash": 57610.89508000016,
-   "invested": 942012.2999999999,
-   "fees": 376.80492,
-   "exposure": 0.9423673886684977
+   "cash": 71062.27348000016,
+   "invested": 928566.2999999999,
+   "fees": 371.42652,
+   "exposure": 0.9289113222998302
   }
  },
  "offline_checks": {
-  "python_tests": 68,
+  "python_tests": 73,
   "javascript_tests": 19,
   "pass": true,
   "web_canonical_fingerprint_match": true,
   "python_javascript_preview_match": true
  },
- "rendered_html_sha256": "ce4739f292a05dc6ef5cd251ebf9fec68218cd61ade5d47798672c705254aee3"
+ "rendered_html_sha256": "19a96368e71645635366a417934d4279247f7ed550f6a1103e65aa7e4573ce2b"
 }
