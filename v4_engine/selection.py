@@ -18,9 +18,20 @@ def select_universe(ctx, positions, day):
     want = {}
     tA = targetA.loc[wk]
     codesA = [c for c in tA[tA].index.tolist() if cap_pass(c)]
-    scoredA = sorted(codesA, key=lambda c: float(r20s[c].loc[wk]) if pd.notna(r20s[c].loc[wk]) else -1, reverse=True)
-    want["A"] = scoredA[:MAX_HOLD_A]
-    want_rank = {c: i + 1 for i, c in enumerate(want["A"])}
+    rank_scores = getattr(ctx, 'a_rank_scores', None)
+    if rank_scores is None:
+        rank_scores = r20s.rolling(cfg.a_rank_days, min_periods=cfg.a_rank_days).mean()
+    scores = rank_scores.loc[wk]
+    scoredA = sorted(codesA, key=lambda c: float(scores[c]) if pd.notna(scores[c]) else -1, reverse=True)
+    ranks = {c: i + 1 for i, c in enumerate(scoredA)}
+    # Eligibility and capital filters take precedence over retention. Existing
+    # A names through rank 20 occupy the same 15 slots; vacancies accept top 15.
+    retained = [c for c in scoredA[:cfg.a_retention_rank]
+                if c in pos and pos[c]['pool'] == 'A'][:MAX_HOLD_A]
+    want["A"] = retained + [c for c in scoredA[:MAX_HOLD_A] if c not in retained][:MAX_HOLD_A-len(retained)]
+    want["A"].sort(key=ranks.__getitem__)
+    # Only raw A selections supply entry coefficients, including B overlaps.
+    want_rank = {c: ranks[c] for c in want["A"]}
     if b_w > 0:
         tB = targetB.loc[wk]
         codesB = [c for c in tB[tB].index.tolist() if cap_pass(c)]

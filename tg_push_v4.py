@@ -32,6 +32,9 @@ def build_message(signal):
              f"訊號基準：{escape(signal.get('sig_date'))}｜收盤調倉日：{escape(signal.get('rebalance_date'))}",
              f"版本：{escape(signal.get('release_version', RELEASE_VERSION))}｜{escape(signal.get('commit_sha', '—'))}",
              f"模擬配置：股票 {exposure:.1%}｜現金 {signal.get('buffer', 0):.1%}"]
+    rules = signal.get('selection_rules', {})
+    if rules.get('a_rank_days'):
+        lines.append(f"A通道：{rules['a_rank_days']}日平均RSI排名；舊A持股符合資格且排名前{rules['a_retention_rank']}可保留，最多{rules['a_entry_rank']}檔。")
     if signal.get('receivables', 0):
         lines.append(f"應收股利／權益：{signal['receivables']:,.0f} 元，尚未列入可用現金。")
     if signal.get("signal_mode") == "PRE_CLOSE_PLAN":
