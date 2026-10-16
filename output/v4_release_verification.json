@@ -1,7 +1,7 @@
 {
- "release_version": "V4.3.1",
- "previous_release": "V4.2.0",
- "code_commit": "04e974d648875850a95ee4dad1e1daa752017f85",
+ "release_version": "V4.3.2",
+ "previous_release": "V4.3.1",
+ "code_commit": "c5a0eae5171a403f3309b952365a8597c4df2e28",
  "authorized_to_deploy": true,
  "current_plan": {
   "rebalance_date": "2026-10-16",
@@ -9,7 +9,7 @@
   "price_basis_date": "2026-10-16",
   "signal_mode": "CLOSE_SIMULATION",
   "stock_exposure": 0.95,
-  "fingerprint": "f5d9982e34ab3f35",
+  "fingerprint": "8e92dd9daa75ce01",
   "counts": {
    "BUY": 9,
    "SELL": 7,
@@ -22,126 +22,128 @@
   "ok": true,
   "reason": "PASS",
   "rebalance_date": "2026-10-16",
-  "canonical_hash": "f5d9982e34ab3f35",
+  "canonical_hash": "8e92dd9daa75ce01",
   "expected_rebalance_date": "2026-10-16",
   "forced": false,
   "regression_baseline": "已固化"
  },
  "offline_checks": {
-  "python_tests": 124,
+  "python_tests": 128,
   "javascript_tests": 21,
   "preview_cases": 2500
  },
- "native_cash_and_shares": {
+ "cash_and_shares": {
   "passed": true,
-  "live_root_unchanged": true,
   "capitals": [
    {
     "capital": 100000,
-    "fills": 10188,
+    "cagr": 0.41989376370881426,
+    "mdd": -0.34203519181228276,
+    "final": 6213053.062689329,
+    "weeks": 607,
+    "max_cash_error": 1.0477378964424133e-08,
+    "fills": 10161,
     "orders": 9554,
-    "max_cash_error": 2.459273673593998e-09,
     "locked_sold": 0,
-    "minimum_daily_cash": 3944.4313777391326,
+    "unlocked_events": 23,
+    "pending_count": 0,
+    "minimum_daily_cash": 4634.8442886800185,
     "over95": 0,
     "negative_cash_days": 0,
-    "pending_count": 23
+    "below90": [
+     "2015-08-21",
+     "2015-08-28"
+    ],
+    "warnings": [
+     "limit_dn",
+     "exposure_band"
+    ],
+    "failures": []
    },
    {
     "capital": 200000,
+    "cagr": 0.41982827977911374,
+    "mdd": -0.34202985691437654,
+    "final": 12419357.952735513,
+    "weeks": 607,
+    "max_cash_error": 5.6461431086063385e-09,
     "fills": 10224,
-    "orders": 9587,
-    "max_cash_error": 7.450580596923828e-09,
+    "orders": 9601,
     "locked_sold": 0,
-    "minimum_daily_cash": 7954.686528019134,
+    "unlocked_events": 23,
+    "pending_count": 0,
+    "minimum_daily_cash": 9300.170540269872,
     "over95": 0,
     "negative_cash_days": 0,
-    "pending_count": 23
+    "below90": [
+     "2015-08-21",
+     "2015-08-28"
+    ],
+    "warnings": [
+     "limit_dn",
+     "exposure_band"
+    ],
+    "failures": []
    },
    {
     "capital": 1000000,
-    "fills": 10249,
-    "orders": 9626,
-    "max_cash_error": 1.6298145055770874e-08,
+    "cagr": 0.4198244638756645,
+    "mdd": -0.342017966321047,
+    "final": 62094824.12089694,
+    "weeks": 607,
+    "max_cash_error": 3.3527612686157227e-08,
+    "fills": 10262,
+    "orders": 9643,
     "locked_sold": 0,
-    "minimum_daily_cash": 39928.245889638,
+    "unlocked_events": 23,
+    "pending_count": 0,
+    "minimum_daily_cash": 46510.18726109958,
     "over95": 0,
     "negative_cash_days": 0,
-    "pending_count": 23
+    "below90": [
+     "2015-08-21",
+     "2015-08-28"
+    ],
+    "warnings": [
+     "limit_dn",
+     "exposure_band"
+    ],
+    "failures": []
    }
-  ]
- },
- "fresh_completed": {
-  "kind": "completed",
-  "failures": [],
-  "warnings": [
-   "limit_dn",
-   "exposure_band"
   ],
-  "cagr": 0.420339675491038,
-  "mdd": -0.34267252405751525,
-  "weeks": 607,
-  "latest_exposure": 0.9499990024698757,
-  "signal_mode": "CLOSE_SIMULATION",
-  "sig_date": "2026-10-15",
-  "rebalance_date": "2026-10-16",
-  "projections": {},
-  "unknown_live_actions": [],
-  "pending_count": 23,
-  "sources": 19,
-  "below90": [
-   "2015-08-21",
-   "2015-08-28"
-  ],
-  "over95": []
- },
- "fresh_live": {
-  "kind": "live",
-  "failures": [],
-  "warnings": [
-   "limit_dn",
-   "exposure_band"
-  ],
-  "cagr": 0.4194688830189506,
-  "mdd": -0.34267252405751525,
-  "weeks": 607,
-  "latest_exposure": 0.9499993200316408,
-  "signal_mode": "PRE_CLOSE_PLAN",
-  "sig_date": "2026-10-15",
-  "rebalance_date": "2026-10-16",
-  "projections": {},
-  "unknown_live_actions": [],
-  "pending_count": 23,
-  "sources": 19,
-  "below90": [
-   "2015-08-21",
-   "2015-08-28"
-  ],
-  "over95": []
+  "live": {
+   "failures": [],
+   "pending_count": 0,
+   "latest_exposure": 0.9496521117272738,
+   "live_day": "2026-10-16 00:00:00",
+   "signal_day": "2026-10-15 00:00:00"
+  }
  },
  "capital_previews": {
   "100000": {
-   "cash": 8724.33222885001,
-   "invested": 91238.84999999999,
-   "fees": 36.817771150000006,
-   "exposure": 0.9127245448341469
+   "cash": 8762.047271150006,
+   "invested": 91201.15,
+   "fees": 36.80272885,
+   "exposure": 0.9123472686914669
   },
   "200000": {
-   "cash": 16899.972227000027,
-   "invested": 183026.99999999997,
-   "fees": 73.02777300000001,
-   "exposure": 0.9154692734114357
+   "cash": 17047.53107950003,
+   "invested": 182879.49999999997,
+   "fees": 72.96892050000001,
+   "exposure": 0.9147312347537379
   },
   "1000000": {
-   "cash": 56761.59798219993,
-   "invested": 942862.2000000001,
-   "fees": 376.2020178000001,
-   "exposure": 0.9432170401537292
+   "cash": 57391.24911279995,
+   "invested": 942232.8,
+   "fees": 375.9508872,
+   "exposure": 0.9425871664815021
   }
  },
- "historical_delivery_dates_complete": false,
- "unknown_stock_deliveries": 23,
- "limitations": "Historical stock-delivery dates remain unverified; pending rights are conservatively locked. Not a full live-account reconstruction.",
- "html_sha256": "aaccdaa076dda1a80c7d3922bba4c63ba7e7578ca7876a42157a498b62637886",
+ "historical_delivery_dates_complete": true,
+ "verified_delivery_events": 23,
+ "unknown_stock_deliveries": 0,
+ "date_evidence": "22 exchange announcements; 1 actual delivery confirmed by issuer annual report, observed only on delivery day; no fabricated advance announcement.",
+ "limitations": "Simulation; actual brokerage fills, fractional rights payout and personal dividend tax are not fully reproduced. Future unverified delivery dates remain locked.",
+ "html_sha256": "3a54ce0951036b9c4ce8670af6e2c7b95d41aa9577bb7cf139b4d418bd055101",
  "telegram_chunks": 1
 }

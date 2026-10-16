@@ -1,23 +1,23 @@
 {
  "strategy_version": "V4",
- "release_version": "V4.3.1",
+ "release_version": "V4.3.2",
  "verdict": "PASS",
  "rebalance_date": "2026-10-16",
  "v4_consistency": true,
  "fixed_anchor": {
-  "pass": true,
   "values": {
    "date": "2026-10-08",
-   "cagr": 0.42480104063966984,
-   "mdd": -0.34267252405751525,
-   "release_version": "V4.3.1",
+   "cagr": 0.4243382889098053,
+   "mdd": -0.3420351918122827,
+   "release_version": "V4.3.2",
    "selection_rules": {
     "a_rank_days": 3,
     "a_entry_rank": 15,
     "a_retention_rank": 20,
     "b_max_names": 4
    }
-  }
+  },
+  "pass": true
  },
  "warning_checks": [
   "limit_dn",
