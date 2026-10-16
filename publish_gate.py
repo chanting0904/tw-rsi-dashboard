@@ -233,6 +233,10 @@ def evaluate(force=False, today=None, output_dir=None, notify=True):
         if any(int(sig.get("counts", {}).get(k, 0)) != actual_counts[k] for k in VALID_ACTIONS):
             reasons.append("counts 各動作筆數與 actions 不符")
         for a in acts:
+            if a.get('allocation_eligible') is False and (float(a.get('target_weight', 0) or 0) > 0 or int(a.get('target_shares', 0) or 0) > 0):
+                reasons.append(f"{a.get('stock_code')} 不可配置的歷史持股仍帶下單目標")
+            if a.get('trading_status', 'TRADABLE') != 'TRADABLE' and a.get('allocation_eligible') is True:
+                reasons.append(f"{a.get('stock_code')} 交易受限卻標記為可配置")
             for key in ("target_weight", "current_weight", "price"):
                 value = a.get(key)
                 if value is not None and not math.isfinite(float(value)):

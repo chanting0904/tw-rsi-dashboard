@@ -40,7 +40,8 @@ def build_message(signal):
     if signal.get("signal_mode") == "PRE_CLOSE_PLAN":
         lines.append("股數以基準日收盤價試算；當日收盤成交價會影響最終模擬結果。")
     for action, label in LABELS.items():
-        rows = [a for a in signal.get("actions", []) if a["action"] == action]
+        rows = [a for a in signal.get("actions", []) if a["action"] == action
+                and (action == 'SELL' or a.get('allocation_eligible', True))]
         lines.append(f"\n<b>{label}（{len(rows)}）</b>")
         for row in sorted(rows, key=lambda a: (a.get("rank") or 99, str(a["stock_code"]))):
             lines.append(f"• <code>{escape(row['stock_code'])}</code> {escape(row['stock_name'])}"
@@ -48,8 +49,15 @@ def build_message(signal):
                          f"｜調倉前模擬 {row['current_weight']:.2%}")
             if row.get("reason"):
                 lines.append("  原因：" + escape(row["reason"])[:500])
+            if row.get('recommendation_note'):
+                lines.append('  ' + escape(row['recommendation_note']))
         if not rows:
             lines.append("（無）")
+    restricted = [a for a in signal.get('actions', []) if a['action'] != 'SELL' and not a.get('allocation_eligible', True)]
+    if restricted:
+        lines.append('\n<b>歷史受限資產（不列入下單）</b>')
+        for row in restricted:
+            lines.append(f"• {escape(row['stock_code'])} {escape(row['stock_name'])}｜{escape(row.get('recommendation_note', '不可交易'))}")
     for warning in signal.get("warnings", []):
         lines.append("⚠️ " + escape(warning)[:1000])
     lines.extend(["\n收盤調倉；未成交部分於下週第一個交易日用市價單補調倉。",
