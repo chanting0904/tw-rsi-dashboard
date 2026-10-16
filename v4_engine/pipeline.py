@@ -34,6 +34,7 @@ def fixed_anchor(result, config):
     cagr = (float(nav.iloc[-1]) / config.start_capital) ** (1 / years) - 1 if years > 0 else 0
     mdd = float((nav / nav.cummax().clip(lower=config.start_capital) - 1).min())
     parameters = {'threshold': config.threshold, 'buy_fee': config.buy_fee, 'sell_fee': config.sell_fee,
+                  'minimum_commission': config.minimum_commission,
                   'delisted_valuation': config.delisted_valuation, 'nav_frequency': 'daily'}
     selection_rules = {'a_rank_days': config.a_rank_days, 'a_entry_rank': config.max_hold_a,
                        'a_retention_rank': config.a_retention_rank, 'b_max_names': config.max_hold_b}
@@ -60,6 +61,9 @@ def publish(ctx, output_dir, root, *, end=None, report_only=False):
     if not plans:
         raise ValueError('沒有可以發布的調倉計畫')
     latest = plans[-1]
+    status = getattr(ctx,'security_status',None)
+    if not status or status.get('checked_for') != latest['date'].strftime('%Y-%m-%d'):
+        raise ValueError('缺少本期官方交易狀態核對，停止發布')
     historical = [plan for plan in plans if ctx.live_day is None or plan['date'] != ctx.live_day][-20:]
     checks, failures, warnings = validate_plans(ctx, historical[-19:] + [latest] if ctx.live_day is not None else historical, trades)
     valid = anchor_ok and not failures
@@ -71,6 +75,7 @@ def publish(ctx, output_dir, root, *, end=None, report_only=False):
     write_json(output_dir / 'validation_log.json', validation)
     if not valid:
         raise ValueError(f'validation FAIL: {failures}; fixed_anchor={anchor_ok}')
+    write_json(output_dir / 'security_status.json', status)
     sha = commit_sha(root)
     for plan in historical:
         write_json(output_dir / 'history' / (plan['date'].strftime('%Y-%m-%d') + '.json'), canonical_for(ctx, plan, trades, sha))

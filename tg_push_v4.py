@@ -65,6 +65,9 @@ def build_message(signal):
         lines.append('\n<b>歷史受限資產（不列入下單）</b>')
         for row in restricted:
             lines.append(f"• {escape(row['stock_code'])} {escape(row['stock_name'])}｜{escape(row.get('recommendation_note', '不可交易'))}")
+    if signal.get('pending_assets'):
+        lines.append(f"\n<b>模擬待領配股：{len(signal['pending_assets'])}筆，目前不用另外下單</b>")
+        lines.append('原有股票可照策略賣出，應領配股不會取消。配股日期及股數可在網頁展開查看。')
     for warning in signal.get("warnings", []):
         lines.append("⚠️ " + escape(warning)[:1000])
     lines.extend(["\n收盤調倉；未成交部分於下週第一個交易日用市價單補調倉。",

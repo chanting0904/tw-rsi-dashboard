@@ -103,14 +103,16 @@ def codes_of(d):
 
 
 def update_file(path, px, sig, expected_rebal_date):
-    html = open(path, encoding="utf-8").read()
+    with open(path, encoding="utf-8") as stream:
+        html = stream.read()
     m, d = read_data(html)
     for k in ("holdings_a", "holdings_b"):
         for h in d.get(k, []):
             c = str(h.get("code"))
-            if c in px:
+            if c in px and sig >= max(h.get('price_valid_from') or '',h.get('px_date') or ''):
                 h["px"] = px[c]
                 h["px_date"] = sig
+                h['price_kind'] = 'CLOSE'
     d["price_warnings"] = [f"{c} 沒有本次行情，請查看該檔價格日期" for c in codes_of(d) if c not in px]
     d["px_date"] = sig
     d["expected_rebal_date"] = expected_rebal_date
@@ -119,7 +121,8 @@ def update_file(path, px, sig, expected_rebal_date):
     new = json.dumps(d, ensure_ascii=False)
     final_html = html[:m.start(1)] + new + html[m.end(1):]
     tmp = path + ".tmp"
-    open(tmp, "w", encoding="utf-8").write(final_html)
+    with open(tmp, "w", encoding="utf-8") as stream:
+        stream.write(final_html)
     os.replace(tmp, path)   # 原子替換，防寫一半斷電毀檔
 
 

@@ -27,6 +27,10 @@ class MarketContext:
     corporate_events: dict = None
     receivable_total: float = 0.
     a_rank_scores: Any = None
+    security_status: Any = None
+    security_types: Any = None
+    share_entitlements: Any = None
+    share_delivery_events: Any = None
 
     def pick_days(self, weekday=5):
         import pandas as pd

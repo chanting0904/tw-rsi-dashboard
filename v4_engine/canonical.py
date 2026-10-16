@@ -3,6 +3,7 @@ from version import STRATEGY_VERSION, RELEASE_VERSION
 import datetime
 from zoneinfo import ZoneInfo
 from .recommendations import recommendation_metadata
+from .security_status import snapshot_hash
 
 def classify_day(wp, trades_df):
     tdate = wp["date"]
@@ -130,7 +131,7 @@ def canonical_for(ctx, wp, trades_df, commit_sha):
         warnings.append(f"有 {wp['blocked_limitup_targets']} 檔新目標股漲停無法買進，其配置已分給其他可買標的")
     if wp.get("blocked_exit_codes"):
         blocked = sorted(set(wp["blocked_exit_codes"]))
-        warnings.append(f"有 {len(blocked)} 檔持股因跌停或缺有效成交價無法賣出，仍暫留模擬持倉：{'、'.join(blocked)}")
+        warnings.append(f"有 {len(blocked)} 檔持股因停牌、跌停、缺報價或待入帳限制無法全部賣出，仍暫留模擬紀錄：{'、'.join(blocked)}")
     if wp.get('exposure_cap_blocked_codes'):
         codes = '、'.join(wp['exposure_cap_blocked_codes'])
         warnings.append(f"股票倉位暫時超過95%上限，受限持股無法成交：{codes}；已停止超額買進，待可成交時再降倉")
@@ -143,12 +144,24 @@ def canonical_for(ctx, wp, trades_df, commit_sha):
         warnings.append(f"B 通道僅 {nb_b} 檔，單檔權重放大至 95%×40%/{nb_b} ≈ {0.95*0.4/nb_b*100:.1f}%，集中度較高")
     if counts["BUY"] + counts["REBALANCE_BUY"] == 0 and counts["SELL"] + counts["REBALANCE_SELL"] == 0:
         warnings.append("本週無買賣動作，僅 HOLD")
+    if wp.get('pending_assets'):
+        unknown = sum(asset.get('tradable_date') is None for asset in wp['pending_assets'])
+        warnings.append(f"待領配股共 {len(wp['pending_assets'])} 筆，{unknown} 筆日期待確認；目前不用另外下單，原有股票仍照策略操作。")
+    if LIVE_DAY is not None and wp['date']==LIVE_DAY and getattr(ctx,'live_action_prices',None):
+        warnings.append('本週部分股票遇除權息，已標示「除權息參考價」；實際成交價格仍以券商為準。')
     return {
         "strategy_version": STRATEGY_VERSION, "release_version": RELEASE_VERSION,
         "restricted_assets": wp.get('restricted_assets', []),
+        "pending_assets": wp.get('pending_assets', []),
+        "security_status_checked_for": (getattr(ctx,'security_status',None) or {}).get('checked_for'),
+        "security_status_hash": snapshot_hash(ctx.security_status) if getattr(ctx,'security_status',None) else None,
         "selection_rules": {"a_rank_days": cfg.a_rank_days, "a_entry_rank": cfg.max_hold_a,
                             "a_retention_rank": cfg.a_retention_rank, "b_max_names": cfg.max_hold_b},
         "start_capital": cfg.start_capital, "buy_fee": cfg.buy_fee, "sell_fee": cfg.sell_fee,
+        "minimum_commission": cfg.minimum_commission,
+        "fee_model": {"commission_rate": cfg.buy_fee, "minimum_commission": cfg.minimum_commission,
+                      "stock_sale_tax": cfg.sell_fee-cfg.buy_fee, "etf_sale_tax": .001,
+                      "order_policy": "one_minimum_per_code_side_rebalance"},
         "signal_mode": "PRE_CLOSE_PLAN" if LIVE_DAY is not None and wp["date"] == LIVE_DAY else "CLOSE_SIMULATION",
         "price_basis_date": (SIGNAL_DAY if LIVE_DAY is not None and wp["date"] == LIVE_DAY else wp["date"]).strftime("%Y-%m-%d"),
         "execution_rule": "last_trading_day_close_then_next_week_first_session_remainder",

@@ -79,8 +79,12 @@ class LivePlanTests(unittest.TestCase):
 
 
 class PublishTests(unittest.TestCase):
+    def status(self):
+        return {'checked_for':'2026-10-08','listed':{'2330':{'name':'A&B','exchange':'TWSE'}},'events':[]}
+
     def signal(self):
-        return {"strategy_version": "V4", "release_version": RELEASE_VERSION, "rebalance_date": "2026-10-08", "sig_date": "2026-10-07",
+        return {"security_status_checked_for":"2026-10-08", "security_status_hash": __import__('v4_engine.security_status',fromlist=['snapshot_hash']).snapshot_hash(self.status()),
+                "strategy_version": "V4", "release_version": RELEASE_VERSION, "rebalance_date": "2026-10-08", "sig_date": "2026-10-07",
                 "price_basis_date": "2026-10-07", "signal_mode": "PRE_CLOSE_PLAN",
                 "generated_at": "2026-10-08T06:00:00+08:00", "commit_sha": "test1234",
                 "cash": 7500, "portfolio_value": 100000, "buffer": .075, "stock_exposure": .925,
@@ -92,6 +96,7 @@ class PublishTests(unittest.TestCase):
     def evaluate(self, signal, perf=None, baseline=None):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
+            (root / 'security_status.json').write_text(json.dumps(self.status()),encoding='utf-8')
             (root / "latest_signals.json").write_text(json.dumps(signal), encoding="utf-8")
             (root / "validation_log.json").write_text(json.dumps({"strategy_version": "V4", "release_version": RELEASE_VERSION, "verdict": "PASS", "rebalance_date": signal["rebalance_date"]}), encoding="utf-8")
             performance = dict(perf or {"cagr": .3869, "mdd": -.3564, "completed_through": "2026-10-02"})

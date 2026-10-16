@@ -41,8 +41,8 @@ class AllocationRepairTests(unittest.TestCase):
                 self.assertGreaterEqual(row['cur_sh'],int(row['target_sh']*.90))
         self.assertGreaterEqual(plan['stock_exposure'],.90)
         self.assertLessEqual(plan['stock_exposure'],.95+1e-10)
-        spent=sum(t['amount']*1.0004 for t in fills if t['side']=='BUY')
-        received=sum(t['amount']*.997 for t in fills if t['side']=='SELL')
+        spent=sum((t['amount']+t['fee']) for t in fills if t['side']=='BUY')
+        received=sum((t['amount']-t['fee']) for t in fills if t['side']=='SELL')
         self.assertAlmostEqual(cash,20000.+received-spent)
 
     def test_restricted_and_unaffordable_allocations_are_redistributed(self):

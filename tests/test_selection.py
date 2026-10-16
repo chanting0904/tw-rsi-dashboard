@@ -28,7 +28,7 @@ class SelectionTests(unittest.TestCase):
 
     def test_existing_A_rank20_retained_and_rank21_exits(self):
         ctx, day, codes = context()
-        positions = {codes[19]: {'pool':'A'}, codes[20]: {'pool':'A'}}
+        positions = {codes[19]: {'pool':'A','shares':1}, codes[20]: {'pool':'A','shares':1}}
         want, ranks, _, _, _ = select_universe(ctx, positions, day)
         self.assertEqual(want['A'], codes[:14]+[codes[19]])
         self.assertEqual(ranks[codes[19]], 20)
@@ -38,12 +38,12 @@ class SelectionTests(unittest.TestCase):
         for filter_name in ['targetA', 'cap_ok']:
             ctx, day, codes = context()
             getattr(ctx, filter_name).loc[day, codes[19]] = False
-            want, _, _, _, _ = select_universe(ctx, {codes[19]: {'pool':'A'}}, day)
+            want, _, _, _, _ = select_universe(ctx, {codes[19]: {'pool':'A','shares':1}}, day)
             self.assertNotIn(codes[19], want['A'])
 
     def test_only_existing_A_receives_buffer(self):
         ctx, day, codes = context()
-        want, _, _, _, _ = select_universe(ctx, {codes[19]: {'pool':'B'}}, day)
+        want, _, _, _, _ = select_universe(ctx, {codes[19]: {'pool':'B','shares':1}}, day)
         self.assertNotIn(codes[19], want['A'])
 
     def test_ranking_uses_three_shifted_sessions_not_last_score_only(self):
@@ -61,7 +61,7 @@ class SelectionTests(unittest.TestCase):
         ctx, day, codes = context()
         ctx.targetB.loc[day, codes[:2]+codes[20:22]] = True
         ctx.tv20_previous.loc[day, codes[20]] = 1e9
-        want, ranks, _, aw, bw = select_universe(ctx, {codes[0]:{'pool':'B'}}, day)
+        want, ranks, _, aw, bw = select_universe(ctx, {codes[0]:{'pool':'B','shares':1}}, day)
         self.assertIn(codes[0], want['B'])
         self.assertNotIn(codes[0], want['A'])
         self.assertIn(codes[1], want['A'])
@@ -80,7 +80,7 @@ class SelectionTests(unittest.TestCase):
         ctx, day, codes = context()
         ctx.config = replace(ctx.config, a_rank_days=1, a_retention_rank=15)
         ctx.r20s.loc[day, codes[24]] = 101
-        want, _, _, _, _ = select_universe(ctx, {codes[19]:{'pool':'A'}}, day)
+        want, _, _, _, _ = select_universe(ctx, {codes[19]:{'pool':'A','shares':1}}, day)
         self.assertEqual(want['A'], [codes[24]]+codes[:14])
 
 

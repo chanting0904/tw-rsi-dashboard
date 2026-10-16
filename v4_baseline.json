@@ -1,11 +1,12 @@
 {
  "date": "2026-10-08",
  "strategy_version": "V4",
- "release_version": "V4.2.0",
+ "release_version": "V4.3.1",
  "parameters": {
   "threshold": 1.0,
-  "buy_fee": 0.0004,
-  "sell_fee": 0.003,
+  "buy_fee": 0.000399,
+  "sell_fee": 0.003399,
+  "minimum_commission": 1.0,
   "delisted_valuation": "zero",
   "nav_frequency": "daily"
  },
@@ -15,7 +16,9 @@
   "a_retention_rank": 20,
   "b_max_names": 4
  },
- "cagr": 0.43613960831035503,
- "mdd": -0.3408843706667586,
- "final_nav": 7047839.608143281
+ "cagr": 0.42480104063966984,
+ "mdd": -0.34267252405751525,
+ "final_nav": 6420747.464740287,
+ "stock_grant_policy": "locked_until_verified_delivery",
+ "historical_delivery_dates_complete": false
 }

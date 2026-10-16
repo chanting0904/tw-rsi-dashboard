@@ -31,7 +31,8 @@ def trade_cycles(trades, close, buy_fee, sell_fee):
             if qty <= 0:
                 continue
             if row['side'] == 'BUY':
-                cost = qty * price * (1 + buy_fee)
+                recorded_fee = row.get('fee')
+                cost = qty*price + (float(recorded_fee) if pd.notna(recorded_fee) else qty*price*buy_fee)
                 if shares == 0:
                     entry, rank = day, row.get('rank')
                 avg = (avg * shares + cost) / (shares + qty)
@@ -41,7 +42,8 @@ def trade_cycles(trades, close, buy_fee, sell_fee):
             elif row['side'] == 'SELL':
                 if qty > shares:
                     raise ValueError(f'{code}: sold {qty} shares but only {shares} recorded')
-                sell_proceeds += qty * price * (1 - sell_fee)
+                recorded_fee = row.get('fee')
+                sell_proceeds += qty*price - (float(recorded_fee) if pd.notna(recorded_fee) else qty*price*sell_fee)
                 shares -= qty
                 if shares:
                     continue
@@ -99,19 +101,27 @@ def perf_document(result, config, anchor=None):
             'trades': int(result['trades']), 'turnover': round(float(result['turnover']), 2),
             'start_capital': config.start_capital, 'strategy_version': STRATEGY_VERSION, 'release_version': RELEASE_VERSION,
             'buy_fee': config.buy_fee, 'sell_fee': config.sell_fee,
+            'minimum_commission': config.minimum_commission,
+            'fee_model': {'commission_rate': config.buy_fee, 'minimum_commission': config.minimum_commission,
+                          'stock_sale_tax': config.sell_fee-config.buy_fee, 'etf_sale_tax': .001,
+                          'order_policy': 'one_minimum_per_code_side_rebalance'},
             'completed_through': nav.index[-1].strftime('%Y-%m-%d'),
             'nav_frequency': 'daily', 'delisted_valuation': config.delisted_valuation,
             'fixed_anchor': anchor,
             'nav': [[day.strftime('%Y-%m-%d'), round(float(value), 0)] for day, value in series.items()],
             'dd': [[day.strftime('%Y-%m-%d'), round(float(value), 2)] for day, value in ((series / series.cummax().clip(lower=config.start_capital) - 1) * 100).items()],
             'yearly': [{**item, 'ret': round(item['ret'], 2), 'mdd': round(item['mdd'], 2)} for item in annual],
-            'accounting_version': 'v4_cash_entitlements_and_share_actions', 'dividend_policy': 'receivable_on_ex_date_cash_on_payment_date', 'stock_grant_policy': 'ex_date_integer_shares_fractional_rights_locked_receivable', 'rebalance_threshold': config.threshold}
+            'pending_stock_deliveries': result.get('pending_assets',[]),
+            'unknown_stock_delivery_count': sum(a.get('tradable_date') is None for a in result.get('pending_assets',[])),
+            'performance_caveat': ('配股可交易日期有缺漏，未確認權益持續鎖定；績效為保守情境，並非已完整還原配股入帳。'
+                if any(a.get('tradable_date') is None for a in result.get('pending_assets',[])) else None),
+            'accounting_version': 'v4_cash_entitlements_and_locked_stock_actions', 'dividend_policy': 'receivable_on_ex_date_cash_on_payment_date', 'stock_grant_policy': 'locked_on_ex_date_until_source_verified_trading_delivery_date', 'rebalance_threshold': config.threshold}
 
 
 def summarize_simulation(nav_hist, trades, close, config, weekday, mode, coefs, start=None, end=None):
     _c1, _c2, _c3 = coefs
     nav_df = pd.DataFrame(nav_hist).set_index("date")
-    tr_df = pd.DataFrame(trades, columns=["date", "code", "pool", "side", "price", "shares", "amount", "rank", "reason", "full", "is_new"])
+    tr_df = pd.DataFrame(trades, columns=["date", "code", "pool", "side", "price", "shares", "amount", "rank", "reason", "full", "is_new", "commission", "tax", "fee"])
     final = float(nav_df["nav"].iloc[-1])
     years = (nav_df.index[-1] - nav_df.index[0]).days / 365.25
     cagr = (final / config.start_capital) ** (1 / years) - 1 if years > 0 else 0.0
