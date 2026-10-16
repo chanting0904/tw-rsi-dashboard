@@ -514,7 +514,7 @@ function renderAllocationDetails(preview) {
   const names = new Map(allHolds().map(row => [String(row.code), row.name]));
   for (const row of preview.details.filter(row => row.shortfall > .005)) {
     const tr = body.insertRow();
-    const reason = {missing_price:'缺少可用價格', under_one_share:'目標金額不足一股', cash_limit:'可用資金需預留費用', rounding:'股數取整，餘額不足再買一股'}[row.reason] || '—';
+    const reason = {missing_price:'缺少可用價格', under_one_share:'目標金額不足一股', exposure_limit:'保留現金以維持95%倉位上限', cash_limit:'可用資金需預留費用', rounding:'股數取整，餘額不足再買一股'}[row.reason] || '—';
     for (const value of [row.code + ' ' + (names.get(row.code) || ''), M(row.target_amount), F(row.quantity, 0), M(row.invested), M(row.shortfall), reason]) {
       tr.insertCell().textContent = value;
     }

@@ -119,7 +119,10 @@ def canonical_for(ctx, wp, trades_df, commit_sha):
         warnings.append(f"有 {wp['blocked_limitup_targets']} 檔新目標股漲停無法買進，其配置已分給其他可買標的")
     if wp.get("blocked_exit_codes"):
         blocked = sorted(set(wp["blocked_exit_codes"]))
-        warnings.append(f"有 {len(blocked)} 檔持股跌停賣不出，仍暫留模擬持倉：{'、'.join(blocked)}")
+        warnings.append(f"有 {len(blocked)} 檔持股因跌停或缺有效成交價無法賣出，仍暫留模擬持倉：{'、'.join(blocked)}")
+    if wp.get('exposure_cap_blocked_codes'):
+        codes = '、'.join(wp['exposure_cap_blocked_codes'])
+        warnings.append(f"股票倉位暫時超過95%上限，受限持股無法成交：{codes}；已停止超額買進，待可成交時再降倉")
     if wp.get("unplanned_holdings"):
         codes = '、'.join(h['code'] for h in wp['unplanned_holdings'])
         warnings.append(f"有未列入本週目標的持股仍留在模擬帳戶：{codes}")
@@ -147,6 +150,7 @@ def canonical_for(ctx, wp, trades_df, commit_sha):
         "cash": round(float(wp["cash"]), 0),
         "buffer": round(float(wp["cash"]) / float(wp["nav"]), 4),
         "stock_exposure": round(exposure, 4),
+        "exposure_cap_blocked_codes": list(wp.get('exposure_cap_blocked_codes', [])),
         "portfolio_value": round(float(wp["nav"]), 0),
         "buy_total": round(buy_total, 0),
         "sell_total": round(sell_total, 0),

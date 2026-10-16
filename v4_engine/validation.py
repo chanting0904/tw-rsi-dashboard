@@ -2,7 +2,7 @@
 from .canonical import classify_day, prev_trading_day
 
 CHECK_NAMES = ['duplicate', 'conflict', 'target_sum', 'cash_no_overdraft', 'buffer', 'exposure_band',
-               'share_qty', 'limit_up', 'limit_dn', 'delisted', 'missing_price', 'lookahead']
+               'exposure_upper_bound', 'share_qty', 'limit_up', 'limit_dn', 'delisted', 'missing_price', 'lookahead']
 
 def run_checks(ctx, wp, ops, res):
     close = ctx.adjusted_close if ctx.adjusted_close is not None else ctx.close
@@ -32,6 +32,29 @@ def run_checks(ctx, wp, ops, res):
     res["exposure_band"]["pass" if EXPOSURE_MIN <= exposure <= EXPOSURE_MAX else "fail"] += 1
     if not (EXPOSURE_MIN <= exposure <= EXPOSURE_MAX):
         res["exposure_band"]["detail"].append((wp["date"].strftime("%Y-%m-%d"), round(exposure * 100, 1)))
+    if exposure <= EXPOSURE_MAX + 1e-10:
+        res['exposure_upper_bound']['pass'] += 1
+    else:
+        # Independently verify any claimed trade block. A plain flag must not
+        # turn an unexplained upper-band violation into a publishable result.
+        blocked = []
+        raw = ctx.close.loc[wp['date']]
+        for code in wp.get('exposure_cap_blocked_codes', []):
+            held = any(r['code'] == code and r['cur_sh'] > 0 for r in wp['recs'])
+            missing = code not in raw.index or not (raw[code] > 0)
+            previous = prev_trading_day(ctx, wp['date'])
+            p0 = close[code].get(previous) if code in close.columns else None
+            p1 = close[code].get(wp['date']) if code in close.columns else None
+            limit_down = p0 is not None and p1 is not None and p0 > 0 and p1 / p0 - 1 <= -LIMIT
+            if held and (missing or limit_down):
+                blocked.append(code)
+        # All residual stock must be unable to sell; otherwise the final trim
+        # could still reduce exposure and the ceiling must remain a hard error.
+        remaining = {r['code'] for r in wp['recs'] if r['cur_sh'] > 0}
+        justified = bool(remaining) and remaining.issubset(set(blocked))
+        res['exposure_upper_bound']['fail'] += 1
+        res['exposure_upper_bound']['detail'].append({'date': wp['date'].strftime('%Y-%m-%d'),
+            'exposure': exposure, 'blocked_codes': blocked, 'justified': justified})
     res["share_qty"]["pass" if all(int(o["trade_sh"]) >= 0 for o in ops) else "fail"] += 1
     if not all(int(o["trade_sh"]) >= 0 for o in ops):
         res["share_qty"]["detail"].append(str(wp["date"]))
@@ -82,6 +105,9 @@ def validate_plans(ctx, plans, trades):
     result = {key: {'pass': 0, 'fail': 0, 'detail': []} for key in CHECK_NAMES}
     for plan in plans:
         run_checks(ctx, plan, classify_day(plan, trades), result)
-    failures = [key for key in CHECK_NAMES if key not in ('limit_dn', 'exposure_band') and result[key]['fail']]
+    failures = [key for key in CHECK_NAMES if key not in ('limit_dn', 'exposure_band', 'exposure_upper_bound') and result[key]['fail']]
     warnings = [key for key in ('limit_dn', 'exposure_band') if result[key]['fail']]
+    if result['exposure_upper_bound']['fail']:
+        target = warnings if all(d['justified'] for d in result['exposure_upper_bound']['detail']) else failures
+        target.append('exposure_upper_bound')
     return result, failures, warnings

@@ -51,6 +51,17 @@ def execute_week(ctx, positions, cash, day, mode, coefs, limit_up, limit_dn, rec
                    for c in pos if pd.notna(marked[c]) and float(marked[c]) > 0)
     pre_sh = {c: pos[c]["shares"] for c in pos}
     receivable = float(getattr(ctx, "receivable_total", 0.))
+
+    def maximum_buy_shares(price):
+        # Buying reduces NAV by commission as well as increasing stock value:
+        # (stocks + q*p) / (nav - q*p*fee) <= EXPOSURE_MAX.
+        # Recompute after every fill; an earlier projection can become stale
+        # when trims release more cash for the subsequent buy pass.
+        stocks = mv_at(px)
+        nav = cash + stocks + receivable
+        headroom = max(0.0, EXPOSURE_MAX * nav - stocks)
+        return max(0, int(np.floor(headroom / (price * (1 + EXPOSURE_MAX * BUY_FEE)))))
+
     pre_total = cash + mv_at(px) + receivable
     total = pre_total
     target_lists = {pool: list(want.get(pool, [])) for pool in ("A", "B")}
@@ -170,7 +181,7 @@ def execute_week(ctx, positions, cash, day, mode, coefs, limit_up, limit_dn, rec
                            "price": p_, "shares": sh, "amount": sh * p_,
                            "reason": "PORTFOLIO_BAND_TRIM", "full": full, "is_new": False})
 
-    # Buy to target only when the existing 25% drift rule says to trade.
+    # Buy to target only when the configured per-stock drift rule says to trade.
     # Account for the declared buy commission both in cash availability and NAV.
     for pool, c, tv_, p_, _ in rebalance_plans:
         cur = pos.get(c)
@@ -180,7 +191,7 @@ def execute_week(ctx, positions, cash, day, mode, coefs, limit_up, limit_dn, rec
             continue
         if c in limit_up.columns and bool(limit_up[c].get(wk, False)):
             continue
-        sh = min(int(diff // p_), int(cash // (p_ * (1 + BUY_FEE))))
+        sh = min(int(diff // p_), int(cash // (p_ * (1 + BUY_FEE))), maximum_buy_shares(p_))
         if sh <= 0:
             continue
         cash -= sh * p_ * (1 + BUY_FEE)
@@ -196,7 +207,7 @@ def execute_week(ctx, positions, cash, day, mode, coefs, limit_up, limit_dn, rec
                        "rank": want_rank.get(c, 8), "is_new": not bool(cur),
                        "reason": ""})
 
-    # The per-stock 25% drift rule can leave too much cash across many names.
+    # The per-stock drift rule can leave too much cash across many names.
     # Only when aggregate exposure falls below 90%, top up eligible targets in
     # strategy order toward 92.5%, never beyond their assigned target weights.
     mv_now = mv_at(px)
@@ -217,7 +228,7 @@ def execute_week(ctx, positions, cash, day, mode, coefs, limit_up, limit_dn, rec
             nav_now = cash + mv_now + receivable
             need = max(0.0, (EXPOSURE_AIM * nav_now - mv_now) /
                        (1 + EXPOSURE_AIM * BUY_FEE))
-            sh = min(gap_sh, int(need // p_), int(cash // (p_ * (1 + BUY_FEE))))
+            sh = min(gap_sh, int(need // p_), int(cash // (p_ * (1 + BUY_FEE))), maximum_buy_shares(p_))
             if sh <= 0:
                 continue
             cash -= sh * p_ * (1 + BUY_FEE)
@@ -236,6 +247,48 @@ def execute_week(ctx, positions, cash, day, mode, coefs, limit_up, limit_dn, rec
             nav_now = cash + mv_now + receivable
             if mv_now / nav_now >= EXPOSURE_AIM:
                 break
+
+    # Reconcile actual filled positions, including holdings outside the target
+    # universe. Prefer the largest excess over its assigned target. Never fake
+    # a fill for a missing quote or a limit-down stock.
+    assigned = {c: tv for pool, c, tv, price, diff in rebalance_plans}
+    priority = sorted(list(pos), key=lambda c: (
+        pos[c]["shares"] * float(px[c]) - assigned.get(c, 0.0)
+        if c in px.index and pd.notna(px[c]) else -1e99), reverse=True)
+    cap_blocked = []
+    for c in priority:
+        stocks = mv_at(px)
+        nav = cash + stocks + receivable
+        if nav <= 0 or stocks / nav <= EXPOSURE_MAX + 1e-12:
+            break
+        if c not in px.index or pd.isna(px[c]) or float(px[c]) <= 0:
+            cap_blocked.append(c)
+            continue
+        if c in limit_dn.columns and bool(limit_dn[c].get(wk, False)):
+            cap_blocked.append(c)
+            if str(c) not in blocked_exit_codes:
+                blocked_exit_codes.append(str(c))
+            continue
+        price = float(px[c])
+        # Selling also reduces NAV by sell fees, so proceeds alone are not the
+        # amount needed to bring the stock fraction back under the ceiling.
+        amount = max(0.0, (stocks - EXPOSURE_MAX * nav) / (1 - EXPOSURE_MAX * SELL_FEE))
+        qty = min(pos[c]["shares"], max(1, int(np.ceil(amount / price))))
+        cash += qty * price * (1 - SELL_FEE)
+        pos[c]["shares"] -= qty
+        full = pos[c]["shares"] == 0
+        pool = pos[c]["pool"]
+        if full:
+            del pos[c]
+        trades.append({"date": wk, "code": c, "pool": pool, "side": "SELL",
+                       "price": price, "shares": qty, "amount": qty * price,
+                       "reason": "PORTFOLIO_BAND_TRIM", "full": full, "is_new": False})
+    stocks = mv_at(px)
+    final_nav = cash + stocks + receivable
+    cap_exceeded = final_nav > 0 and stocks / final_nav > EXPOSURE_MAX + 1e-10
+    cap_blocked = sorted(set(cap_blocked)) if cap_exceeded else []
+    if cap_exceeded and not cap_blocked:
+        raise ValueError('調倉後股票倉位超過上限，且沒有可核對的成交限制')
 
     # ---- 每週調倉決策明細（實盤信號輸出用）----
     if record:
@@ -296,6 +349,7 @@ def execute_week(ctx, positions, cash, day, mode, coefs, limit_up, limit_dn, rec
                              "missing_price_targets": missing_price_targets,
                              "blocked_limitup_targets": blocked_limitup_targets,
                              "blocked_exit_codes": blocked_exit_codes,
+                             "exposure_cap_blocked_codes": cap_blocked,
                              "unplanned_holdings": unplanned_holdings,
                              "wa_eff": alloc_weights["A"], "wb_eff": alloc_weights["B"]})
 

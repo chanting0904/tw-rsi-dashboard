@@ -22,7 +22,9 @@ def preview_allocation(targets, capital, buy_fee=.0004):
                 missing.append(code)
             else:
                 price = float(price)
-                qty = max(0, min(math.floor(capital * weight / price), math.floor(max(cash, 0) / (price * (1 + buy_fee)))))
+                headroom = max(0., .95 * (cash + invested) - invested)
+                cap_qty = max(0, math.floor(headroom / (price * (1 + .95 * buy_fee))))
+                qty = max(0, min(math.floor(capital * weight / price), math.floor(max(cash, 0) / (price * (1 + buy_fee))), cap_qty))
                 if qty == 0:
                     unaffordable.append(code)
                 amount, fee = qty * price, qty * price * buy_fee

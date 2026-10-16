@@ -11,6 +11,9 @@ from v4_engine.jsonio import write_json
 from v4_engine.performance import trade_cycles, profit_factor, annual_performance
 from v4_engine.simulation import run
 from v4_engine.allocation import preview_allocation
+from v4_engine.execution import execute_week
+from v4_engine.validation import validate_plans
+from v4_engine.canonical import canonical_for
 
 
 def sample_context(capital=100_000, no_targets=False):
@@ -29,6 +32,75 @@ def sample_context(capital=100_000, no_targets=False):
 
 
 class AccountingTests(unittest.TestCase):
+    def exposure_case(self, capital=100_000, shares=None, missing=False, down=False):
+        ctx = sample_context(capital)
+        ctx.targetA.loc[:, :] = False
+        ctx.targetA.loc[:, ['2400', '2401']] = True
+        ctx.targetB.loc[:, :] = False
+        ctx.close.loc[:, :] = 100.
+        ctx.open_ = ctx.close.copy()
+        ctx.adjusted_close = ctx.close.copy()
+        day = ctx.days[1]
+        if down:
+            ctx.close.loc[ctx.days[0], '2400'] = 112.
+            ctx.adjusted_close = ctx.close.copy()
+        if missing:
+            ctx.close.loc[day, '2400'] = float('nan')
+            ctx.adjusted_close = ctx.close.copy()
+        ctx.valuation_close = ctx.close.ffill()
+        quantity = shares if shares is not None else int(capital * .9 / 100)
+        positions = {'2400': {'shares': quantity, 'avg': 100., 'pool': 'A', 'wc': 1.5, 'entry_d': ctx.days[0]}}
+        flags = pd.DataFrame(False, index=ctx.days, columns=ctx.close.columns)
+        downs = flags.copy()
+        downs.loc[day, '2400'] = down
+        cash, fills, plan = execute_week(ctx, positions, capital - quantity * 100., day, 'close', (1.5, 1., .5), flags, downs)
+        return ctx, positions, cash, fills, plan
+
+    def test_sale_released_cash_cannot_make_later_buys_exceed_cap(self):
+        for capital in [100_000, 200_000, 1_000_000]:
+            ctx, positions, cash, fills, plan = self.exposure_case(capital)
+            self.assertLessEqual(plan['stock_exposure'], .95 + 1e-10)
+            self.assertGreaterEqual(plan['stock_exposure'], .90)
+            self.assertGreaterEqual(cash, 0)
+            spent = sum(t['amount'] * 1.0004 for t in fills if t['side'] == 'BUY')
+            received = sum(t['amount'] * .997 for t in fills if t['side'] == 'SELL')
+            self.assertAlmostEqual(cash, capital * .1 + received - spent)
+            self.assertEqual(plan['exposure_cap_blocked_codes'], [])
+
+    def test_all_blocked_overweight_positions_do_not_fabricate_sales(self):
+        for missing, down in [(False, True), (True, False)]:
+            ctx, positions, cash, fills, plan = self.exposure_case(shares=970, missing=missing, down=down)
+            self.assertEqual(positions['2400']['shares'], 970)
+            self.assertFalse(any(t['side'] == 'BUY' for t in fills))
+            self.assertEqual(plan['exposure_cap_blocked_codes'], ['2400'])
+            frame = pd.DataFrame(fills, columns=['date', 'code', 'side', 'shares', 'amount'])
+            checks, failures, warnings = validate_plans(ctx, [plan], frame)
+            self.assertNotIn('exposure_upper_bound', failures)
+            self.assertIn('exposure_upper_bound', warnings)
+            signal = canonical_for(ctx, plan, frame, 'test1234')
+            self.assertEqual(signal['exposure_cap_blocked_codes'], ['2400'])
+            self.assertTrue(any('停止超額買進' in warning for warning in signal['warnings']))
+
+    def test_unexplained_or_forged_overweight_plan_is_fatal(self):
+        ctx, positions, cash, fills, plan = self.exposure_case()
+        plan['stock_exposure'] = .97
+        plan['exposure_cap_blocked_codes'] = ['2400']
+        _, failures, _ = validate_plans(ctx, [plan], pd.DataFrame(fills))
+        self.assertIn('exposure_upper_bound', failures)
+
+    def test_empty_target_cash_and_large_receivables_never_force_buy(self):
+        ctx = sample_context()
+        ctx.receivable_total = 100_000
+        ctx.valuation_close = ctx.close.ffill()
+        flags = pd.DataFrame(False, index=ctx.days, columns=ctx.close.columns)
+        positions = {}
+        cash, fills, plan = execute_week(ctx, positions, 0., ctx.days[0], 'close', (1.5, 1., .5), flags, flags)
+        self.assertEqual(cash, 0)
+        self.assertEqual(positions, {})
+        self.assertFalse(any(t['side'] == 'BUY' for t in fills))
+        self.assertEqual(plan['receivables'], 100_000)
+        self.assertEqual(plan['stock_exposure'], 0)
+
     def cycles(self, rows, buy_fee=0, sell_fee=0):
         dates = pd.date_range('2026-01-01', periods=len(rows))
         trades = pd.DataFrame([{'date': day, 'code': '2330', 'pool': 'A', 'rank': 1,
@@ -118,6 +190,13 @@ class AccountingTests(unittest.TestCase):
     def test_preview_fee_never_overdraws_all_cash(self):
         result = preview_allocation([{'code': '2330', 'target_weight': 1, 'price': 100}], 1000)
         self.assertEqual(result['quantities']['2330'], 9)
+
+    def test_preview_ceiling_accounts_for_fees_at_different_capitals(self):
+        for capital in [100_000, 200_000, 1_000_000]:
+            for weight in [.95, .95004, 1.]:
+                result = preview_allocation([{'code': '2330', 'target_weight': weight, 'price': 1}], capital)
+                self.assertLessEqual(result['exposure'], .95 + 1e-10)
+                self.assertAlmostEqual(result['cash'] + result['invested'] + result['fees'], capital)
 
     def test_oversized_target_is_rejected(self):
         with self.assertRaises(ValueError):
