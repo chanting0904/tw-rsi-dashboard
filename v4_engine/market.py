@@ -152,7 +152,7 @@ def load_market(config, root, *, live_rebalance=None, data_root=None, token=None
     for exchange, before_name, reference_name in [('tse','停止買賣前收盤價格','恢復買賣參考價'),('otc','最後交易之收盤價格','減資恢復買賣開始日參考價格')]:
         prefix='capital_reduction_'+exchange+':'
         reductions.append((data.get(prefix+'減資原因'),data.get(prefix+before_name),data.get(prefix+reference_name)))
-    events = build_events(announcements, raw_close, adjusted, cash_fallback, stock_grants, splits, reductions)
+    events = build_events(announcements, raw_close, adjusted, cash_fallback, stock_grants, splits, reductions, as_of=SIGNAL_DAY)
     context = MarketContext(config, raw_close, raw_open, raw_high, raw_low, targetA, targetB, r20s, tv20,
                          ma60, cap_ok, sw_tsm, days, days_all, weeks, LIVE_DAY, SIGNAL_DAY, name_map)
     context.tv20_previous = tv20.shift(1)
@@ -161,4 +161,13 @@ def load_market(config, root, *, live_rebalance=None, data_root=None, token=None
     context.a_rank_scores = r20s.rolling(config.a_rank_days, min_periods=config.a_rank_days).mean()
     context.adjusted_close = adjusted
     context.corporate_events = events
+    delivery_path = Path(root)/'v4_engine/share_delivery_events.json'
+    context.share_delivery_events = json.loads(delivery_path.read_text(encoding='utf-8')).get('events',[]) if delivery_path.exists() else []
+    from .corporate_actions import delivery_registry
+    delivery_registry(context.share_delivery_events)
+    from .security_status import refresh_security_status
+    # Loading data (including report-only runs) must not replace the status
+    # snapshot bound to an already published signal. Publication stages it.
+    context.security_status = refresh_security_status(None,
+        LIVE_DAY or raw_close.index[-1], SIGNAL_DAY or raw_close.index[-1])
     return context

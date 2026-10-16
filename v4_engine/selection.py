@@ -1,9 +1,12 @@
 """Rank A/B candidates and resolve channel overlaps without placing trades."""
 import pandas as pd
+from .security_status import can_trade
 
 
 def select_universe(ctx, positions, day):
-    pos, wk = positions, day
+    # Pending dividend rights do not occupy an old-stock retention slot.
+    pos={c:p for c,p in positions.items() if p['shares']-p.get('locked_shares',0)>0}
+    wk = day
     sw_tsm, cap_ok, targetA, targetB = ctx.sw_tsm, ctx.cap_ok, ctx.targetA, ctx.targetB
     r20s, tv20 = ctx.r20s, ctx.tv20
     cfg = ctx.config
@@ -17,7 +20,7 @@ def select_universe(ctx, positions, day):
 
     want = {}
     tA = targetA.loc[wk]
-    codesA = [c for c in tA[tA].index.tolist() if cap_pass(c)]
+    codesA = [c for c in tA[tA].index.tolist() if cap_pass(c) and can_trade(ctx, c, wk)]
     rank_scores = getattr(ctx, 'a_rank_scores', None)
     if rank_scores is None:
         rank_scores = r20s.rolling(cfg.a_rank_days, min_periods=cfg.a_rank_days).mean()
@@ -34,7 +37,7 @@ def select_universe(ctx, positions, day):
     want_rank = {c: ranks[c] for c in want["A"]}
     if b_w > 0:
         tB = targetB.loc[wk]
-        codesB = [c for c in tB[tB].index.tolist() if cap_pass(c)]
+        codesB = [c for c in tB[tB].index.tolist() if cap_pass(c) and can_trade(ctx, c, wk)]
         tvw_ = ctx.tv20_previous.loc[wk] if getattr(ctx, 'tv20_previous', None) is not None else tv20.shift(1).loc[wk]
         scoredB = sorted(codesB, key=lambda c: float(tvw_[c]) if pd.notna(tvw_[c]) else -1, reverse=True)
         want["B"] = scoredB[:MAX_HOLD_B]

@@ -1,8 +1,9 @@
 """Independent publication checks; no strategy calculation or notifications."""
 from .canonical import classify_day, prev_trading_day
+from .security_status import can_trade
 
 CHECK_NAMES = ['duplicate', 'conflict', 'target_sum', 'cash_no_overdraft', 'buffer', 'exposure_band',
-               'exposure_upper_bound', 'share_qty', 'limit_up', 'limit_dn', 'delisted', 'missing_price', 'lookahead']
+               'exposure_upper_bound', 'share_qty', 'limit_up', 'limit_dn', 'delisted', 'missing_price', 'lookahead', 'security_status']
 
 def run_checks(ctx, wp, ops, res):
     close = ctx.adjusted_close if ctx.adjusted_close is not None else ctx.close
@@ -46,7 +47,7 @@ def run_checks(ctx, wp, ops, res):
             p0 = close[code].get(previous) if code in close.columns else None
             p1 = close[code].get(wp['date']) if code in close.columns else None
             limit_down = p0 is not None and p1 is not None and p0 > 0 and p1 / p0 - 1 <= -LIMIT
-            if held and (missing or limit_down):
+            if held and (missing or limit_down or not can_trade(ctx, code, wp['date'])):
                 blocked.append(code)
         # All residual stock must be unable to sell; otherwise the final trim
         # could still reduce exposure and the ceiling must remain a hard error.
@@ -76,6 +77,10 @@ def run_checks(ctx, wp, ops, res):
         res["delisted"]["detail"].append((str(wp["date"]), sorted(set(dl))[:3]))
     else:
         res["delisted"]["pass"] += 1
+    illegal = [o['code'] for o in ops if o['action']!='HOLD' and o.get('trade_sh',0)>0
+               and not can_trade(ctx,o['code'],wp['date'])]
+    res['security_status']['fail' if illegal else 'pass'] += 1
+    if illegal:res['security_status']['detail'].append((str(wp['date']),illegal))
     # limit_up / limit_dn：買進價不得誤買已漲停(>=+9.9%)/跌停(<=-9.9%)（對照前一交易日收盤）
     for o in ops:
         if o["action"] in ("BUY", "REBALANCE_BUY") and o.get("price") and prev_row is not None:

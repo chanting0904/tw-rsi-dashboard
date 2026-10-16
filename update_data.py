@@ -87,7 +87,8 @@ for a in SIG.get("actions", []):
                       "current_weight": a.get("current_weight", 0), "rank": a.get("rank")})
         continue
     quote_date = a.get('price_date') or SIG.get('price_basis_date', SIG.get('rebalance_date'))
-    use_latest_quote = a['stock_code'] in prices and px_date >= quote_date and a.get('allocation_eligible', True)
+    minimum_quote_date=max(a.get('price_valid_from') or '',quote_date or '')
+    use_latest_quote = a['stock_code'] in prices and px_date >= minimum_quote_date and a.get('allocation_eligible', True)
     item = {
         "code": a["stock_code"], "name": a["stock_name"], "channel": a["channel"],
         "rank": a["rank"], "action": a["action"], "reason": a["reason"],
@@ -99,6 +100,8 @@ for a in SIG.get("actions", []):
         "estimated_sell_amount": a["estimated_sell_amount"],
         "px": prices.get(a["stock_code"]) if use_latest_quote else a["price"],
         "px_date": px_date if use_latest_quote else quote_date,
+        "price_kind": 'CLOSE' if use_latest_quote else a.get('price_kind','CLOSE'),
+        "price_valid_from":minimum_quote_date,
         "post_weight": a.get('post_weight', a['target_weight']),
         "post_shares": a.get('post_shares', a['target_shares']),
         "recommendation_note": a.get('recommendation_note', ''),
@@ -148,6 +151,8 @@ DATA = {
     "selection_rules": SIG.get("selection_rules", {}),
     "receivables": SIG.get("receivables", 0),
     "buy_fee": SIG.get("buy_fee", StrategyConfig().buy_fee),
+    "minimum_commission": SIG.get("minimum_commission", StrategyConfig().minimum_commission),
+    "pending_assets": SIG.get("pending_assets", []),
     "sig_date": SIG.get("sig_date"),
     "rebal_date": SIG.get("rebalance_date"),
     "sig_generated_at": SIG.get("generated_at"),
@@ -283,6 +288,7 @@ HTML = """<!DOCTYPE html>
     <h2><span id="ops-title">📋 最近一期模擬清單</span> <span class="tag">操作順序：先賣 → 減碼 → 買 → 加碼 → 持有</span></h2>
     <div id="ops"></div>
     <div id="restrictednote" class="note"></div>
+    <details id="pendingbox" class="note" style="display:none"><summary id="pendingsummary"></summary><div id="pendingnote"></div></details>
     <div class="note">🔸 先賣出／減碼釋出現金，再買入／加碼。每檔顯示 V4 模擬調倉後建議權重＋照目前本金算出的「目標股數」（目標金額 ÷ 現價，取整股）；<b>實際買賣股數請你自己對照手上持股決定</b>。</div>
   </section>
 
@@ -367,7 +373,7 @@ let USER_CAPITAL = parseFloat(localStorage.getItem("v4_user_capital") || "100000
 if (!Number.isFinite(USER_CAPITAL) || USER_CAPITAL < 10000) USER_CAPITAL = 100000;
 let CAPITAL_PREVIEW = null;
 function updateCapitalPreview() {
-  CAPITAL_PREVIEW = previewAllocation(allHolds().map(row => ({code:row.code, target_weight:row.target_weight, price:row.px || row.price, channel:row.channel})), USER_CAPITAL, DATA.buy_fee);
+  CAPITAL_PREVIEW = previewAllocation(allHolds().map(row => ({code:row.code, target_weight:row.target_weight, price:row.px || row.price, channel:row.channel})), USER_CAPITAL, DATA.buy_fee, DATA.minimum_commission);
 }
 
 const AMT = (w) => USER_CAPITAL * (w || 0);            // 權重 → 金額
@@ -527,7 +533,7 @@ function renderCards() {
   $("cap-cash").textContent = M(bufAmt);
   $("cap-invest").textContent = M(investAmt);
   const preview = CAPITAL_PREVIEW;
-  $("allocationnote").textContent = '整股前配置目標 ' + P(preview.target_weight_total, 1) + '｜整股後配置 ' + P(preview.exposure, 1) + '｜預估模型買入費用 ' + M(preview.fees) + '。這是目標配置試算，實際成交另計。' +
+  $("allocationnote").textContent = '整股前配置目標 ' + P(preview.target_weight_total, 1) + '｜整股後配置 ' + P(preview.exposure, 1) + '｜整組建倉手續費估算 ' + M(preview.fees) + '（最低每檔1元）。這是整組目標配置的試算費用。' +
     ' 相較目標少投入 ' + M(preview.shortfall) + '（占輸入資金 ' + P(preview.shortfall / USER_CAPITAL, 2) + '）。' +
     (preview.below_band_amount > 0 ? ' 距離90%配置下緣約差 ' + M(preview.below_band_amount) + '。' : '') +
     ((preview.exposure < .90 || preview.exposure > .95) ? ' 目前價格與整股限制下無法達到90～95%，差額保留現金。' : '') +
@@ -568,7 +574,7 @@ function renderOps() {
   if (sells.length) blocks.push({key:"SELL", title:"🔴 先賣出", rows: sells.map(s => ({
     code: s.code, name: s.name, rank: s.rank, px: s.price,
     weight: s.current_weight || 0, reason: s.reason, cls:"sell",
-    line: s.name + "｜Rank " + (s.rank||"—") + "｜目標股數 0（已不在持倉）｜原因 " + (s.reason||"—")
+    line: s.name + "｜Rank " + (s.rank||"—") + "｜目標股數 0（賣出原有股票）｜原因 " + (s.reason||"—")
   }))});
 
   const rebSell = SORTER["REBALANCE_SELL"](g.REBALANCE_SELL||[]);
@@ -601,6 +607,7 @@ function renderOps() {
 
   blocks.forEach(block => block.rows.forEach(row => {
     const original = rows.find(item => item.code === row.code);
+    if (original?.price_kind === 'EX_RIGHTS_REFERENCE') row.line += '｜除權息參考價';
     if (original?.recommendation_note) row.line += '｜⚠️ ' + original.recommendation_note;
   }));
   const box = $("ops");
@@ -640,7 +647,7 @@ function renderHoldings() {
       '<td class="num tgt">' + P(previewWeight(h) - (h.current_weight || 0), 2) + '</td>' +
       '<td class="num">' + M(tgtVal) + '</td>' +
       '<td class="' + tgtCls + '">' + F(tgtSh, 0) + '</td>' +
-      '<td class="num">' + F(pxNow, 2) + ' <span style="color:var(--dim);font-size:11px">' + (h.px_date || DATA.price_basis_date || DATA.px_date || "") + '</span></td>' +
+      '<td class="num">' + F(pxNow, 2) + (h.price_kind === 'EX_RIGHTS_REFERENCE' ? ' <span class="tag">除權息參考價</span>' : '') + ' <span style="color:var(--dim);font-size:11px">' + (h.px_date || DATA.price_basis_date || DATA.px_date || "") + '</span></td>' +
     '</tr>';
   }).join("");
 }
@@ -653,6 +660,12 @@ function renderSellNote() {
 }
 
 function renderRestrictedHoldings() {
+  const pending = DATA.pending_assets || [];
+  $("pendingbox").style.display = pending.length ? '' : 'none';
+  $("pendingsummary").textContent = '模擬待領配股 ' + pending.length + ' 筆：目前不用另外下單（點此查看）';
+  $("pendingnote").textContent = pending.length ? '這是策略模擬紀錄，實際配股以券商入帳為準。原有股票照原清單操作，應領配股會保留。新增配股可交易後，由後續調倉處理。明細：' + pending.map(row =>
+    row.code + ' ' + row.shares + ' 股｜除權日 ' + row.ex_date + '｜' + (row.tradable_date ? row.tradable_date + ' 起可交易' : '日期待確認')
+  ).join('；') : '';
   const rows = DATA.restricted_holdings || [];
   const box = $("restrictednote");
   box.innerHTML = rows.length ? '<b>歷史受限資產（不列入下單或本金試算）</b><br>' + rows.map(row =>
@@ -702,7 +715,7 @@ function renderHist() {
     if (!h) return;
     const historyPreview = previewAllocation((h.actions || []).filter(a => a.action !== 'SELL').map(a => ({
       code:a.stock_code,target_weight:a.target_weight,price:a.price,channel:a.channel,allocation_eligible:a.allocation_eligible
-    })), USER_CAPITAL, h.buy_fee ?? DATA.buy_fee);
+    })), USER_CAPITAL, h.buy_fee ?? DATA.buy_fee, h.minimum_commission ?? DATA.minimum_commission);
     const g = groupByAction((h.actions || []).filter(a => a.action === 'SELL' || a.allocation_eligible !== false));
     const rows = []
       .concat(SORTER["SELL"](g.SELL||[]))

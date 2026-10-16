@@ -62,8 +62,8 @@ class AccountingTests(unittest.TestCase):
             self.assertLessEqual(plan['stock_exposure'], .95 + 1e-10)
             self.assertGreaterEqual(plan['stock_exposure'], .90)
             self.assertGreaterEqual(cash, 0)
-            spent = sum(t['amount'] * 1.0004 for t in fills if t['side'] == 'BUY')
-            received = sum(t['amount'] * .997 for t in fills if t['side'] == 'SELL')
+            spent = sum((t['amount'] + t['fee']) for t in fills if t['side'] == 'BUY')
+            received = sum((t['amount'] - t['fee']) for t in fills if t['side'] == 'SELL')
             self.assertAlmostEqual(cash, capital * .1 + received - spent)
             self.assertEqual(plan['exposure_cap_blocked_codes'], [])
 
@@ -171,8 +171,8 @@ class AccountingTests(unittest.TestCase):
                 self.assertAlmostEqual(plan['nav'], plan['cash'] + sum(row['cur_val'] for row in plan['recs']))
                 self.assertTrue(all(int(row['cur_sh']) == row['cur_sh'] for row in plan['recs']))
             fills = result['trades_df']
-            spend = float(fills.loc[fills.side == 'BUY', 'amount'].sum()) * 1.0004
-            receipts = float(fills.loc[fills.side == 'SELL', 'amount'].sum()) * .997
+            spend = float((fills.loc[fills.side == 'BUY', 'amount'] + fills.loc[fills.side == 'BUY', 'fee']).sum())
+            receipts = float((fills.loc[fills.side == 'SELL', 'amount'] - fills.loc[fills.side == 'SELL', 'fee']).sum())
             self.assertAlmostEqual(result['weekly_plans'][-1]['cash'], capital - spend + receipts)
 
     def test_all_cash_without_targets_does_not_crash(self):
@@ -210,7 +210,7 @@ class AccountingTests(unittest.TestCase):
             write_report(context, result, folder, folder)
             root = Path(folder)
             self.assertTrue((root / 'daily_trade_plan.csv').exists())
-            self.assertEqual(json.loads((root / 'perf.json').read_text(encoding='utf-8'))['accounting_version'], 'v4_cash_entitlements_and_share_actions')
+            self.assertEqual(json.loads((root / 'perf.json').read_text(encoding='utf-8'))['accounting_version'], 'v4_cash_entitlements_and_locked_stock_actions')
             self.assertFalse((root / 'latest_signals.json').exists())
 
     def test_importing_cli_does_not_load_market_or_write(self):

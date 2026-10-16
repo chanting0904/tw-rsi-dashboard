@@ -27,7 +27,8 @@ class RecommendationTests(unittest.TestCase):
         self.assertIn('不列入下單',item['recommendation_note'])
 
     def test_security_event_only_applies_from_effective_day(self):
-        ctx,wp,row = self.sample(day='2023-07-20')
+        ctx,wp,row = self.sample(day='2023-07-19')
+        ctx.close.loc[ctx.signal_day,'3089'] = 81.
         row.update(target_val=2000.,target_sh=24)
         self.assertEqual(recommendation_metadata(ctx,wp,row)['trading_status'],'TRADABLE')
         ctx,wp,row = self.sample(day='2023-07-21')

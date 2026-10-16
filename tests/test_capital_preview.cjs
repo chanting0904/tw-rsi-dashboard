@@ -18,6 +18,19 @@ test('fees never overdraw even at a 100% target', () => {
   assert.equal(result.quantities['2330'], 9);
   assert.ok(result.cash > 0);
 });
+
+test('commission minimum applies once to each nonzero stock order', () => {
+  const result = previewAllocation([{code:'x', target_weight:.5,price:1},{code:'y',target_weight:.45,price:1}],100);
+  assert.equal(result.fees,2);
+  assert.equal(result.details.reduce((s,r)=>s+r.commission,0),2);
+  assert.ok(result.exposure<=.95+1e-10);
+});
+
+test('zero share orders never incur minimum commission', () => {
+  const result = previewAllocation([{code:'x',target_weight:.95,price:1000}],10);
+  assert.equal(result.fees,0);
+  assert.equal(result.cash,10);
+});
 test('invalid or duplicate targets rejected', () => {
   assert.throws(() => previewAllocation([{code:'x', target_weight:1.1, price:10}], 100));
   assert.throws(() => previewAllocation([{code:'x', target_weight:.1, price:10}, {code:'x', target_weight:.1, price:10}], 100));

@@ -25,6 +25,7 @@ import ssl
 import hashlib
 import datetime
 import math
+from types import SimpleNamespace
 from collections import Counter
 import urllib.request
 from zoneinfo import ZoneInfo
@@ -111,6 +112,9 @@ def fingerprint(sig):
             a.get("buy_shares"), a.get("sell_shares"), a.get("price"),
         ]))
     raw = str(sig.get("release_version", sig.get("strategy_version", "?"))) + "#" + str(sig.get("rebalance_date", "?")) + "#" + ";".join(rows)
+    # Delivery changes must reach Web/TG even when this week's orders are unchanged.
+    pending=sorted(sig.get('pending_assets',[]),key=lambda row:(str(row.get('code')),str(row.get('ex_date'))))
+    raw += '#' + json.dumps(pending,ensure_ascii=False,sort_keys=True,separators=(',',':'))
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
 
 
@@ -187,6 +191,18 @@ def evaluate(force=False, today=None, output_dir=None, notify=True):
         reasons.append("validation 必須是 JSON 物件")
         val = None
     if sig is not None:
+        from v4_engine.security_status import snapshot_hash, can_trade
+        security = _load_json(os.path.join(output_dir,'security_status.json'))
+        if (not security or security.get('checked_for') != sig.get('rebalance_date')
+                or sig.get('security_status_checked_for') != sig.get('rebalance_date')
+                or sig.get('security_status_hash') != snapshot_hash(security)):
+            reasons.append('缺少一致的本期官方交易狀態核對資料')
+        else:
+            status_ctx=SimpleNamespace(security_status=security)
+            blocked=[str(a.get('stock_code')) for a in sig.get('actions',[])
+                     if ((a.get('allocation_eligible',True) and a.get('action')!='SELL' or a.get('sell_shares',0)>0)
+                         and not can_trade(status_ctx,a.get('stock_code'),sig['rebalance_date']))]
+            if blocked:reasons.append('官方交易狀態不允許配置：'+','.join(blocked))
         # --- validation 把關 ---
         if val is not None:
             if val.get("verdict") != "PASS":
