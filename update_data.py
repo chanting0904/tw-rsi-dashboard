@@ -114,6 +114,14 @@ for a in SIG.get("actions", []):
     else:
         holdings_b.append(item)
 
+for asset in SIG.get('restricted_assets', []):
+    if any(row['code']==asset['code'] for row in restricted_holdings):
+        continue
+    restricted_holdings.append({'code':asset['code'],'name':asset.get('name',asset['code']),
+        'post_shares':asset['shares'],'post_weight':asset['book_value']/SIG['portfolio_value'],
+        'px':asset.get('last_quote'),'px_date':asset.get('last_quote_date'),
+        'recommendation_note':'歷史受限持股；保守估值 '+str(round(asset['book_value'],2))+' 元，不列入下單或可用現金。'})
+
 week_last = last_trading_day_of_week(datetime.datetime.now(ZoneInfo("Asia/Taipei")).date(), load_holidays())
 def read_optional(path):
     try:
@@ -136,6 +144,7 @@ DATA = {
     "price_basis_date": SIG.get("price_basis_date") or SIG.get("rebalance_date"),
     "strategy_version": SIG.get("strategy_version", "V4"),
     "release_version": SIG.get("release_version"),
+    "review_only": os.environ.get("V4_REVIEW_MODE") == "1",
     "selection_rules": SIG.get("selection_rules", {}),
     "receivables": SIG.get("receivables", 0),
     "buy_fee": SIG.get("buy_fee", StrategyConfig().buy_fee),
@@ -260,7 +269,7 @@ HTML = """<!DOCTYPE html>
       <button id="cap-reset" class="ghost">重新設定</button>
       <span class="cap-info">試算資金：<b id="cap-now"></b>｜配置後預估現金（<span id="cap-bufpct"></span>）：<b id="cap-cash"></b>｜整股預估投入：<b id="cap-invest"></b></span>
     </div>
-    <div class="note">🔸 權重（%）是 V4.0.0 策略結果，不隨本金改變；所有目標金額／目標股數都依此本金即時計算。<br>
+    <div class="note">🔸 以 V4.0.0 模擬配置為基礎，依輸入本金、整股與模型費用計算；整股後權重可能略有調整。<br>
     🔸 輸入後按「套用本金」記住（存你瀏覽器，重新整理不會消失）；「重新設定」回預設 100,000。<br>
     🔸 本頁只給「目標清單」：每檔該持有多少股（照本金估算）。<b>實際買賣你自己對照手上持股下單</b>，系統不記錄你的持股。</div>
     <div id="selectionnote" class="note"></div>
@@ -278,7 +287,7 @@ HTML = """<!DOCTYPE html>
   </section>
 
   <section>
-    <h2>💼 持股與買賣明細 <span class="tag">V4 分檔權重（Rank1-5×1.5 / 6-10×1.0 / 11-15×0.5）</span></h2>
+    <h2>💼 持股與買賣明細 <span class="tag">V4 策略係數（入場排名分檔，整股權重依本金調整）</span></h2>
     <div style="overflow-x:auto">
     <table id="holdtbl">
       <thead><tr>
@@ -291,7 +300,7 @@ HTML = """<!DOCTYPE html>
     </div>
     <div id="sellnote" class="note"></div>
     <div class="note">🔸 動作說明：BUY=買入｜SELL=賣出｜REBALANCE_BUY=加碼｜REBALANCE_SELL=減碼｜HOLD=不動（買紅賣綠＝台股習慣）。<br>
-    🔸 目標金額 = 實盤本金 × 目標權重；目標股數為「預估」（目標金額 ÷ 現價，無條件取整數股，實際成交價可能不同）。<br>
+    🔸 目標金額＝整股股數×顯示價格；目標權重使用扣除模型費用後的資產計算。低於90%時依可買標的補足整股差額，上限95%。<br>
     🔸 <b style="color:var(--warn)">🟡 加碼／減碼（REBALANCE）= 該檔持倉權重偏離目標超過 V4 的一般 100% 差距門檻，或整體倉位需要修復，才需要調</b>。舊持股減少一般加減碼；退出、新股加入、90～95% 倉位修復仍執行。<br>
     🔸 系統不記錄你的實際持股；「目標股數」是你照本金應該持有的量，實際買賣你自己對照手上持股下單。</div>
   </section>
@@ -358,7 +367,7 @@ let USER_CAPITAL = parseFloat(localStorage.getItem("v4_user_capital") || "100000
 if (!Number.isFinite(USER_CAPITAL) || USER_CAPITAL < 10000) USER_CAPITAL = 100000;
 let CAPITAL_PREVIEW = null;
 function updateCapitalPreview() {
-  CAPITAL_PREVIEW = previewAllocation(allHolds().map(row => ({code:row.code, target_weight:row.target_weight, price:row.px || row.price})), USER_CAPITAL, DATA.buy_fee);
+  CAPITAL_PREVIEW = previewAllocation(allHolds().map(row => ({code:row.code, target_weight:row.target_weight, price:row.px || row.price, channel:row.channel})), USER_CAPITAL, DATA.buy_fee);
 }
 
 const AMT = (w) => USER_CAPITAL * (w || 0);            // 權重 → 金額
@@ -369,7 +378,8 @@ function tgtShares(h) {
   if (!CAPITAL_PREVIEW) updateCapitalPreview();
   return CAPITAL_PREVIEW.quantities[h.code] || 0;
 }
-function tgtAmount(h) { return h.action === "SELL" ? 0 : AMT(h.target_weight || 0); }
+function previewWeight(h) { return h.action === 'SELL' ? 0 : (CAPITAL_PREVIEW?.weights?.[h.code] || 0); }
+function tgtAmount(h) { return h.action === "SELL" ? 0 : tgtShares(h) * (h.px || h.price || 0); }
 function is25(h) { return (h.action === "REBALANCE_BUY" || h.action === "REBALANCE_SELL") && !(h.reason || "").startsWith("PORTFOLIO_BAND_"); }
 
 /* ================= 排序（V4 權重不變，僅排列） ================= */
@@ -402,6 +412,12 @@ const selectionRules = DATA.selection_rules || {};
 $("selectionnote").textContent = selectionRules.a_rank_days ? 'A通道：最近' + selectionRules.a_rank_days + '個已收盤交易日的平均RSI排名；舊A持股符合資格且排名前' + selectionRules.a_retention_rank + '可保留，最多' + selectionRules.a_entry_rank + '檔。B通道維持原規則。' : '';
 $("m-px").textContent = DATA.px_date || "—";
 
+if (DATA.review_only) {
+  const banner = document.createElement('div');
+  banner.className = 'warnbox'; banner.style.display = 'block';
+  banner.textContent = '候選研究版，尚未上線。請先確認回測結果，再決定是否採用。';
+  document.querySelector('.wrap').prepend(banner);
+}
 const warns = DATA.warnings || [];
 if (warns.length) {
   const w = $("warnbox");
@@ -488,7 +504,8 @@ const HOLD_ROWS = allHolds().concat((DATA.sells||[]).map(s => ({
 function renderCards() {
   updateCapitalPreview();
   const period = weeklyReadiness(DATA, taipeiDate(), publicWeeklyStatus).state === 'ready' ? '本週' : '最近一期';
-  const c = DATA.counts || {};
+  const c = {BUY:0,SELL:(DATA.sells||[]).length,REBALANCE_BUY:0,REBALANCE_SELL:0,HOLD:0};
+  allHolds().filter(row => tgtShares(row)>0).forEach(row => { c[row.action] = (c[row.action]||0)+1; });
   const bufAmt = CAPITAL_PREVIEW.cash;
   const investAmt = CAPITAL_PREVIEW.invested;
   const cards = [
@@ -496,7 +513,7 @@ function renderCards() {
     ["配置後預估現金", M(bufAmt), "依目標整股與模型費用估算", ""],
     ["整股預估投入", M(investAmt), "目標股數 × 顯示價格", ""],
     ["CAGR(回測)", P(DATA.perf.cagr, 2), "截至 " + (DATA.perf.completed_through || DATA.perf.nav?.at(-1)?.[0] || '—'), "up"],
-    ["MDD(回測)", P(DATA.perf.mdd, 2), "最大回撤", "down"],
+    ["MDD(回測)", P(DATA.perf.mdd, 2), "每日資產估值的最大回撤", "down"],
     [period + "買進", (c.BUY||0) + " 檔", "🟢 BUY", "up"],
     [period + "賣出", (c.SELL||0) + " 檔", "🔴 SELL", "down"],
     ["加碼/減碼", (c.REBALANCE_BUY||0) + "/" + (c.REBALANCE_SELL||0), "🟡 減少加減碼", ""],
@@ -510,13 +527,13 @@ function renderCards() {
   $("cap-cash").textContent = M(bufAmt);
   $("cap-invest").textContent = M(investAmt);
   const preview = CAPITAL_PREVIEW;
-  $("allocationnote").textContent = '本期目標權重合計 ' + P(preview.target_weight_total, 1) + '｜整股後配置 ' + P(preview.exposure, 1) + '｜預估模型買入費用 ' + M(preview.fees) + '。這是目標配置試算，實際成交另計。' +
+  $("allocationnote").textContent = '整股前配置目標 ' + P(preview.target_weight_total, 1) + '｜整股後配置 ' + P(preview.exposure, 1) + '｜預估模型買入費用 ' + M(preview.fees) + '。這是目標配置試算，實際成交另計。' +
     ' 相較目標少投入 ' + M(preview.shortfall) + '（占輸入資金 ' + P(preview.shortfall / USER_CAPITAL, 2) + '）。' +
     (preview.below_band_amount > 0 ? ' 距離90%配置下緣約差 ' + M(preview.below_band_amount) + '。' : '') +
-    ((preview.exposure < .90 || preview.exposure > .95) ? ' 目前試算未落在90～95%，請留意整股取整或報價限制。' : '') +
+    ((preview.exposure < .90 || preview.exposure > .95) ? ' 目前價格與整股限制下無法達到90～95%，差額保留現金。' : '') +
     (preview.unaffordable.length ? ' 目標金額不足一股：' + preview.unaffordable.join('、') + '。' : '') +
     (preview.missing.length ? ' 缺少價格：' + preview.missing.join('、') + '。' : '') +
-    ' 差額保留為現金，不會自動轉買其他股票。';
+    ' 已先在可買標的間重分配並依整股修補；剩餘差額保留為現金。';
   renderAllocationDetails(preview);
 }
 
@@ -532,7 +549,7 @@ function renderAllocationDetails(preview) {
   const names = new Map(allHolds().map(row => [String(row.code), row.name]));
   for (const row of preview.details.filter(row => row.shortfall > .005)) {
     const tr = body.insertRow();
-    const reason = {missing_price:'缺少可用價格', under_one_share:'目標金額不足一股', exposure_limit:'保留現金以維持95%倉位上限', cash_limit:'可用資金需預留費用', rounding:'股數取整，餘額不足再買一股'}[row.reason] || '—';
+    const reason = {missing_price:'缺少可用價格', restricted:'不可交易，移出試算', under_one_share:'不足一股，額度分配其他可買標的', exposure_limit:'保留現金以維持95%倉位上限', cash_limit:'可用資金需預留費用', rounding:'股數取整', rounding_repair:'補足整股差額，維持90～95%配置', redistributed:'承接同通道其他無法配置的額度'}[row.reason] || '—';
     for (const value of [row.code + ' ' + (names.get(row.code) || ''), M(row.target_amount), F(row.quantity, 0), M(row.invested), M(row.shortfall), reason]) {
       tr.insertCell().textContent = value;
     }
@@ -542,7 +559,7 @@ function renderAllocationDetails(preview) {
 
 /* ================= 本週操作（四區塊＋排序＋目標股數） ================= */
 function renderOps() {
-  const rows = allHolds();
+  const rows = allHolds().filter(row => tgtShares(row) > 0);
   const g = groupByAction(rows);
   const sells = (DATA.sells||[]).slice();
   sells.sort((x, y) => (y.current_weight||0) - (x.current_weight||0) || cmp(x.rank, y.rank) || String(x.code).localeCompare(String(y.code)));
@@ -558,28 +575,28 @@ function renderOps() {
   if (rebSell.length) blocks.push({key:"REBALANCE_SELL", title:"🟡 再減碼（權重／總持倉調整）", rows: rebSell.map(r => ({
     code: r.code, name: r.name, rank: r.rank, px: r.px,
     weight: Math.abs(r.weight_diff||0), cls:"reb",
-    line: r.name + "｜Rank " + (r.rank||"—") + "｜目標權重 " + P(r.target_weight,2) + "｜目標股數 " + F(tgtShares(r),0) + " 股（照本金 " + M(USER_CAPITAL) + "）"
+    line: r.name + "｜Rank " + (r.rank||"—") + "｜目標權重 " + P(previewWeight(r),2) + "｜目標股數 " + F(tgtShares(r),0) + " 股（照本金 " + M(USER_CAPITAL) + "）"
   }))});
 
   const buys = SORTER["BUY"](g.BUY||[]);
   if (buys.length) blocks.push({key:"BUY", title:"🟢 再買入", rows: buys.map(r => ({
     code: r.code, name: r.name, rank: r.rank, px: r.px,
     weight: r.target_weight || 0, cls:"buy",
-    line: r.name + "｜Rank " + (r.rank||"—") + "｜目標權重 " + P(r.target_weight,2) + "｜目標股數 " + F(tgtShares(r),0) + " 股（照本金 " + M(USER_CAPITAL) + "）"
+    line: r.name + "｜Rank " + (r.rank||"—") + "｜目標權重 " + P(previewWeight(r),2) + "｜目標股數 " + F(tgtShares(r),0) + " 股（照本金 " + M(USER_CAPITAL) + "）"
   }))});
 
   const rebBuy = SORTER["REBALANCE_BUY"](g.REBALANCE_BUY||[]);
   if (rebBuy.length) blocks.push({key:"REBALANCE_BUY", title:"🟡 再加碼（權重／總持倉調整）", rows: rebBuy.map(r => ({
     code: r.code, name: r.name, rank: r.rank, px: r.px,
     weight: r.weight_diff || 0, cls:"reb",
-    line: r.name + "｜Rank " + (r.rank||"—") + "｜目標權重 " + P(r.target_weight,2) + "｜目標股數 " + F(tgtShares(r),0) + " 股（照本金 " + M(USER_CAPITAL) + "）"
+    line: r.name + "｜Rank " + (r.rank||"—") + "｜目標權重 " + P(previewWeight(r),2) + "｜目標股數 " + F(tgtShares(r),0) + " 股（照本金 " + M(USER_CAPITAL) + "）"
   }))});
 
   const holds = SORTER["HOLD"](g.HOLD||[]);
-  if (holds.length) blocks.push({key:"HOLD", title:"⚪ 持有（不用動）", rows: holds.map(r => ({
+  if (holds.length) blocks.push({key:"HOLD", title:"⚪ 策略續抱（股數依本金試算）", rows: holds.map(r => ({
     code: r.code, name: r.name, rank: r.rank, px: r.px,
     weight: r.target_weight || 0, cls:"hold",
-    line: r.name + "｜Rank " + (r.rank||"—") + "｜目標權重 " + P(r.target_weight,2) + "｜目標股數 " + F(tgtShares(r),0) + " 股"
+    line: r.name + "｜Rank " + (r.rank||"—") + "｜目標權重 " + P(previewWeight(r),2) + "｜目標股數 " + F(tgtShares(r),0) + " 股"
   }))});
 
   blocks.forEach(block => block.rows.forEach(row => {
@@ -613,14 +630,14 @@ function renderHoldings() {
     const tgtSh = tgtShares(h);
     const pxNow = h.px || h.price || 0;
     const tgtCls = (h.action === "SELL") ? "num tgt" : "num";
-    const actBadge = ACT_LABEL[h.action] + (is25(h) ? '<span class="badge-25">100%差距門檻</span>' : ((h.reason || "").startsWith("PORTFOLIO_BAND_") ? '<span class="badge-25">90–95%配置調整</span>' : ""));
+    const actBadge = (tgtSh === 0 && h.action !== "SELL" ? "不下單（整股／本金限制）" : ACT_LABEL[h.action]) + (is25(h) ? '<span class="badge-25">100%差距門檻</span>' : ((h.reason || "").startsWith("PORTFOLIO_BAND_") ? '<span class="badge-25">90–95%配置調整</span>' : ""));
     return '<tr>' +
       '<td><span class="badge ' + ACT_CLS[h.action] + '">' + actBadge + '</span></td>' +
       '<td>' + h.code + '</td><td>' + h.name + (h.recommendation_note ? '<div class="note">⚠️ ' + h.recommendation_note + '</div>' : '') + '</td>' +
       '<td>' + h.channel + '</td><td>' + (h.rank || "—") + '</td>' +
-      '<td class="num">' + P(h.target_weight, 2) + '</td>' +
+      '<td class="num">' + P(previewWeight(h), 2) + '</td>' +
       '<td class="num">' + P(h.current_weight, 2) + '</td>' +
-      '<td class="num tgt">' + P(h.weight_diff, 2) + '</td>' +
+      '<td class="num tgt">' + P(previewWeight(h) - (h.current_weight || 0), 2) + '</td>' +
       '<td class="num">' + M(tgtVal) + '</td>' +
       '<td class="' + tgtCls + '">' + F(tgtSh, 0) + '</td>' +
       '<td class="num">' + F(pxNow, 2) + ' <span style="color:var(--dim);font-size:11px">' + (h.px_date || DATA.price_basis_date || DATA.px_date || "") + '</span></td>' +
@@ -640,7 +657,7 @@ function renderRestrictedHoldings() {
   const box = $("restrictednote");
   box.innerHTML = rows.length ? '<b>歷史受限資產（不列入下單或本金試算）</b><br>' + rows.map(row =>
     row.code + ' ' + row.name + '｜' + row.recommendation_note + '｜最後報價 ' + F(row.px, 2) + '（' + (row.px_date || '日期未知') + '）'
-  ).join('<br>') + '<br>這些部位仍保留於歷史模擬估值，未假設可以賣出換成現金。' : '';
+  ).join('<br>') + '<br>已下櫃部位採保守零估值；原股數保留紀錄，未假設可以賣出換成現金。' : '';
 }
 
 /* ================= 績效圖（回測口徑，不隨本金） ================= */
@@ -683,6 +700,9 @@ function renderHist() {
   sel.addEventListener("change", () => {
     const h = DATA.history[parseInt(sel.value)];
     if (!h) return;
+    const historyPreview = previewAllocation((h.actions || []).filter(a => a.action !== 'SELL').map(a => ({
+      code:a.stock_code,target_weight:a.target_weight,price:a.price,channel:a.channel,allocation_eligible:a.allocation_eligible
+    })), USER_CAPITAL, h.buy_fee ?? DATA.buy_fee);
     const g = groupByAction((h.actions || []).filter(a => a.action === 'SELL' || a.allocation_eligible !== false));
     const rows = []
       .concat(SORTER["SELL"](g.SELL||[]))
@@ -693,7 +713,7 @@ function renderHist() {
       .map(a => {
         const w = a.action === "REBALANCE_SELL" ? Math.abs(a.weight_diff||0) : (a.action === "BUY" || a.action === "REBALANCE_BUY" || a.action === "SELL" ? (a.action === "SELL" ? a.current_weight||0 : a.target_weight||0) : a.target_weight||0);
         return '<div class="action-row"><span class="tag ' + ACT_CLS[a.action] + '">' + ACT_LABEL[a.action] + '</span><span>' +
-          a.stock_name + '｜目標權重 ' + P(a.target_weight,2) + '｜按目前本金估算 ' + M(AMT(w)) + '</span></div>';
+          a.stock_name + '｜整股試算權重 ' + P(historyPreview.weights[a.stock_code] || 0,2) + '｜目標股數 ' + F(historyPreview.quantities[a.stock_code] || 0,0) + ' 股</span></div>';
       }).join("");
     $("histview").innerHTML = '<div class="note">調倉日：' + h.rebalance_date + '｜訊號基準：' + h.sig_date + '｜' +
       'BUY ' + (h.counts.BUY||0) + ' / SELL ' + (h.counts.SELL||0) + ' / REBAL ' + ((h.counts.REBALANCE_BUY||0)+(h.counts.REBALANCE_SELL||0)) + ' / HOLD ' + (h.counts.HOLD||0) + '</div>' +
@@ -757,6 +777,7 @@ function renderAll() {
   renderOps();
   renderHoldings();
   renderRestrictedHoldings();
+  if ($("histsel").options.length) $("histsel").dispatchEvent(new Event("change"));
 }
 $("cap").value = USER_CAPITAL;
 renderAll();

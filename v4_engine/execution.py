@@ -136,116 +136,101 @@ def execute_week(ctx, positions, cash, day, mode, coefs, limit_up, limit_dn, rec
                        "price": p_, "shares": sh, "amount": sh * p_,
                        "reason": "REBALANCE_DOWN", "full": full, "is_new": False})
 
-    # Predict exposure after ordinary target buys. If that would exceed 95%,
-    # trim overweight holdings to their assigned target before executing buys.
-    projected_cash = cash
-    projected_mv = mv_at(px)
-    for pool, c, tv_, p_, _ in rebalance_plans:
-        cur = pos.get(c)
-        cur_sh = cur["shares"] if cur else 0
-        diff = tv_ - cur_sh * p_
-        if diff <= p_ or (cur and abs(diff) <= tv_ * THRESH):
-            continue
-        if c in limit_up.columns and bool(limit_up[c].get(wk, False)):
-            continue
-        sh = min(int(diff // p_), int(projected_cash // (p_ * (1 + BUY_FEE))))
-        projected_cash -= sh * p_ * (1 + BUY_FEE)
-        projected_mv += sh * p_
-    projected_nav = projected_cash + projected_mv + receivable
-    if projected_nav > 0 and projected_mv / projected_nav > EXPOSURE_MAX:
-        for pool, c, tv_, p_, _ in rebalance_plans:
-            if c not in pos or p_ <= 0:
-                continue
-            if c in limit_dn.columns and bool(limit_dn[c].get(wk, False)):
-                if str(c) not in blocked_exit_codes:
-                    blocked_exit_codes.append(str(c))
-                continue
-            target_sh = int(tv_ // p_)
-            excess_sh = max(0, pos[c]["shares"] - target_sh)
-            if excess_sh <= 0:
-                continue
-            projected_nav = projected_cash + projected_mv + receivable
-            if projected_nav <= 0 or projected_mv / projected_nav <= EXPOSURE_MAX:
-                break
-            need = max(0.0, (projected_mv - EXPOSURE_MAX * projected_nav) /
-                       (1 - EXPOSURE_MAX * SELL_FEE))
-            sh = min(excess_sh, max(1, int(np.ceil(need / p_))))
-            cash += sh * p_ * (1 - SELL_FEE)
-            projected_cash += sh * p_ * (1 - SELL_FEE)
-            pos[c]["shares"] -= sh
-            projected_mv -= sh * p_
-            full = pos[c]["shares"] == 0
-            if full:
-                del pos[c]
-            trades.append({"date": wk, "code": c, "pool": pool, "side": "SELL",
-                           "price": p_, "shares": sh, "amount": sh * p_,
-                           "reason": "PORTFOLIO_BAND_TRIM", "full": full, "is_new": False})
+    from .sizing import proportional_quantities, proportional_sales
 
-    # Buy to target only when the configured per-stock drift rule says to trade.
-    # Account for the declared buy commission both in cash availability and NAV.
-    for pool, c, tv_, p_, _ in rebalance_plans:
-        cur = pos.get(c)
-        cur_sh = cur["shares"] if cur else 0
-        diff = tv_ - cur_sh * p_
-        if diff <= p_ or (cur and abs(diff) <= tv_ * THRESH):
-            continue
-        if c in limit_up.columns and bool(limit_up[c].get(wk, False)):
-            continue
-        sh = min(int(diff // p_), int(cash // (p_ * (1 + BUY_FEE))), maximum_buy_shares(p_))
-        if sh <= 0:
-            continue
-        cash -= sh * p_ * (1 + BUY_FEE)
-        if cur:
-            cur["shares"] = cur_sh + sh
-            cur["avg"] = (cur_sh * cur["avg"] + sh * p_ * (1 + BUY_FEE)) / (cur_sh + sh)
-        else:
-            pos[c] = {"shares": sh, "avg": p_ * (1 + BUY_FEE), "pool": pool,
-                      "wc": coef_of(want_rank.get(c, 8)), "rank": want_rank.get(c, 8),
-                      "entry_d": wk}
-        trades.append({"date": wk, "code": c, "pool": pool, "side": "BUY",
-                       "price": p_, "shares": sh, "amount": sh * p_,
-                       "rank": want_rank.get(c, 8), "is_new": not bool(cur),
-                       "reason": ""})
-
-    # The per-stock drift rule can leave too much cash across many names.
-    # Only when aggregate exposure falls below 90%, top up eligible targets in
-    # strategy order toward 92.5%, never beyond their assigned target weights.
-    mv_now = mv_at(px)
-    nav_now = cash + mv_now + receivable
-    if nav_now > 0 and mv_now / nav_now < EXPOSURE_MIN:
-        for pool, c, tv_, p_, _ in rebalance_plans:
-            if p_ <= 0:
-                continue
-            if c in limit_up.columns and bool(limit_up[c].get(wk, False)):
+    def pending_buys(band=False):
+        requests = []
+        for pool, c, target, price, _ in rebalance_plans:
+            if price <= 0 or (c in limit_up.columns and bool(limit_up[c].get(wk, False))):
                 continue
             cur = pos.get(c)
-            cur_sh = cur["shares"] if cur else 0
-            target_sh = int(tv_ // p_)
-            gap_sh = max(0, target_sh - cur_sh)
-            if gap_sh <= 0:
+            current = cur['shares'] if cur else 0
+            gap = target - current * price
+            if gap < price and not band:
                 continue
-            mv_now = mv_at(px)
-            nav_now = cash + mv_now + receivable
-            need = max(0.0, (EXPOSURE_AIM * nav_now - mv_now) /
-                       (1 + EXPOSURE_AIM * BUY_FEE))
-            sh = min(gap_sh, int(need // p_), int(cash // (p_ * (1 + BUY_FEE))), maximum_buy_shares(p_))
-            if sh <= 0:
+            if cur and not band and abs(gap) <= target * THRESH:
                 continue
-            cash -= sh * p_ * (1 + BUY_FEE)
+            qty = max(0, int(np.ceil(gap / price))) if band else max(0, int(np.floor(gap / price)))
+            if qty:
+                requests.append({'code': c, 'pool': pool, 'price': price, 'quantity': qty})
+        return requests
+
+    def buy_budget():
+        stocks = mv_at(px)
+        nav = cash + stocks + receivable
+        headroom = max(0., EXPOSURE_MAX * nav - stocks) / (1 + EXPOSURE_MAX * BUY_FEE)
+        return min(max(0., cash) / (1 + BUY_FEE), headroom)
+
+    # Reserve the complete buy basket before any fill. Existing overweight
+    # positions fund new targets proportionally, including the cost of sales.
+    requests = pending_buys()
+    demand = sum(row['quantity'] * row['price'] for row in requests)
+    stocks = mv_at(px)
+    nav = cash + stocks + receivable
+    need_cap = max(0., (stocks + demand - EXPOSURE_MAX * (nav-demand*BUY_FEE)) / (1-EXPOSURE_MAX*SELL_FEE))
+    need_cash = max(0., (demand*(1+BUY_FEE)-cash) / (1-SELL_FEE))
+    required = max(need_cap, need_cash)
+    if required > 0:
+        excess = []
+        for pool, c, target, price, _ in rebalance_plans:
+            if c not in pos:
+                continue
+            if c in limit_dn.columns and bool(limit_dn[c].get(wk, False)):
+                continue
+            qty = max(0, int(np.floor((pos[c]['shares']*price-target)/price)))
+            if qty:
+                excess.append({'code':c, 'pool':pool, 'price':price, 'quantity':qty})
+        quantities = proportional_sales(excess, required)
+        for row in excess:
+            c, price, qty = row['code'], row['price'], quantities[row['code']]
+            if not qty:
+                continue
+            cash += qty*price*(1-SELL_FEE)
+            pos[c]['shares'] -= qty
+            full = pos[c]['shares'] == 0
+            if full:
+                del pos[c]
+            trades.append({'date':wk,'code':c,'pool':row['pool'],'side':'SELL','price':price,
+                'shares':qty,'amount':qty*price,'reason':'PORTFOLIO_BAND_FUNDING','full':full,'is_new':False})
+
+    def fill_basket(requests, budget, reason):
+        nonlocal cash
+        quantities = proportional_quantities(requests, budget)
+        count = 0
+        for row in requests:
+            c, price = row['code'], row['price']
+            qty = quantities[c]
+            if not qty:
+                continue
+            if qty > maximum_buy_shares(price):
+                raise ValueError('Reserved buy basket exceeds actual fee-aware exposure budget')
+            cur = pos.get(c)
+            cash -= qty*price*(1+BUY_FEE)
             if cur:
-                cur["shares"] = cur_sh + sh
-                cur["avg"] = (cur_sh * cur["avg"] + sh * p_ * (1 + BUY_FEE)) / (cur_sh + sh)
+                old = cur['shares']
+                cur['shares'] += qty
+                cur['avg'] = (old*cur['avg']+qty*price*(1+BUY_FEE))/(old+qty)
             else:
-                pos[c] = {"shares": sh, "avg": p_ * (1 + BUY_FEE), "pool": pool,
-                          "wc": coef_of(want_rank.get(c, 8)), "rank": want_rank.get(c, 8),
-                          "entry_d": wk}
-            trades.append({"date": wk, "code": c, "pool": pool, "side": "BUY",
-                           "price": p_, "shares": sh, "amount": sh * p_,
-                           "rank": want_rank.get(c, 8), "is_new": not bool(cur),
-                           "reason": "PORTFOLIO_BAND_TOPUP"})
-            mv_now = mv_at(px)
-            nav_now = cash + mv_now + receivable
-            if mv_now / nav_now >= EXPOSURE_AIM:
+                pos[c] = {'shares':qty,'avg':price*(1+BUY_FEE),'pool':row['pool'],
+                          'wc':coef_of(want_rank.get(c,8)),'rank':want_rank.get(c,8),'entry_d':wk}
+            trades.append({'date':wk,'code':c,'pool':row['pool'],'side':'BUY','price':price,
+                'shares':qty,'amount':qty*price,'rank':want_rank.get(c,8),'is_new':not bool(cur),'reason':reason})
+            count += 1
+        return count
+
+    fill_basket(pending_buys(), buy_budget(), '')
+    stocks = mv_at(px)
+    nav = cash + stocks + receivable
+    if nav > 0 and stocks/nav < EXPOSURE_MIN:
+        # Round the whole basket together toward the existing 92.5% aim.
+        # Never exceed a target by more than its next whole share.
+        for _ in range(3):
+            stocks = mv_at(px)
+            nav = cash + stocks + receivable
+            if nav <= 0 or stocks/nav >= EXPOSURE_AIM:
+                break
+            budget = min(buy_budget(), max(0., (EXPOSURE_AIM*nav-stocks)/(1+EXPOSURE_AIM*BUY_FEE)))
+            if not fill_basket(pending_buys(band=True), budget, 'PORTFOLIO_BAND_TOPUP'):
                 break
 
     # Reconcile actual filled positions, including holdings outside the target
@@ -343,6 +328,8 @@ def execute_week(ctx, positions, cash, day, mode, coefs, limit_up, limit_dn, rec
                               "cur_val": shares * price, "target_val": 0,
                               "pre_sh": before, "pre_val": before * price,
                               "pre_total": pre_total, "nav": total2, "price": price})
+        from .valuation import restricted_assets
+        restricted = restricted_assets(ctx, pos, wk)
         weekly_plans.append({"date": wk, "cash": cash, "nav": total2, "receivables": receivable, "recs": plan_recs,
                              "stock_exposure": exposure,
                              "exposure_in_band": EXPOSURE_MIN <= exposure <= EXPOSURE_MAX,
@@ -350,7 +337,7 @@ def execute_week(ctx, positions, cash, day, mode, coefs, limit_up, limit_dn, rec
                              "blocked_limitup_targets": blocked_limitup_targets,
                              "blocked_exit_codes": blocked_exit_codes,
                              "exposure_cap_blocked_codes": cap_blocked,
-                             "unplanned_holdings": unplanned_holdings,
+                             "unplanned_holdings": unplanned_holdings, "restricted_assets": restricted,
                              "wa_eff": alloc_weights["A"], "wb_eff": alloc_weights["B"]})
 
 

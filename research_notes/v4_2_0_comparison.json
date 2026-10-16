@@ -1,0 +1,391 @@
+{
+ "plan": {
+  "period": [
+   "2015-01-05",
+   "2026-10-16"
+  ],
+  "capital": 100000,
+  "compound": true,
+  "fixed_fees": {
+   "buy": 0.0004,
+   "sell": 0.003
+  },
+  "no_parameter_search": true,
+  "scenarios": [
+   "v403_original_last_quote",
+   "v403_zero_only",
+   "v403_full_allocation_fix_zero",
+   "v420_zero"
+  ],
+  "v403_rules": {
+   "a_rank_days": 1,
+   "a_retention_rank": 15,
+   "threshold": 1.0,
+   "A_max": 15,
+   "B_max": 4
+  },
+  "v420_rules": {
+   "a_rank_days": 3,
+   "a_retention_rank": 20,
+   "threshold": 1.0,
+   "A_max": 15,
+   "B_max": 4
+  },
+  "deployment_condition": "V4.0.3 with the same allocation repairs and zero valuation has both lower CAGR and deeper daily MDD than V4.2.0; otherwise report without deploying"
+ },
+ "results": [
+  {
+   "cagr": 0.41956250202146705,
+   "daily_mdd": -0.3500112262643289,
+   "final_nav": 6196001.874676086,
+   "annual": [
+    {
+     "year": 2015,
+     "return": 0.5363037751901552,
+     "daily_mdd": -0.2504860507203319
+    },
+    {
+     "year": 2016,
+     "return": 0.7658707425673459,
+     "daily_mdd": -0.0860828108829822
+    },
+    {
+     "year": 2017,
+     "return": 0.7879241062638842,
+     "daily_mdd": -0.0792044018150907
+    },
+    {
+     "year": 2018,
+     "return": -0.07527195146407584,
+     "daily_mdd": -0.3500112262643289
+    },
+    {
+     "year": 2019,
+     "return": 0.29670312594583836,
+     "daily_mdd": -0.16396759955400875
+    },
+    {
+     "year": 2020,
+     "return": 0.7595505212360976,
+     "daily_mdd": -0.2845397813587618
+    },
+    {
+     "year": 2021,
+     "return": 0.43197262294894845,
+     "daily_mdd": -0.2543820993371988
+    },
+    {
+     "year": 2022,
+     "return": 0.061499004436914806,
+     "daily_mdd": -0.18691614714146576
+    },
+    {
+     "year": 2023,
+     "return": 0.6541397411153842,
+     "daily_mdd": -0.1568882275615725
+    },
+    {
+     "year": 2024,
+     "return": 0.349021750578568,
+     "daily_mdd": -0.17930153127816362
+    },
+    {
+     "year": 2025,
+     "return": 0.2916845026994086,
+     "daily_mdd": -0.28358464246299275
+    },
+    {
+     "year": 2026,
+     "return": 0.38187327917376,
+     "daily_mdd": -0.32450054083225666
+    }
+   ],
+   "label": "v403_original_last_quote",
+   "start": "2015-01-05",
+   "end": "2026-10-16",
+   "rebalance_count": 607,
+   "trade_count": 9983,
+   "zero_cash_overdraft": true,
+   "max_exposure": 0.9499998316453947,
+   "min_exposure": 0.0,
+   "below90": 2,
+   "above95": 0,
+   "below90_with_targets": 0,
+   "preview_100k_below90": 75,
+   "preview_100k_above95": 0,
+   "long_missing_holdings": {},
+   "last_week": {
+    "exposure": 0.9499942090168778,
+    "cash": 300844.2566904351,
+    "nav": 6196001.874676085,
+    "executable_exposure": 0.9499942090168778,
+    "targets": 19,
+    "unplanned": 0,
+    "blocked_exits": 0,
+    "blocked_entries": 0,
+    "missing_targets": 0,
+    "preview_100k": 0.9046937698953006,
+    "preview_200k": 0.9105199979324552,
+    "preview_1m": 0.9433620885382017,
+    "cap_blocked": ""
+   },
+   "delisted_valuation": "last_quote",
+   "extra_cost_each_side": 0
+  },
+  {
+   "cagr": 0.41956250202146705,
+   "daily_mdd": -0.3500112262643289,
+   "final_nav": 6196001.874676086,
+   "annual": [
+    {
+     "year": 2015,
+     "return": 0.5363037751901552,
+     "daily_mdd": -0.2504860507203319
+    },
+    {
+     "year": 2016,
+     "return": 0.7658707425673459,
+     "daily_mdd": -0.0860828108829822
+    },
+    {
+     "year": 2017,
+     "return": 0.7879241062638842,
+     "daily_mdd": -0.0792044018150907
+    },
+    {
+     "year": 2018,
+     "return": -0.07527195146407584,
+     "daily_mdd": -0.3500112262643289
+    },
+    {
+     "year": 2019,
+     "return": 0.29670312594583836,
+     "daily_mdd": -0.16396759955400875
+    },
+    {
+     "year": 2020,
+     "return": 0.7595505212360976,
+     "daily_mdd": -0.2845397813587618
+    },
+    {
+     "year": 2021,
+     "return": 0.43197262294894845,
+     "daily_mdd": -0.2543820993371988
+    },
+    {
+     "year": 2022,
+     "return": 0.061499004436914806,
+     "daily_mdd": -0.18691614714146576
+    },
+    {
+     "year": 2023,
+     "return": 0.6541397411153842,
+     "daily_mdd": -0.1568882275615725
+    },
+    {
+     "year": 2024,
+     "return": 0.349021750578568,
+     "daily_mdd": -0.17930153127816362
+    },
+    {
+     "year": 2025,
+     "return": 0.2916845026994086,
+     "daily_mdd": -0.28358464246299275
+    },
+    {
+     "year": 2026,
+     "return": 0.38187327917376,
+     "daily_mdd": -0.32450054083225666
+    }
+   ],
+   "label": "v403_zero_only",
+   "start": "2015-01-05",
+   "end": "2026-10-16",
+   "rebalance_count": 607,
+   "trade_count": 9983,
+   "zero_cash_overdraft": true,
+   "max_exposure": 0.9499998316453947,
+   "min_exposure": 0.0,
+   "below90": 2,
+   "above95": 0,
+   "below90_with_targets": 0,
+   "preview_100k_below90": 75,
+   "preview_100k_above95": 0,
+   "long_missing_holdings": {},
+   "last_week": {
+    "exposure": 0.9499942090168778,
+    "cash": 300844.2566904351,
+    "nav": 6196001.874676085,
+    "executable_exposure": 0.9499942090168778,
+    "targets": 19,
+    "unplanned": 0,
+    "blocked_exits": 0,
+    "blocked_entries": 0,
+    "missing_targets": 0,
+    "preview_100k": 0.9046937698953006,
+    "preview_200k": 0.9105199979324552,
+    "preview_1m": 0.9433620885382017,
+    "cap_blocked": ""
+   },
+   "delisted_valuation": "zero",
+   "extra_cost_each_side": 0
+  },
+  {
+   "cagr": 0.4164210601797895,
+   "daily_mdd": -0.3654059758710909,
+   "final_nav": 6036416.401467225,
+   "annual": [
+    {
+     "year": 2015,
+     "return": 0.5172280619787608,
+     "daily_mdd": -0.24928135555328568
+    },
+    {
+     "year": 2016,
+     "return": 0.7056062529354852,
+     "daily_mdd": -0.0856710755851029
+    },
+    {
+     "year": 2017,
+     "return": 0.7933572371117559,
+     "daily_mdd": -0.06987812589180742
+    },
+    {
+     "year": 2018,
+     "return": -0.07545547981299239,
+     "daily_mdd": -0.3654059758710909
+    },
+    {
+     "year": 2019,
+     "return": 0.34661735360793156,
+     "daily_mdd": -0.1587108272071025
+    },
+    {
+     "year": 2020,
+     "return": 0.7601240722916898,
+     "daily_mdd": -0.27717430499107487
+    },
+    {
+     "year": 2021,
+     "return": 0.3909650507794804,
+     "daily_mdd": -0.2516660988985976
+    },
+    {
+     "year": 2022,
+     "return": 0.10325736610372216,
+     "daily_mdd": -0.1883692358156448
+    },
+    {
+     "year": 2023,
+     "return": 0.6673973043765677,
+     "daily_mdd": -0.15820533085981547
+    },
+    {
+     "year": 2024,
+     "return": 0.3695298521826127,
+     "daily_mdd": -0.18072012453599307
+    },
+    {
+     "year": 2025,
+     "return": 0.2305516535239469,
+     "daily_mdd": -0.3053370083086374
+    },
+    {
+     "year": 2026,
+     "return": 0.3764610159862469,
+     "daily_mdd": -0.32494519885888895
+    }
+   ],
+   "label": "v403_full_allocation_fix_zero",
+   "trade_count": 11739,
+   "rebalance_count": 607,
+   "below90_with_targets": 0,
+   "cash_overdraft_days": 0,
+   "above95": 0,
+   "a_rank_days": 1,
+   "a_retention_rank": 15,
+   "delisted_valuation": "zero"
+  },
+  {
+   "cagr": 0.4316135575668789,
+   "daily_mdd": -0.3408843706667586,
+   "final_nav": 6844674.173273281,
+   "annual": [
+    {
+     "year": 2015,
+     "return": 0.6821729713533196,
+     "daily_mdd": -0.26971176232961436
+    },
+    {
+     "year": 2016,
+     "return": 0.6133955687488424,
+     "daily_mdd": -0.09183454385549583
+    },
+    {
+     "year": 2017,
+     "return": 0.6584043408852251,
+     "daily_mdd": -0.060287897604564655
+    },
+    {
+     "year": 2018,
+     "return": -0.09461861553386886,
+     "daily_mdd": -0.32793408365026255
+    },
+    {
+     "year": 2019,
+     "return": 0.4001354077477539,
+     "daily_mdd": -0.15027683273240422
+    },
+    {
+     "year": 2020,
+     "return": 0.8767301250343467,
+     "daily_mdd": -0.2809578316462138
+    },
+    {
+     "year": 2021,
+     "return": 0.421104137166024,
+     "daily_mdd": -0.23656322539657637
+    },
+    {
+     "year": 2022,
+     "return": 0.08139165988079755,
+     "daily_mdd": -0.21929136264618498
+    },
+    {
+     "year": 2023,
+     "return": 0.8242296925141899,
+     "daily_mdd": -0.15777985233646663
+    },
+    {
+     "year": 2024,
+     "return": 0.2800417923925167,
+     "daily_mdd": -0.1974661850741175
+    },
+    {
+     "year": 2025,
+     "return": 0.18734898190643956,
+     "daily_mdd": -0.3053370296687865
+    },
+    {
+     "year": 2026,
+     "return": 0.500225161432335,
+     "daily_mdd": -0.3408843706667586
+    }
+   ],
+   "label": "v420_zero",
+   "trade_count": 10163,
+   "rebalance_count": 607,
+   "below90_with_targets": 0,
+   "cash_overdraft_days": 0,
+   "above95": 0,
+   "a_rank_days": 3,
+   "a_retention_rank": 20,
+   "delisted_valuation": "zero"
+  }
+ ],
+ "v420_strictly_better_both": true,
+ "cagr_difference_pp": 1.5192497387089388,
+ "mdd_improvement_pp": 2.452160520433233,
+ "approval": "User conditionally authorized deployment if both metrics are worse for repaired V4.0.3",
+ "deployed": false
+}

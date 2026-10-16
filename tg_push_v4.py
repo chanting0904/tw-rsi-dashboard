@@ -39,13 +39,15 @@ def build_message(signal):
         lines.append(f"應收股利／權益：{signal['receivables']:,.0f} 元，尚未列入可用現金。")
     if signal.get("signal_mode") == "PRE_CLOSE_PLAN":
         lines.append("股數以基準日收盤價試算；當日收盤成交價會影響最終模擬結果。")
+    else:
+        lines.append("本期已收盤，以下為新版收盤模擬目標；請對照券商實際持股，未成交差額於下週第一個交易日處理。")
     for action, label in LABELS.items():
         rows = [a for a in signal.get("actions", []) if a["action"] == action
                 and (action == 'SELL' or a.get('allocation_eligible', True))]
         lines.append(f"\n<b>{label}（{len(rows)}）</b>")
         for row in sorted(rows, key=lambda a: (a.get("rank") or 99, str(a["stock_code"]))):
             lines.append(f"• <code>{escape(row['stock_code'])}</code> {escape(row['stock_name'])}"
-                         f"（{escape(row['channel'])}）｜建議持有 {row['target_weight']:.2%}"
+                         f"（{escape(row['channel'])}）｜模擬目標 {row['target_weight']:.2%}"
                          f"｜調倉前模擬 {row['current_weight']:.2%}")
             if row.get("reason"):
                 lines.append("  原因：" + escape(row["reason"])[:500])
@@ -54,6 +56,11 @@ def build_message(signal):
         if not rows:
             lines.append("（無）")
     restricted = [a for a in signal.get('actions', []) if a['action'] != 'SELL' and not a.get('allocation_eligible', True)]
+    for asset in signal.get('restricted_assets', []):
+        if any(row['stock_code']==asset['code'] for row in restricted):
+            continue
+        restricted.append({'stock_code':asset['code'],'stock_name':asset.get('name',asset['code']),
+            'recommendation_note':f"歷史股數{asset['shares']}股；保守估值{asset['book_value']:,.0f}元，不列入下單或可用現金。"})
     if restricted:
         lines.append('\n<b>歷史受限資產（不列入下單）</b>')
         for row in restricted:
@@ -61,7 +68,7 @@ def build_message(signal):
     for warning in signal.get("warnings", []):
         lines.append("⚠️ " + escape(warning)[:1000])
     lines.extend(["\n收盤調倉；未成交部分於下週第一個交易日用市價單補調倉。",
-                  "網頁與本訊息使用同一份策略結果。請在網頁輸入資金，查看試算股數。",
+                  "網頁與本訊息使用同一份策略結果。請在網頁輸入資金，查看整股後的試算股數與權重；不同本金會有取整差異。",
                   "若同週收到修正版，請以版本較新、與網頁一致的計畫為準。",
                   "系統持倉為策略模擬；實際下單請對照券商持股。",
                   "https://chanting0904.github.io/tw-rsi-dashboard/"])
@@ -110,9 +117,16 @@ def tg_send(text):
     return message_id
 
 
+def delivery_due(today, last_trading_day, *, force=False, event_name=None):
+    # A version release may land on a weekend. The publication gate still
+    # requires this week's verified signal, and delivery receipts deduplicate.
+    return force or today == last_trading_day or event_name == 'push'
+
+
 def main():
     today = datetime.datetime.now(TW).date()
-    if not FORCE and today != last_trading_day_of_week(today, load_holidays()):
+    if not delivery_due(today, last_trading_day_of_week(today, load_holidays()),
+                        force=FORCE, event_name=os.environ.get('GITHUB_EVENT_NAME')):
         print("非本週最後交易日，跳過推播")
         return
     gate = evaluate(force=FORCE, notify=not DRY_RUN)

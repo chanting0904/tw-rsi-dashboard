@@ -1,0 +1,13 @@
+{
+ "cagr": 45.76888024306604,
+ "mdd": -28.55322567037789,
+ "anchor_date": "2026-10-08",
+ "release_version": "V4.1.1",
+ "selection_rules": {
+  "a_rank_days": 3,
+  "a_entry_rank": 15,
+  "a_retention_rank": 20,
+  "b_max_names": 4
+ },
+ "migration_reason": "approved ranking strategy upgrade"
+}

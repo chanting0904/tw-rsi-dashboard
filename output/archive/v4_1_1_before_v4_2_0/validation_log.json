@@ -1,0 +1,145 @@
+{
+ "strategy_version": "V4",
+ "release_version": "V4.1.1",
+ "generated_at": "2026-10-16T20:48:32.739098+08:00",
+ "rebalance_date": "2026-10-16",
+ "v4_consistency": true,
+ "fixed_anchor": {
+  "pass": true,
+  "values": {
+   "date": "2026-10-08",
+   "cagr": 0.45768880243066046,
+   "mdd": -0.2855322567037789,
+   "release_version": "V4.1.1",
+   "selection_rules": {
+    "a_rank_days": 3,
+    "a_entry_rank": 15,
+    "a_retention_rank": 20,
+    "b_max_names": 4
+   }
+  }
+ },
+ "warning_checks": [
+  "limit_dn"
+ ],
+ "checks": {
+  "duplicate": {
+   "pass": 20,
+   "fail": 0,
+   "detail": []
+  },
+  "conflict": {
+   "pass": 20,
+   "fail": 0,
+   "detail": []
+  },
+  "target_sum": {
+   "pass": 20,
+   "fail": 0,
+   "detail": []
+  },
+  "cash_no_overdraft": {
+   "pass": 20,
+   "fail": 0,
+   "detail": []
+  },
+  "buffer": {
+   "pass": 20,
+   "fail": 0,
+   "detail": [
+    [
+     "2026-06-05",
+     7.4
+    ],
+    [
+     "2026-06-12",
+     6.5
+    ],
+    [
+     "2026-06-18",
+     6.7
+    ],
+    [
+     "2026-06-26",
+     4.5
+    ],
+    [
+     "2026-07-03",
+     5.8
+    ]
+   ]
+  },
+  "exposure_band": {
+   "pass": 20,
+   "fail": 0,
+   "detail": []
+  },
+  "exposure_upper_bound": {
+   "pass": 20,
+   "fail": 0,
+   "detail": []
+  },
+  "share_qty": {
+   "pass": 20,
+   "fail": 0,
+   "detail": []
+  },
+  "limit_up": {
+   "pass": 20,
+   "fail": 0,
+   "detail": []
+  },
+  "limit_dn": {
+   "pass": 1,
+   "fail": 6,
+   "detail": [
+    [
+     "2026-06-12 00:00:00",
+     "8454",
+     934.44,
+     1037.97
+    ],
+    [
+     "2026-07-03 00:00:00",
+     "6226",
+     25.33,
+     28.13
+    ],
+    [
+     "2026-07-17 00:00:00",
+     "1303",
+     548.95,
+     609.64
+    ],
+    [
+     "2026-07-17 00:00:00",
+     "6182",
+     246.41,
+     273.61
+    ],
+    [
+     "2026-07-24 00:00:00",
+     "4939",
+     113.5,
+     125.99
+    ]
+   ]
+  },
+  "delisted": {
+   "pass": 20,
+   "fail": 0,
+   "detail": []
+  },
+  "missing_price": {
+   "pass": 20,
+   "fail": 0,
+   "detail": []
+  },
+  "lookahead": {
+   "pass": 20,
+   "fail": 0,
+   "detail": []
+  }
+ },
+ "verdict": "PASS"
+}

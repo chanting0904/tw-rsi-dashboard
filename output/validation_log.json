@@ -1,16 +1,16 @@
 {
  "strategy_version": "V4",
- "release_version": "V4.1.1",
- "generated_at": "2026-10-16T20:48:32.739098+08:00",
+ "release_version": "V4.2.0",
+ "generated_at": "2026-10-17T06:17:14.582678+08:00",
  "rebalance_date": "2026-10-16",
  "v4_consistency": true,
  "fixed_anchor": {
   "pass": true,
   "values": {
    "date": "2026-10-08",
-   "cagr": 0.45768880243066046,
-   "mdd": -0.2855322567037789,
-   "release_version": "V4.1.1",
+   "cagr": 0.43613960831035503,
+   "mdd": -0.3408843706667586,
+   "release_version": "V4.2.0",
    "selection_rules": {
     "a_rank_days": 3,
     "a_entry_rank": 15,
@@ -53,11 +53,11 @@
     ],
     [
      "2026-06-12",
-     6.5
+     8.4
     ],
     [
      "2026-06-18",
-     6.7
+     8.5
     ],
     [
      "2026-06-26",
@@ -65,7 +65,7 @@
     ],
     [
      "2026-07-03",
-     5.8
+     7.4
     ]
    ]
   },
