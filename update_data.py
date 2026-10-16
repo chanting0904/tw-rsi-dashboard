@@ -125,6 +125,7 @@ DATA = {
     "price_basis_date": SIG.get("price_basis_date") or SIG.get("rebalance_date"),
     "strategy_version": SIG.get("strategy_version", "V4"),
     "release_version": SIG.get("release_version"),
+    "selection_rules": SIG.get("selection_rules", {}),
     "receivables": SIG.get("receivables", 0),
     "buy_fee": SIG.get("buy_fee", StrategyConfig().buy_fee),
     "sig_date": SIG.get("sig_date"),
@@ -249,6 +250,7 @@ HTML = """<!DOCTYPE html>
     <div class="note">🔸 權重（%）是 V4.0.0 策略結果，不隨本金改變；所有目標金額／目標股數都依此本金即時計算。<br>
     🔸 輸入後按「套用本金」記住（存你瀏覽器，重新整理不會消失）；「重新設定」回預設 100,000。<br>
     🔸 本頁只給「目標清單」：每檔該持有多少股（照本金估算）。<b>實際買賣你自己對照手上持股下單</b>，系統不記錄你的持股。</div>
+    <div id="selectionnote" class="note"></div>
     <div id="allocationnote" class="note"></div>
     <details id="allocationdetails" class="note"><summary>查看配置差額：哪些股票少了多少</summary><div id="allocationrows" style="overflow-x:auto"></div></details>
   </section>
@@ -382,6 +384,8 @@ const SORTER = {
 
 /* ================= meta / 警告 / 開關 ================= */
 $("m-rebal").textContent = DATA.rebal_date ? DATA.rebal_date + "（訊號基準 " + DATA.sig_date + "）｜版本 " + (DATA.sig_commit_sha || "—") + (DATA.signal_mode === "PRE_CLOSE_PLAN" ? "｜收盤調倉計畫，股數按基準日價格試算" : "｜收盤模擬結果") : "—";
+const selectionRules = DATA.selection_rules || {};
+$("selectionnote").textContent = selectionRules.a_rank_days ? 'A通道：最近' + selectionRules.a_rank_days + '個已收盤交易日的平均RSI排名；舊A持股符合資格且排名前' + selectionRules.a_retention_rank + '可保留，最多' + selectionRules.a_entry_rank + '檔。B通道維持原規則。' : '';
 $("m-px").textContent = DATA.px_date || "—";
 
 const warns = DATA.warnings || [];

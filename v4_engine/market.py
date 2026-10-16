@@ -156,6 +156,9 @@ def load_market(config, root, *, live_rebalance=None, data_root=None, token=None
     context = MarketContext(config, raw_close, raw_open, raw_high, raw_low, targetA, targetB, r20s, tv20,
                          ma60, cap_ok, sw_tsm, days, days_all, weeks, LIVE_DAY, SIGNAL_DAY, name_map)
     context.tv20_previous = tv20.shift(1)
+    # r20s already ends at the previous actual session. Ranking alone uses
+    # its trailing mean; entry/exit eligibility and B's RSI remain unchanged.
+    context.a_rank_scores = r20s.rolling(config.a_rank_days, min_periods=config.a_rank_days).mean()
     context.adjusted_close = adjusted
     context.corporate_events = events
     return context

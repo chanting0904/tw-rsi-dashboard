@@ -3,1734 +3,1633 @@
   "date": "2015-05-14",
   "code": "4930",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1244.0,
+  "amount": 672.0,
   "payment": "2015-05-27"
  },
  {
   "date": "2015-05-25",
   "code": "6506",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 123.89999999999999,
+  "amount": 106.5,
   "payment": "2015-06-18"
  },
  {
   "date": "2015-05-25",
   "code": "6506",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 413,
-  "new_shares": 425,
-  "fractional_receivable": 9.418413027155852
- },
- {
-  "date": "2015-06-08",
-  "code": "6414",
-  "kind": "CASH_ENTITLEMENT",
-  "amount": 156.0,
-  "payment": "2015-06-30"
+  "old_shares": 355,
+  "new_shares": 365,
+  "fractional_receivable": 15.697425241259614
  },
  {
   "date": "2015-06-25",
   "code": "2455",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 442.0,
+  "amount": 280.0,
   "payment": "2015-07-24"
  },
  {
   "date": "2015-06-25",
   "code": "3529",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 84.0,
+  "amount": 120.0,
   "payment": "2015-07-15"
  },
  {
   "date": "2015-06-30",
   "code": "5490",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 222.5,
+  "amount": 162.5,
   "payment": "2015-07-27"
  },
  {
   "date": "2015-07-21",
   "code": "3706",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 93.10207635,
+  "amount": 259.30652376,
   "payment": "2015-08-14"
  },
  {
   "date": "2015-07-23",
   "code": "3234",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 230.6056581,
+  "amount": 240.85479846,
   "payment": "2015-08-14"
  },
  {
   "date": "2015-07-27",
   "code": "1707",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 201.4,
+  "amount": 196.1,
   "payment": "2015-09-01"
  },
  {
   "date": "2015-11-09",
   "code": "1527",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 339.99999999999994,
+  "amount": 351.99999999999994,
   "payment": null
  },
  {
   "date": "2015-11-09",
   "code": "1527",
   "kind": "CASH_CAPITAL_REDUCTION",
-  "old_shares": 340,
-  "new_shares": 306,
-  "fractional_receivable": 0.0
+  "old_shares": 352,
+  "new_shares": 316,
+  "fractional_receivable": 55.120000000000786
  },
  {
   "date": "2016-06-27",
   "code": "3669",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 119.4,
+  "amount": 106.60000000000001,
   "payment": "2016-07-22"
  },
  {
   "date": "2016-06-30",
   "code": "8271",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 310.04523858000005,
+  "amount": 491.24050788000005,
   "payment": "2016-07-29"
  },
  {
   "date": "2016-07-05",
   "code": "1215",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 790.0,
+  "amount": 364.0,
   "payment": "2016-08-03"
  },
  {
   "date": "2016-07-05",
   "code": "1909",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 544.0,
+  "amount": 657.0,
   "payment": "2016-07-21"
  },
  {
   "date": "2016-07-13",
   "code": "2489",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 765.0,
+  "amount": 529.2,
   "payment": "2016-08-10"
  },
  {
   "date": "2016-07-21",
   "code": "2412",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3740.9064,
+  "amount": 3768.3324,
   "payment": "2016-08-26"
  },
  {
   "date": "2016-07-21",
   "code": "1717",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 495.0,
+  "amount": 315.0,
   "payment": "2016-08-25"
  },
  {
   "date": "2016-07-21",
   "code": "1717",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 330,
-  "new_shares": 356,
-  "fractional_receivable": 13.340000000001139
+  "old_shares": 210,
+  "new_shares": 226,
+  "fractional_receivable": 26.68000000000038
  },
  {
   "date": "2016-07-21",
   "code": "2427",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 165.0,
+  "amount": 157.60000000000002,
   "payment": "2016-08-25"
- },
- {
-  "date": "2016-07-26",
-  "code": "9925",
-  "kind": "CASH_ENTITLEMENT",
-  "amount": 364.0,
-  "payment": "2016-08-25"
- },
- {
-  "date": "2016-08-01",
-  "code": "3702",
-  "kind": "CASH_ENTITLEMENT",
-  "amount": 259.2,
-  "payment": "2016-08-30"
  },
  {
   "date": "2016-08-04",
   "code": "2450",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1179.0,
+  "amount": 966.0,
   "payment": "2016-08-29"
+ },
+ {
+  "date": "2016-08-09",
+  "code": "5403",
+  "kind": "CASH_ENTITLEMENT",
+  "amount": 1055.6000000000001,
+  "payment": "2016-09-02"
  },
  {
   "date": "2016-08-25",
   "code": "8043",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 673.6,
+  "amount": 607.2,
   "payment": "2016-09-09"
  },
  {
   "date": "2016-08-30",
   "code": "8069",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 296.12300765,
+  "amount": 183.22312105,
   "payment": "2016-09-28"
  },
  {
   "date": "2016-09-23",
   "code": "3324",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 435.29495425,
+  "amount": 431.62931253,
   "payment": "2016-10-14"
  },
  {
   "date": "2016-12-09",
   "code": "1603",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 4176.000000000001,
+  "amount": 3447.0000000000005,
   "payment": null
  },
  {
   "date": "2016-12-09",
   "code": "1603",
   "kind": "CASH_CAPITAL_REDUCTION",
-  "old_shares": 1392,
-  "new_shares": 974,
-  "fractional_receivable": 8.7999999999995
+  "old_shares": 1149,
+  "new_shares": 804,
+  "fractional_receivable": 6.5999999999989996
  },
  {
   "date": "2017-06-14",
   "code": "6456",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 632.0,
+  "amount": 568.0,
   "payment": "2017-07-13"
  },
  {
   "date": "2017-06-22",
   "code": "6412",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 577.5657195,
+  "amount": 462.0525756,
   "payment": "2017-07-17"
  },
  {
   "date": "2017-06-26",
   "code": "2421",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 980.0,
+  "amount": 832.0,
   "payment": "2017-07-20"
  },
  {
   "date": "2017-06-29",
   "code": "2373",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1014.0,
+  "amount": 789.75,
   "payment": "2017-07-20"
  },
  {
   "date": "2017-07-03",
   "code": "1215",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 774.0,
+  "amount": 603.0,
   "payment": "2017-07-28"
  },
  {
   "date": "2017-07-03",
   "code": "2731",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 700.0,
+  "amount": 544.0,
   "payment": "2017-08-03"
  },
  {
   "date": "2017-07-06",
   "code": "8299",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 238.0,
+  "amount": 392.0,
   "payment": "2017-08-03"
+ },
+ {
+  "date": "2017-07-07",
+  "code": "3706",
+  "kind": "CASH_ENTITLEMENT",
+  "amount": 362.0824551,
+  "payment": "2017-08-04"
  },
  {
   "date": "2017-07-07",
   "code": "3105",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 967.5,
+  "amount": 841.5,
   "payment": "2017-07-28"
  },
  {
   "date": "2017-07-11",
   "code": "2303",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1220.0,
+  "amount": 1062.5,
   "payment": "2017-08-10"
  },
  {
   "date": "2017-07-13",
   "code": "2317",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1525.5,
+  "amount": 949.5,
   "payment": "2017-08-10"
  },
  {
   "date": "2017-07-13",
   "code": "8112",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1384.833619,
+  "amount": 1186.646339,
   "payment": "2017-08-18"
  },
  {
   "date": "2017-07-18",
   "code": "4506",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 884.4000000000001,
+  "amount": 792.0000000000001,
   "payment": "2017-08-09"
  },
  {
   "date": "2017-07-24",
   "code": "4205",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 468.0,
+  "amount": 313.5,
   "payment": "2017-08-30"
  },
  {
   "date": "2017-07-24",
   "code": "4205",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 312,
-  "new_shares": 346,
-  "fractional_receivable": 20.288049056384022
+  "old_shares": 209,
+  "new_shares": 231,
+  "fractional_receivable": 62.766032861489045
  },
  {
   "date": "2017-07-26",
   "code": "8404",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 66.0,
+  "amount": 51.800000000000004,
   "payment": "2017-08-25"
  },
  {
   "date": "2017-07-26",
   "code": "8404",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 330,
-  "new_shares": 356,
-  "fractional_receivable": 22.48000000000192
- },
- {
-  "date": "2017-07-27",
-  "code": "3533",
-  "kind": "CASH_ENTITLEMENT",
-  "amount": 156.0,
-  "payment": "2017-08-29"
+  "old_shares": 259,
+  "new_shares": 279,
+  "fractional_receivable": 40.46400000000153
  },
  {
   "date": "2017-08-17",
   "code": "3227",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 270.13897035,
+  "amount": 110.05661755000001,
   "payment": "2017-09-06"
  },
  {
   "date": "2017-08-17",
   "code": "3515",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 368.0,
+  "amount": 150.0,
   "payment": "2017-09-08"
  },
  {
   "date": "2017-08-21",
   "code": "6116",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 340.0,
+  "amount": 876.0,
   "payment": "2017-09-12"
  },
  {
   "date": "2017-09-04",
   "code": "4721",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 344.1,
+  "amount": 220.1,
   "payment": "2017-10-06"
  },
  {
   "date": "2017-10-06",
   "code": "2340",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1617.6599999999996,
+  "amount": 2102.7599999999993,
   "payment": null
  },
  {
   "date": "2017-10-06",
   "code": "2340",
   "kind": "CASH_CAPITAL_REDUCTION",
-  "old_shares": 817,
-  "new_shares": 655,
-  "fractional_receivable": 5.1714000000008244
+  "old_shares": 1062,
+  "new_shares": 851,
+  "fractional_receivable": 16.000400000001026
  },
  {
   "date": "2018-06-14",
   "code": "3030",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1398.0,
+  "amount": 1119.0,
   "payment": "2018-07-11"
  },
  {
   "date": "2018-06-26",
   "code": "8261",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 372.15000000000003,
+  "amount": 305.1,
   "payment": "2018-07-16"
+ },
+ {
+  "date": "2018-07-10",
+  "code": "8163",
+  "kind": "CASH_ENTITLEMENT",
+  "amount": 1278.0,
+  "payment": "2018-08-10"
  },
  {
   "date": "2018-07-16",
   "code": "2426",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1484.6939763599999,
+  "amount": 986.9959955999999,
   "payment": "2018-08-07"
  },
  {
   "date": "2018-07-20",
   "code": "1225",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 716.25,
+  "amount": 477.5,
   "payment": "2018-08-20"
  },
  {
   "date": "2018-07-25",
   "code": "3416",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2032.5,
+  "amount": 1530.0,
   "payment": "2018-08-28"
  },
  {
   "date": "2018-07-25",
   "code": "2108",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1048.0,
+  "amount": 564.0,
   "payment": "2018-09-07"
  },
  {
   "date": "2018-07-25",
   "code": "2108",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 1048,
-  "new_shares": 1100,
-  "fractional_receivable": 11.500000000002615
- },
- {
-  "date": "2018-07-25",
-  "code": "3702",
-  "kind": "CASH_ENTITLEMENT",
-  "amount": 928.8,
-  "payment": "2018-08-24"
- },
- {
-  "date": "2018-07-31",
-  "code": "5525",
-  "kind": "CASH_ENTITLEMENT",
-  "amount": 541.1999999999999,
-  "payment": "2018-08-31"
+  "old_shares": 564,
+  "new_shares": 592,
+  "fractional_receivable": 5.750000000001307
  },
  {
   "date": "2018-08-02",
-  "code": "3088",
+  "code": "4103",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 845.74908387,
-  "payment": "2018-08-24"
+  "amount": 397.80762516000004,
+  "payment": null
  },
  {
   "date": "2018-08-07",
   "code": "8415",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 274.0,
+  "amount": 1128.0,
   "payment": "2018-08-31"
  },
  {
   "date": "2018-08-13",
   "code": "5820",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 995.9900496000001,
+  "amount": 1011.4557336000001,
   "payment": "2018-09-14"
  },
  {
   "date": "2018-08-13",
   "code": "5820",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 1932,
-  "new_shares": 1974,
-  "fractional_receivable": 6.496497299274461
+  "old_shares": 1962,
+  "new_shares": 2005,
+  "fractional_receivable": 3.2999832821821746
  },
  {
   "date": "2018-08-24",
   "code": "4942",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 912.0,
+  "amount": 1512.0,
   "payment": "2018-09-19"
- },
- {
-  "date": "2018-09-06",
-  "code": "2845",
-  "kind": "CASH_ENTITLEMENT",
-  "amount": 727.862,
-  "payment": "2018-10-05"
- },
- {
-  "date": "2018-09-06",
-  "code": "2845",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 1658,
-  "new_shares": 1702,
-  "fractional_receivable": 9.504359999998359
  },
  {
   "date": "2018-09-06",
   "code": "2834",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 421.29600000000005,
+  "amount": 486.956,
   "payment": "2018-10-11"
  },
  {
   "date": "2018-09-06",
   "code": "2834",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 1572,
-  "new_shares": 1634,
-  "fractional_receivable": 9.284000000001152
+  "old_shares": 1817,
+  "new_shares": 1889,
+  "fractional_receivable": 7.174000000000672
  },
  {
   "date": "2019-06-24",
   "code": "8924",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 518.4,
+  "amount": 741.6,
   "payment": "2019-07-10"
  },
  {
   "date": "2019-07-08",
   "code": "2433",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3076.5,
+  "amount": 1263.5,
   "payment": "2019-07-24"
  },
  {
   "date": "2019-07-10",
   "code": "1232",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1690.0,
+  "amount": 1265.0,
   "payment": "2019-07-31"
  },
  {
   "date": "2019-07-15",
   "code": "2903",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1466.25,
+  "amount": 1240.1499999999999,
   "payment": "2019-08-09"
  },
  {
   "date": "2019-07-18",
   "code": "6189",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2238.13,
+  "amount": 2498.5,
   "payment": "2019-08-23"
  },
  {
   "date": "2019-07-18",
   "code": "4935",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 621.6,
+  "amount": 576.8000000000001,
   "payment": "2019-08-16"
  },
  {
-  "date": "2019-07-18",
-  "code": "5403",
-  "kind": "CASH_ENTITLEMENT",
-  "amount": 2139.0,
-  "payment": "2019-08-08"
- },
- {
   "date": "2019-07-25",
-  "code": "4104",
+  "code": "6803",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1743.0,
-  "payment": "2019-08-23"
- },
- {
-  "date": "2019-08-22",
-  "code": "6186",
-  "kind": "CASH_ENTITLEMENT",
-  "amount": 341.0,
-  "payment": "2019-09-17"
+  "amount": 1915.14,
+  "payment": "2019-08-21"
  },
  {
   "date": "2019-08-22",
   "code": "3680",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 155.115181,
+  "amount": 132.77453300000002,
   "payment": "2019-09-11"
  },
  {
   "date": "2019-10-07",
   "code": "2316",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 257.99999999999994,
+  "amount": 395.9999999999999,
   "payment": null
  },
  {
   "date": "2019-10-07",
   "code": "2316",
   "kind": "CASH_CAPITAL_REDUCTION",
-  "old_shares": 258,
-  "new_shares": 232,
-  "fractional_receivable": 9.360000000000797
+  "old_shares": 396,
+  "new_shares": 356,
+  "fractional_receivable": 18.720000000001594
  },
  {
   "date": "2019-10-29",
   "code": "9935",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 174.24,
+  "amount": 133.98000000000002,
   "payment": "2019-11-22"
  },
  {
   "date": "2019-12-19",
   "code": "2330",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 412.5,
+  "amount": 422.5,
   "payment": "2020-01-16"
  },
  {
   "date": "2020-04-22",
   "code": "2910",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 853.3,
+  "amount": 935.9,
   "payment": "2020-05-20"
  },
  {
   "date": "2020-06-08",
   "code": "2467",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1110.0,
+  "amount": 992.5,
   "payment": "2020-07-03"
  },
  {
   "date": "2020-06-15",
   "code": "2458",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1618.5,
+  "amount": 1514.5,
   "payment": "2020-07-03"
- },
- {
-  "date": "2020-06-16",
-  "code": "2347",
-  "kind": "CASH_ENTITLEMENT",
-  "amount": 891.8000000000001,
-  "payment": "2020-07-15"
- },
- {
-  "date": "2020-06-18",
-  "code": "2020",
-  "kind": "CASH_ENTITLEMENT",
-  "amount": 1579.9,
-  "payment": "2020-07-10"
  },
  {
   "date": "2020-06-30",
   "code": "1760",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1675.8,
+  "amount": 1539.0,
   "payment": "2020-07-22"
  },
  {
   "date": "2020-07-01",
   "code": "5604",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3679.65,
+  "amount": 3341.1,
   "payment": "2020-07-15"
  },
  {
   "date": "2020-07-01",
   "code": "1604",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1069.5,
+  "amount": 970.5,
   "payment": "2020-07-17"
  },
  {
   "date": "2020-07-02",
   "code": "3325",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1218.6999999999998,
+  "amount": 1106.6999999999998,
   "payment": "2020-07-29"
  },
  {
   "date": "2020-07-03",
   "code": "3540",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 945.88305,
+  "amount": 881.4792,
   "payment": "2020-07-24"
  },
  {
   "date": "2020-07-06",
   "code": "2417",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 62.06593601000001,
+  "amount": 174.41442247,
   "payment": "2020-08-07"
  },
  {
   "date": "2020-07-06",
   "code": "2454",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 829.56787443,
+  "amount": 504.04124016000003,
   "payment": "2020-07-30"
  },
  {
   "date": "2020-07-07",
   "code": "3231",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2646.7583846400003,
+  "amount": 2403.73041568,
   "payment": "2020-07-31"
  },
  {
   "date": "2020-07-13",
   "code": "1598",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 846.00737235,
+  "amount": 811.72472066,
   "payment": "2020-08-12"
  },
  {
   "date": "2020-07-16",
   "code": "4133",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 22.900000000000002,
+  "amount": 22.0,
   "payment": "2020-07-31"
  },
  {
   "date": "2020-07-21",
   "code": "5410",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2370.0,
+  "amount": 2086.5,
   "payment": "2020-08-20"
  },
  {
   "date": "2020-07-22",
   "code": "3406",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 197.802,
+  "amount": 971.028,
   "payment": "2020-08-18"
  },
  {
   "date": "2020-07-23",
   "code": "2414",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1770.0,
+  "amount": 846.0,
   "payment": "2020-08-07"
- },
- {
-  "date": "2020-07-27",
-  "code": "6257",
-  "kind": "CASH_ENTITLEMENT",
-  "amount": 832.7538084,
-  "payment": "2020-08-14"
  },
  {
   "date": "2020-07-31",
   "code": "3702",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2848.7999999999997,
+  "amount": 2294.4,
   "payment": "2020-08-28"
  },
  {
   "date": "2020-08-03",
   "code": "2382",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 814.0,
+  "amount": 1313.5,
   "payment": "2020-08-27"
  },
  {
   "date": "2020-08-03",
   "code": "6477",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1600.50775563,
+  "amount": 938.49259311,
   "payment": "2020-08-31"
  },
  {
   "date": "2020-08-17",
   "code": "8070",
   "kind": "SPLIT_FACTOR",
-  "old_shares": 208,
-  "new_shares": 2080,
+  "old_shares": 167,
+  "new_shares": 1670,
   "fractional_receivable": 0.0
  },
  {
   "date": "2020-09-10",
   "code": "1513",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1465.7793115,
+  "amount": 1243.22016706,
   "payment": "2020-09-30"
  },
  {
   "date": "2020-09-17",
   "code": "2330",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 500.0,
+  "amount": 515.0,
   "payment": "2020-10-15"
  },
  {
   "date": "2020-10-16",
   "code": "2504",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1068.48,
+  "amount": 2177.28,
   "payment": null
  },
  {
   "date": "2020-10-16",
   "code": "2504",
   "kind": "CASH_CAPITAL_REDUCTION",
-  "old_shares": 742,
-  "new_shares": 635,
-  "fractional_receivable": 3.9444000000011328
+  "old_shares": 1512,
+  "new_shares": 1294,
+  "fractional_receivable": 7.058399999998301
  },
  {
   "date": "2020-11-02",
   "code": "8936",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 426.77241903000004,
+  "amount": 453.34460538,
   "payment": "2020-11-30"
  },
  {
   "date": "2021-03-17",
   "code": "2330",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 382.5,
+  "amount": 340.0,
   "payment": "2021-04-15"
  },
  {
   "date": "2021-03-31",
   "code": "3005",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 4132.3265049599995,
+  "amount": 3622.9598698,
   "payment": "2021-04-28"
+ },
+ {
+  "date": "2021-04-16",
+  "code": "4930",
+  "kind": "CASH_ENTITLEMENT",
+  "amount": 3535.0,
+  "payment": "2021-04-29"
+ },
+ {
+  "date": "2021-04-22",
+  "code": "1229",
+  "kind": "CASH_ENTITLEMENT",
+  "amount": 1448.3999999999999,
+  "payment": "2021-05-20"
  },
  {
   "date": "2021-05-17",
   "code": "2430",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 5342.85,
+  "amount": 3423.9500000000003,
   "payment": "2021-05-28"
  },
  {
   "date": "2021-06-17",
   "code": "9911",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3171.2000000000003,
+  "amount": 2873.6000000000004,
   "payment": "2021-07-16"
  },
  {
   "date": "2021-06-18",
   "code": "6672",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2419.2000000000003,
+  "amount": 2192.0,
   "payment": "2021-07-09"
  },
  {
   "date": "2021-06-22",
   "code": "8924",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2390.0,
+  "amount": 2975.0,
   "payment": "2021-07-09"
- },
- {
-  "date": "2021-07-08",
-  "code": "2612",
-  "kind": "CASH_ENTITLEMENT",
-  "amount": 625.6,
-  "payment": "2021-08-06"
  },
  {
   "date": "2021-07-19",
   "code": "2637",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3.0,
+  "amount": 1882.5,
   "payment": "2021-08-13"
  },
  {
   "date": "2021-07-26",
   "code": "9945",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 814.0,
+  "amount": 813.0,
   "payment": "2021-08-12"
- },
- {
-  "date": "2021-07-26",
-  "code": "2881",
-  "kind": "CASH_ENTITLEMENT",
-  "amount": 1041.0,
-  "payment": "2021-08-24"
  },
  {
   "date": "2021-07-27",
   "code": "3035",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 528.0,
+  "amount": 734.0,
   "payment": "2021-08-24"
+ },
+ {
+  "date": "2021-08-03",
+  "code": "2476",
+  "kind": "CASH_ENTITLEMENT",
+  "amount": 1650.0,
+  "payment": "2021-09-03"
+ },
+ {
+  "date": "2021-08-05",
+  "code": "6509",
+  "kind": "CASH_ENTITLEMENT",
+  "amount": 904.0,
+  "payment": "2021-09-01"
  },
  {
   "date": "2021-08-05",
   "code": "5289",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3347.801265,
+  "amount": 3146.9331891,
   "payment": "2021-08-27"
  },
  {
   "date": "2021-08-09",
   "code": "8374",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 394.8,
+  "amount": 1102.2,
   "payment": "2021-08-31"
  },
  {
   "date": "2021-08-09",
   "code": "2027",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1.6,
+  "amount": 0.8,
   "payment": "2021-09-09"
  },
  {
   "date": "2021-08-10",
   "code": "6525",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 4536.0,
+  "amount": 4266.0,
   "payment": "2021-08-25"
  },
  {
   "date": "2021-08-13",
   "code": "1773",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1507.20000048,
+  "amount": 1402.53333378,
   "payment": "2021-09-17"
  },
  {
   "date": "2021-08-13",
   "code": "1773",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 432,
-  "new_shares": 479,
-  "fractional_receivable": 128.9999938079995
+  "old_shares": 402,
+  "new_shares": 446,
+  "fractional_receivable": 85.99999423800472
  },
  {
   "date": "2021-08-17",
   "code": "2538",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 4341.5,
+  "amount": 4316.5,
   "payment": "2021-09-10"
  },
  {
   "date": "2021-08-19",
   "code": "1783",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1028.88610176,
+  "amount": 1023.040158,
   "payment": "2021-09-13"
  },
  {
   "date": "2021-08-24",
   "code": "5438",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 496.70000000000005,
+  "amount": 507.20000000000005,
   "payment": "2021-09-17"
  },
  {
   "date": "2021-08-26",
   "code": "3056",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 6890.400000000001,
+  "amount": 5948.8,
   "payment": "2021-09-17"
  },
  {
   "date": "2021-08-30",
   "code": "2013",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 4082.3999999999996,
+  "amount": 4085.2,
   "payment": "2021-09-28"
  },
  {
   "date": "2021-09-07",
   "code": "2887",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2147.55645744,
+  "amount": 2910.41648136,
   "payment": "2021-10-05"
  },
  {
   "date": "2021-09-07",
   "code": "2887",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 3868,
-  "new_shares": 4043,
-  "fractional_receivable": 12.83642988444849
+  "old_shares": 5242,
+  "new_shares": 5480,
+  "fractional_receivable": 2.262969352186156
  },
  {
   "date": "2021-09-07",
   "code": "5508",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 4232.5401999999995,
+  "amount": 4048.8071999999997,
   "payment": "2021-09-30"
  },
  {
   "date": "2021-09-09",
   "code": "3663",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1680.8000000000002,
+  "amount": 2380.8,
   "payment": "2021-09-27"
- },
- {
-  "date": "2021-09-23",
-  "code": "9945",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 486,
-  "new_shares": 680,
-  "fractional_receivable": 24.439999999998612
  },
  {
   "date": "2021-09-24",
   "code": "1229",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 1081,
-  "new_shares": 1189,
-  "fractional_receivable": 5.60000000000764
- },
- {
-  "date": "2021-11-02",
-  "code": "6655",
-  "kind": "CASH_ENTITLEMENT",
-  "amount": 9400.0,
-  "payment": "2021-11-26"
+  "old_shares": 1002,
+  "new_shares": 1102,
+  "fractional_receivable": 11.200000000002547
  },
  {
   "date": "2022-03-24",
   "code": "8401",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 11070.04334128,
+  "amount": 9031.32623712,
   "payment": "2022-04-21"
  },
  {
   "date": "2022-06-09",
   "code": "1568",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1357.5,
+  "amount": 1222.5,
   "payment": "2022-06-30"
  },
  {
-  "date": "2022-06-23",
-  "code": "1319",
+  "date": "2022-06-21",
+  "code": "1605",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1677.05,
-  "payment": "2022-07-20"
+  "amount": 4072.0,
+  "payment": "2022-07-19"
  },
  {
   "date": "2022-07-01",
   "code": "5353",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3756.6,
+  "amount": 3895.2000000000003,
   "payment": "2022-07-28"
  },
  {
   "date": "2022-07-07",
   "code": "6472",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1316.0,
+  "amount": 1571.5,
   "payment": "2022-08-02"
  },
  {
   "date": "2022-07-11",
   "code": "6605",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 5067.0,
+  "amount": 5886.0,
   "payment": "2022-07-29"
  },
  {
   "date": "2022-07-14",
   "code": "1522",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2019.5,
+  "amount": 2345.0,
   "payment": "2022-08-12"
  },
  {
   "date": "2022-07-14",
   "code": "6715",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1468.8,
+  "amount": 1706.4,
   "payment": "2022-08-10"
  },
  {
   "date": "2022-07-27",
   "code": "3531",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1701.6,
+  "amount": 1838.3999999999999,
   "payment": "2022-08-26"
  },
  {
   "date": "2022-08-30",
   "code": "6472",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 402,
-  "new_shares": 442,
-  "fractional_receivable": 128.55825693601162
+  "old_shares": 612,
+  "new_shares": 673,
+  "fractional_receivable": 159.67077921602822
  },
  {
   "date": "2022-09-06",
   "code": "2468",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2140.8,
+  "amount": 2176.0,
   "payment": "2022-09-26"
  },
  {
   "date": "2022-09-08",
   "code": "8349",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 2044,
-  "new_shares": 2248,
-  "fractional_receivable": 27.44046973162003
- },
- {
-  "date": "2022-09-19",
-  "code": "2540",
-  "kind": "CASH_ENTITLEMENT",
-  "amount": 3426.5,
-  "payment": "2022-10-21"
- },
- {
-  "date": "2022-09-19",
-  "code": "2540",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 979,
-  "new_shares": 1615,
-  "fractional_receivable": 27.999999999992724
+  "old_shares": 1762,
+  "new_shares": 1938,
+  "fractional_receivable": 13.72040492520532
  },
  {
   "date": "2023-03-17",
   "code": "3029",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 4404.38593248,
+  "amount": 6754.11143404,
   "payment": "2023-04-13"
  },
  {
   "date": "2023-03-24",
   "code": "6235",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1017.14446288,
+  "amount": 675.5348184100001,
   "payment": "2023-04-26"
  },
  {
   "date": "2023-04-14",
   "code": "2382",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 7500.0,
+  "amount": 7626.0,
   "payment": "2023-05-19"
  },
  {
   "date": "2023-06-14",
   "code": "2486",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1086.4,
+  "amount": 1403.2,
   "payment": "2023-07-13"
  },
  {
   "date": "2023-06-15",
   "code": "5864",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1159.0,
+  "amount": 1479.6000000000001,
   "payment": "2023-07-20"
  },
  {
   "date": "2023-06-15",
   "code": "5864",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 5795,
-  "new_shares": 5910,
-  "fractional_receivable": 23.21957389364452
+  "old_shares": 7398,
+  "new_shares": 7545,
+  "fractional_receivable": 24.767456025061257
  },
  {
   "date": "2023-06-27",
   "code": "8942",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 741.0,
+  "amount": 1026.0,
   "payment": "2023-07-14"
  },
  {
   "date": "2023-06-27",
   "code": "8942",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 494,
-  "new_shares": 543,
+  "old_shares": 684,
+  "new_shares": 752,
   "fractional_receivable": 26.880000000006113
  },
  {
   "date": "2023-06-29",
   "code": "2722",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 589.1999999999999,
+  "amount": 543.6,
   "payment": "2023-08-16"
  },
  {
   "date": "2023-06-29",
   "code": "2722",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 982,
-  "new_shares": 1040,
-  "fractional_receivable": 87.03200000000687
+  "old_shares": 906,
+  "new_shares": 960,
+  "fractional_receivable": 34.05600000000129
  },
  {
   "date": "2023-07-05",
   "code": "3231",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 6042.026185500001,
+  "amount": 9979.0884096,
   "payment": "2023-07-28"
  },
  {
   "date": "2023-07-06",
   "code": "6125",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2833.38,
+  "amount": 3920.4,
   "payment": "2023-07-28"
  },
  {
   "date": "2023-07-06",
   "code": "8085",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 157.70000000000002,
+  "amount": 186.8,
   "payment": "2023-08-10"
  },
  {
   "date": "2023-07-13",
   "code": "4979",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 61.50246859,
+  "amount": 65.89126577,
   "payment": "2023-08-09"
  },
  {
   "date": "2023-07-14",
   "code": "2618",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3797.18311104,
+  "amount": 5179.57511064,
   "payment": "2023-08-18"
  },
  {
   "date": "2023-07-19",
   "code": "1535",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2760.0,
+  "amount": 12.0,
   "payment": "2023-08-16"
  },
  {
   "date": "2023-07-25",
   "code": "6187",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3793.80469314,
+  "amount": 2691.4885595399996,
   "payment": "2023-08-17"
  },
  {
   "date": "2023-07-27",
   "code": "3483",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 4266.02835225,
+  "amount": 4540.870515,
   "payment": "2023-08-30"
  },
  {
   "date": "2023-08-04",
   "code": "2376",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 961.0,
+  "amount": 1221.4,
   "payment": "2023-08-31"
  },
  {
   "date": "2023-08-24",
   "code": "2383",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3245.03670424,
+  "amount": 3589.71676868,
   "payment": "2023-09-22"
  },
  {
   "date": "2023-09-04",
   "code": "8927",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2396.5686548,
+  "amount": 2574.65621506,
   "payment": "2023-09-28"
  },
  {
   "date": "2023-09-04",
   "code": "8927",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 3620,
-  "new_shares": 3962,
-  "fractional_receivable": 22.713805051698955
+  "old_shares": 3889,
+  "new_shares": 4256,
+  "fractional_receivable": 50.01662647680369
  },
  {
-  "date": "2023-12-21",
-  "code": "6121",
+  "date": "2023-09-05",
+  "code": "6139",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2270.0,
-  "payment": "2024-01-18"
+  "amount": 6419.0,
+  "payment": "2023-09-28"
+ },
+ {
+  "date": "2023-10-12",
+  "code": "2543",
+  "kind": "CASH_ENTITLEMENT",
+  "amount": 5253.9,
+  "payment": "2023-11-03"
  },
  {
   "date": "2024-01-04",
   "code": "2454",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 8314.800000000001,
+  "amount": 10159.800000000001,
   "payment": "2024-01-31"
  },
  {
   "date": "2024-03-11",
   "code": "3363",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 849.0,
+  "amount": 866.5,
   "payment": "2024-03-29"
  },
  {
   "date": "2024-03-18",
   "code": "2330",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 696.4581483100001,
+  "amount": 1648.40094399,
   "payment": "2024-04-11"
  },
  {
   "date": "2024-04-02",
   "code": "3188",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 6766.400000000001,
+  "amount": 8931.2,
   "payment": "2024-04-30"
- },
- {
-  "date": "2024-04-11",
-  "code": "2535",
-  "kind": "CASH_ENTITLEMENT",
-  "amount": 3366.0,
-  "payment": "2024-05-15"
  },
  {
   "date": "2024-06-13",
   "code": "2330",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1802.39169035,
+  "amount": 2176.86918718,
   "payment": "2024-07-11"
  },
  {
   "date": "2024-06-13",
   "code": "2615",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3805.5,
+  "amount": 4500.0,
   "payment": "2024-07-12"
  },
  {
   "date": "2024-06-20",
   "code": "4915",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2284.0,
+  "amount": 2784.0,
   "payment": "2024-07-18"
  },
  {
   "date": "2024-06-24",
   "code": "3374",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2148.0,
+  "amount": 2530.0,
   "payment": "2024-07-19"
  },
  {
   "date": "2024-06-27",
   "code": "4545",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1083.0,
+  "amount": 2455.0,
   "payment": "2024-07-17"
  },
  {
   "date": "2024-06-27",
   "code": "3591",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3179.0,
+  "amount": 3600.5,
   "payment": "2024-07-22"
  },
  {
   "date": "2024-06-27",
   "code": "4938",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 4352.63553344,
+  "amount": 5420.79149615,
   "payment": "2024-07-18"
  },
  {
   "date": "2024-07-02",
   "code": "2317",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 10351.800000000001,
+  "amount": 9774.0,
   "payment": "2024-07-31"
  },
  {
   "date": "2024-07-05",
   "code": "8099",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2926.7000000000003,
+  "amount": 3422.5,
   "payment": "2024-07-31"
  },
  {
   "date": "2024-07-09",
   "code": "2609",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 4782.0,
+  "amount": 6634.0,
   "payment": "2024-07-31"
  },
  {
   "date": "2024-07-10",
   "code": "2359",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3593.7999999999997,
+  "amount": 4377.5,
   "payment": "2024-07-26"
- },
- {
-  "date": "2024-07-11",
-  "code": "1423",
-  "kind": "CASH_ENTITLEMENT",
-  "amount": 1012.1999999999999,
-  "payment": "2024-08-08"
  },
  {
   "date": "2024-07-11",
   "code": "3652",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 890.6346655,
+  "amount": 1561.9829706399998,
   "payment": "2024-08-07"
  },
  {
   "date": "2024-07-11",
   "code": "8114",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 5002.5221322,
+  "amount": 5852.71603448,
   "payment": "2024-08-13"
- },
- {
-  "date": "2024-07-11",
-  "code": "8374",
-  "kind": "CASH_ENTITLEMENT",
-  "amount": 175.79999999999998,
-  "payment": "2024-08-08"
  },
  {
   "date": "2024-07-19",
   "code": "2881",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 5360.0,
+  "amount": 6537.5,
   "payment": "2024-08-21"
- },
- {
-  "date": "2024-07-26",
-  "code": "2365",
-  "kind": "CASH_ENTITLEMENT",
-  "amount": 594.9,
-  "payment": "2024-08-15"
  },
  {
   "date": "2024-07-26",
   "code": "6442",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 495.6,
+  "amount": 625.8000000000001,
   "payment": "2024-08-21"
  },
  {
   "date": "2024-08-01",
   "code": "6873",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 685,
-  "new_shares": 702,
-  "fractional_receivable": 6.519405506608393
+  "old_shares": 553,
+  "new_shares": 566,
+  "fractional_receivable": 184.4747901389249
+ },
+ {
+  "date": "2024-08-27",
+  "code": "2905",
+  "kind": "CASH_ENTITLEMENT",
+  "amount": 2538.8,
+  "payment": "2024-09-18"
  },
  {
   "date": "2024-09-09",
   "code": "2881",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 997,
-  "new_shares": 1046,
-  "fractional_receivable": 73.10000000001173
+  "old_shares": 894,
+  "new_shares": 938,
+  "fractional_receivable": 60.20000000000391
+ },
+ {
+  "date": "2024-12-05",
+  "code": "6438",
+  "kind": "CASH_ENTITLEMENT",
+  "amount": 2683.9697713,
+  "payment": "2025-01-02"
  },
  {
   "date": "2025-03-26",
   "code": "8930",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 19384.399999999998,
+  "amount": 19070.8,
   "payment": "2025-04-23"
  },
  {
   "date": "2025-06-24",
   "code": "2615",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 10643.5,
+  "amount": 22249.5,
   "payment": "2025-07-23"
  },
  {
   "date": "2025-06-26",
   "code": "8210",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 4788.90712026,
+  "amount": 5545.8392316,
   "payment": "2025-07-31"
  },
  {
   "date": "2025-07-03",
   "code": "8021",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 6860.9904588,
+  "amount": 8137.84673064,
   "payment": "2025-07-29"
  },
  {
   "date": "2025-07-09",
   "code": "1616",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 12816.3816,
+  "amount": 12908.3652,
   "payment": "2025-08-01"
  },
  {
   "date": "2025-07-10",
   "code": "3577",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3921.0,
+  "amount": 4390.5,
   "payment": "2025-08-08"
  },
  {
   "date": "2025-07-18",
   "code": "6191",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 11305.94844552,
+  "amount": 4719.84216256,
   "payment": "2025-08-06"
- },
- {
-  "date": "2025-07-21",
-  "code": "8358",
-  "kind": "CASH_ENTITLEMENT",
-  "amount": 2905.95578592,
-  "payment": "2025-08-20"
  },
  {
   "date": "2025-07-22",
   "code": "2884",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 7856.4,
+  "amount": 5241.599999999999,
   "payment": "2025-08-27"
  },
  {
   "date": "2025-07-22",
   "code": "2884",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 6547,
-  "new_shares": 6612,
-  "fractional_receivable": 18.89244549158939
+  "old_shares": 4368,
+  "new_shares": 4411,
+  "fractional_receivable": 24.769971270385216
+ },
+ {
+  "date": "2025-07-24",
+  "code": "1419",
+  "kind": "CASH_ENTITLEMENT",
+  "amount": 6385.5,
+  "payment": "2025-08-22"
  },
  {
   "date": "2025-07-31",
   "code": "2801",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 5895.0,
+  "amount": 3792.5,
   "payment": "2025-09-04"
  },
  {
   "date": "2025-07-31",
   "code": "2801",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 11790,
-  "new_shares": 12379,
-  "fractional_receivable": 9.25
+  "old_shares": 7585,
+  "new_shares": 7964,
+  "fractional_receivable": 4.625
  },
  {
   "date": "2025-08-19",
   "code": "3017",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 5312.7479393,
+  "amount": 1261.15698746,
   "payment": "2025-09-22"
  },
  {
   "date": "2025-11-10",
   "code": "2515",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 16421,
-  "new_shares": 17246,
-  "fractional_receivable": 16.889989999973114
+  "old_shares": 14305,
+  "new_shares": 15024,
+  "fractional_receivable": 9.367949999988923
  },
  {
   "date": "2025-12-11",
   "code": "2330",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1885.0042148600003,
+  "amount": 2190.00489684,
   "payment": "2026-01-08"
  },
  {
   "date": "2026-03-17",
   "code": "2330",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2886.0171861299996,
+  "amount": 2622.01561401,
   "payment": "2026-04-09"
  },
  {
   "date": "2026-03-20",
   "code": "2006",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 9481.5,
+  "amount": 15243.5,
   "payment": "2026-04-24"
  },
  {
   "date": "2026-03-27",
   "code": "2344",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3417.5,
+  "amount": 3517.0,
   "payment": "2026-05-04"
  },
  {
   "date": "2026-06-08",
   "code": "4958",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 4174.471743,
+  "amount": 3141.1189017,
   "payment": "2026-07-14"
  },
  {
   "date": "2026-06-11",
   "code": "3481",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 14247.0,
+  "amount": 16633.0,
   "payment": "2026-07-10"
  },
  {
-  "date": "2026-06-17",
-  "code": "8163",
+  "date": "2026-06-12",
+  "code": "2327",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2025.0,
-  "payment": "2026-07-16"
+  "amount": 4043.00632854,
+  "payment": "2026-07-03"
  },
  {
   "date": "2026-06-22",
   "code": "3026",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3694.6,
+  "amount": 4802.4,
   "payment": "2026-07-17"
  },
  {
   "date": "2026-06-25",
   "code": "6585",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 14746.5,
+  "amount": 10255.5,
   "payment": "2026-07-16"
+ },
+ {
+  "date": "2026-07-01",
+  "code": "2881",
+  "kind": "CASH_ENTITLEMENT",
+  "amount": 14734.75,
+  "payment": "2026-07-31"
  },
  {
   "date": "2026-07-06",
   "code": "8476",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2643.8,
+  "amount": 3904.2000000000003,
   "payment": "2026-07-30"
  },
  {
   "date": "2026-07-07",
   "code": "2454",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 5341.04693322,
+  "amount": 5071.54456503,
   "payment": "2026-07-31"
  },
  {
   "date": "2026-07-08",
   "code": "1303",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 849.6,
+  "amount": 836.8000000000001,
   "payment": "2026-08-07"
  },
  {
   "date": "2026-07-08",
   "code": "2303",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 16120.55867422,
+  "amount": 22202.607344059998,
   "payment": "2026-07-30"
  },
  {
   "date": "2026-07-09",
   "code": "2493",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 4624.0,
+  "amount": 4552.0,
   "payment": "2026-08-05"
  },
  {
   "date": "2026-07-09",
   "code": "3284",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 8039.5,
+  "amount": 5276.5,
   "payment": "2026-08-03"
  },
  {
   "date": "2026-07-09",
   "code": "6446",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 500.69118960000003,
+  "amount": 564.76774065,
   "payment": "2026-08-06"
  },
  {
   "date": "2026-07-09",
   "code": "6446",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 336,
-  "new_shares": 372,
-  "fractional_receivable": 921.7996025712131
- },
- {
-  "date": "2026-07-09",
-  "code": "8261",
-  "kind": "CASH_ENTITLEMENT",
-  "amount": 4895.0,
-  "payment": "2026-07-29"
+  "old_shares": 379,
+  "new_shares": 420,
+  "fractional_receivable": 534.9465755192813
  },
  {
   "date": "2026-07-21",
   "code": "2887",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 10214.0,
+  "amount": 8172.0,
   "payment": "2026-08-19"
  },
  {
   "date": "2026-07-21",
   "code": "2887",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 10214,
-  "new_shares": 10316,
-  "fractional_receivable": 4.8579999999798025
+  "old_shares": 8172,
+  "new_shares": 8253,
+  "fractional_receivable": 24.98399999997728
  },
  {
   "date": "2026-07-24",
   "code": "1617",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3795.6,
+  "amount": 8088.599999999999,
   "payment": "2026-08-26"
  },
  {
   "date": "2026-08-10",
   "code": "2546",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 23803.2,
+  "amount": 29817.6,
   "payment": "2026-09-04"
  },
  {
   "date": "2026-08-10",
   "code": "2546",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 4959,
-  "new_shares": 5554,
-  "fractional_receivable": 7.4080000000774815
+  "old_shares": 6212,
+  "new_shares": 6957,
+  "fractional_receivable": 40.74400000004716
  },
  {
   "date": "2026-08-20",
   "code": "2377",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 9748.2,
+  "amount": 5649.0,
   "payment": "2026-09-17"
- },
- {
-  "date": "2026-08-27",
-  "code": "2059",
-  "kind": "CASH_ENTITLEMENT",
-  "amount": 1479.0,
-  "payment": "2026-10-01"
  },
  {
   "date": "2026-08-28",
   "code": "1709",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 18243.0,
+  "amount": 18035.0,
   "payment": "2026-10-01"
  }
 ]

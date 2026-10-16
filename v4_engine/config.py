@@ -16,6 +16,8 @@ class StrategyConfig:
     exposure_aim: float = .925
     max_hold_a: int = 15
     max_hold_b: int = 4
+    a_rank_days: int = 3
+    a_retention_rank: int = 20
     weight_a: float = .60
     weight_b: float = .40
     cap_threshold: float = 6e5
@@ -26,6 +28,10 @@ class StrategyConfig:
             raise ValueError('本金必須是有限的正數')
         if not (0 <= self.buy_fee < 1 and 0 <= self.sell_fee < 1):
             raise ValueError('Invalid modeled transaction fees')
+        if not isinstance(self.a_rank_days, int) or self.a_rank_days < 1:
+            raise ValueError('A ranking window must be a positive integer')
+        if not isinstance(self.a_retention_rank, int) or self.a_retention_rank < self.max_hold_a:
+            raise ValueError('A retention rank must cover the entry rank limit')
 
 
 V4_COEFFICIENTS = (1.5, 1.0, .5)

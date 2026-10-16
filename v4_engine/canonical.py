@@ -134,6 +134,8 @@ def canonical_for(ctx, wp, trades_df, commit_sha):
         warnings.append("本週無買賣動作，僅 HOLD")
     return {
         "strategy_version": STRATEGY_VERSION, "release_version": RELEASE_VERSION,
+        "selection_rules": {"a_rank_days": cfg.a_rank_days, "a_entry_rank": cfg.max_hold_a,
+                            "a_retention_rank": cfg.a_retention_rank, "b_max_names": cfg.max_hold_b},
         "start_capital": cfg.start_capital, "buy_fee": cfg.buy_fee, "sell_fee": cfg.sell_fee,
         "signal_mode": "PRE_CLOSE_PLAN" if LIVE_DAY is not None and wp["date"] == LIVE_DAY else "CLOSE_SIMULATION",
         "price_basis_date": (SIGNAL_DAY if LIVE_DAY is not None and wp["date"] == LIVE_DAY else wp["date"]).strftime("%Y-%m-%d"),

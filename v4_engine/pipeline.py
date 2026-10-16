@@ -34,9 +34,13 @@ def fixed_anchor(result, config):
     cagr = (float(nav.iloc[-1]) / config.start_capital) ** (1 / years) - 1 if years > 0 else 0
     mdd = float((nav / nav.cummax() - 1).min())
     parameters = {'threshold': config.threshold, 'buy_fee': config.buy_fee, 'sell_fee': config.sell_fee}
+    selection_rules = {'a_rank_days': config.a_rank_days, 'a_entry_rank': config.max_hold_a,
+                       'a_retention_rank': config.a_retention_rank, 'b_max_names': config.max_hold_b}
     ok = (result['nav'].index[-1] >= anchor_day and parameters == expected['parameters']
+          and selection_rules == expected.get('selection_rules')
           and abs(cagr - expected['cagr']) < .005 and abs(mdd - expected['mdd']) < .005)
-    return {'date': expected['date'], 'cagr': cagr, 'mdd': mdd, 'release_version': RELEASE_VERSION}, bool(ok)
+    return {'date': expected['date'], 'cagr': cagr, 'mdd': mdd, 'release_version': RELEASE_VERSION,
+            'selection_rules': selection_rules}, bool(ok)
 
 
 def publish(ctx, output_dir, root, *, end=None, report_only=False):
