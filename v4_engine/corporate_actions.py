@@ -121,16 +121,24 @@ def delivery_registry(records):
     """Only explicitly sourced stock-dividend delivery dates may unlock rights."""
     result = {}
     for row in records or []:
-        required = ['code','ex_date','tradable_date','announced_on','source']
+        # A retrospective issuer report can prove actual delivery without proving
+        # an advance announcement. Observe those shares only on delivery day;
+        # a prior-close live plan must still wait for its knowledge cutoff.
+        observed = row.get('evidence_kind') == 'ISSUER_DELIVERY_CONFIRMATION'
+        known_key = 'confirmed_on' if observed else 'announced_on'
+        required = ['code','ex_date','tradable_date',known_key,'source']
         if any(not row.get(key) for key in required):
             raise ValueError('Incomplete stock-delivery record')
-        ex,release,known = (pd.Timestamp(row[key]).normalize() for key in ['ex_date','tradable_date','announced_on'])
+        ex,release,known = (pd.Timestamp(row[key]).normalize() for key in ['ex_date','tradable_date',known_key])
         if any(pd.isna(value) for value in (ex,release,known)) or release < ex or not str(row['source']).startswith('https://'):
             raise ValueError('Invalid stock-delivery date or source')
+        if observed and (known != release or row.get('announced_on')):
+            raise ValueError('Observed delivery must not invent an advance announcement')
+        normalized = dict(row,ex_date=ex,tradable_date=release,announced_on=known)
         key = (str(row['code']),ex)
-        if key in result and result[key] != dict(row,ex_date=ex,tradable_date=release,announced_on=known):
+        if key in result and result[key] != normalized:
             raise ValueError('Conflicting stock-delivery records')
-        result[key] = dict(row,ex_date=ex,tradable_date=release,announced_on=known)
+        result[key] = normalized
     return result
 
 

@@ -23,6 +23,14 @@
   "fractional_receivable": 14.248425662435766
  },
  {
+  "date": "2015-06-18",
+  "code": "6506",
+  "kind": "STOCK_DELIVERY",
+  "shares": 10,
+  "ex_date": "2015-05-25",
+  "source": "https://www.tpex.org.tw/storage/eb_data/10406/10400147701.htm"
+ },
+ {
   "date": "2015-06-25",
   "code": "2455",
   "kind": "CASH_ENTITLEMENT",
@@ -91,7 +99,7 @@
   "date": "2016-06-30",
   "code": "8271",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 479.16082326000003,
+  "amount": 481.17410403,
   "payment": "2016-07-29"
  },
  {
@@ -105,21 +113,21 @@
   "date": "2016-07-05",
   "code": "1909",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 616.0,
+  "amount": 617.0,
   "payment": "2016-07-21"
  },
  {
   "date": "2016-07-13",
   "code": "2489",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 513.0,
+  "amount": 514.8000000000001,
   "payment": "2016-08-10"
  },
  {
   "date": "2016-07-21",
   "code": "2412",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 4053.5627999999997,
+  "amount": 4059.048,
   "payment": "2016-08-26"
  },
  {
@@ -142,7 +150,7 @@
   "date": "2016-07-21",
   "code": "2427",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 153.3,
+  "amount": 153.5,
   "payment": "2016-08-25"
  },
  {
@@ -153,15 +161,6 @@
   "payment": "2016-08-29"
  },
  {
-  "date": "2016-08-08",
-  "code": "6506",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 10,
-  "new_shares": 10,
-  "locked_shares": 10,
-  "fractional_receivable": 0.0
- },
- {
   "date": "2016-08-09",
   "code": "5403",
   "kind": "CASH_ENTITLEMENT",
@@ -170,9 +169,17 @@
  },
  {
   "date": "2016-08-25",
+  "code": "1717",
+  "kind": "STOCK_DELIVERY",
+  "shares": 15,
+  "ex_date": "2016-07-21",
+  "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20160101&endDate1=20161231&selectType=&stockNo=1717&response=json"
+ },
+ {
+  "date": "2016-08-25",
   "code": "8043",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 592.0,
+  "amount": 592.8000000000001,
   "payment": "2016-09-09"
  },
  {
@@ -193,17 +200,17 @@
   "date": "2016-12-09",
   "code": "1603",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3288.0000000000005,
+  "amount": 3294.0000000000005,
   "payment": null
  },
  {
   "date": "2016-12-09",
   "code": "1603",
   "kind": "CASH_CAPITAL_REDUCTION",
-  "old_shares": 1096,
-  "new_shares": 767,
+  "old_shares": 1098,
+  "new_shares": 768,
   "locked_shares": 0,
-  "fractional_receivable": 4.399999999998499
+  "fractional_receivable": 13.199999999997999
  },
  {
   "date": "2017-06-14",
@@ -223,14 +230,14 @@
   "date": "2017-06-26",
   "code": "2421",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 772.0,
+  "amount": 774.0,
   "payment": "2017-07-20"
  },
  {
   "date": "2017-06-29",
   "code": "2373",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 786.5,
+  "amount": 789.75,
   "payment": "2017-07-20"
  },
  {
@@ -244,7 +251,7 @@
   "date": "2017-07-03",
   "code": "2731",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 540.0,
+  "amount": 544.0,
   "payment": "2017-08-03"
  },
  {
@@ -258,7 +265,7 @@
   "date": "2017-07-07",
   "code": "3706",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 339.60837168,
+  "amount": 342.10549206,
   "payment": "2017-08-04"
  },
  {
@@ -272,7 +279,7 @@
   "date": "2017-07-11",
   "code": "2303",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1062.0,
+  "amount": 1063.5,
   "payment": "2017-08-10"
  },
  {
@@ -329,24 +336,6 @@
   "fractional_receivable": 38.21600000000118
  },
  {
-  "date": "2017-08-03",
-  "code": "1717",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 15,
-  "new_shares": 15,
-  "locked_shares": 15,
-  "fractional_receivable": 0.0
- },
- {
-  "date": "2017-08-04",
-  "code": "6506",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 10,
-  "new_shares": 10,
-  "locked_shares": 10,
-  "fractional_receivable": 0.0
- },
- {
   "date": "2017-08-17",
   "code": "3227",
   "kind": "CASH_ENTITLEMENT",
@@ -364,31 +353,47 @@
   "date": "2017-08-21",
   "code": "6116",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 872.5,
+  "amount": 874.5,
   "payment": "2017-09-12"
+ },
+ {
+  "date": "2017-08-25",
+  "code": "8404",
+  "kind": "STOCK_DELIVERY",
+  "shares": 21,
+  "ex_date": "2017-07-26",
+  "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20170101&endDate1=20171231&selectType=&stockNo=8404&response=json"
+ },
+ {
+  "date": "2017-08-30",
+  "code": "4205",
+  "kind": "STOCK_DELIVERY",
+  "shares": 22,
+  "ex_date": "2017-07-24",
+  "source": "https://www.tpex.org.tw/zh-tw/announce/market/reduction-tdr-detail.html?date=2017/08/24&op=8&type=IND&key=1&code=4205"
  },
  {
   "date": "2017-09-04",
   "code": "4721",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 218.55,
+  "amount": 220.1,
   "payment": "2017-10-06"
  },
  {
   "date": "2017-10-06",
   "code": "2340",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2084.9399999999996,
+  "amount": 2086.9199999999996,
   "payment": null
  },
  {
   "date": "2017-10-06",
   "code": "2340",
   "kind": "CASH_CAPITAL_REDUCTION",
-  "old_shares": 1053,
-  "new_shares": 844,
+  "old_shares": 1054,
+  "new_shares": 845,
   "locked_shares": 0,
-  "fractional_receivable": 11.18260000000189
+  "fractional_receivable": 6.806799999999839
  },
  {
   "date": "2018-06-14",
@@ -401,7 +406,7 @@
   "date": "2018-06-26",
   "code": "8261",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 278.1,
+  "amount": 278.55,
   "payment": "2018-07-16"
  },
  {
@@ -415,62 +420,44 @@
   "date": "2018-07-16",
   "code": "2426",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 981.3960183199998,
+  "amount": 982.0960154799999,
   "payment": "2018-08-07"
  },
  {
   "date": "2018-07-20",
   "code": "1225",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 478.75,
+  "amount": 480.0,
   "payment": "2018-08-20"
  },
  {
   "date": "2018-07-25",
   "code": "3416",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1520.0,
+  "amount": 1522.5,
   "payment": "2018-08-28"
  },
  {
   "date": "2018-07-25",
   "code": "2108",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 776.0,
+  "amount": 777.0,
   "payment": "2018-09-07"
  },
  {
   "date": "2018-07-25",
   "code": "2108",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 776,
-  "new_shares": 814,
+  "old_shares": 777,
+  "new_shares": 815,
   "locked_shares": 38,
-  "fractional_receivable": 23.000000000000938
- },
- {
-  "date": "2018-07-26",
-  "code": "1717",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 15,
-  "new_shares": 15,
-  "locked_shares": 15,
-  "fractional_receivable": 0.0
- },
- {
-  "date": "2018-07-31",
-  "code": "8404",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 21,
-  "new_shares": 21,
-  "locked_shares": 21,
-  "fractional_receivable": 0.0
+  "fractional_receivable": 24.437500000001062
  },
  {
   "date": "2018-08-01",
   "code": "3016",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 329.0,
+  "amount": 329.5,
   "payment": "2018-08-29"
  },
  {
@@ -481,59 +468,74 @@
   "payment": null
  },
  {
-  "date": "2018-08-06",
-  "code": "6506",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 10,
-  "new_shares": 10,
-  "locked_shares": 10,
-  "fractional_receivable": 0.0
- },
- {
   "date": "2018-08-07",
   "code": "8415",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 676.0,
+  "amount": 678.0,
   "payment": "2018-08-31"
  },
  {
   "date": "2018-08-13",
   "code": "5820",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 943.406724,
+  "amount": 945.4688152000001,
   "payment": "2018-09-14"
  },
  {
   "date": "2018-08-13",
   "code": "5820",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 1830,
-  "new_shares": 1870,
+  "old_shares": 1834,
+  "new_shares": 1874,
   "locked_shares": 40,
-  "fractional_receivable": 4.092644957387533
+  "fractional_receivable": 4.930443088441881
  },
  {
   "date": "2018-08-24",
   "code": "4942",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 919.1999999999999,
+  "amount": 920.4,
   "payment": "2018-09-19"
  },
  {
   "date": "2018-09-06",
   "code": "2834",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 449.43600000000004,
+  "amount": 450.24,
   "payment": "2018-10-11"
  },
  {
   "date": "2018-09-06",
   "code": "2834",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 1677,
-  "new_shares": 1744,
+  "old_shares": 1680,
+  "new_shares": 1747,
   "locked_shares": 67,
-  "fractional_receivable": 0.8440000000005817
+  "fractional_receivable": 2.11000000000063
+ },
+ {
+  "date": "2018-09-07",
+  "code": "2108",
+  "kind": "STOCK_DELIVERY",
+  "shares": 38,
+  "ex_date": "2018-07-25",
+  "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20180101&endDate1=20181231&selectType=&stockNo=2108&response=json"
+ },
+ {
+  "date": "2018-09-14",
+  "code": "5820",
+  "kind": "STOCK_DELIVERY",
+  "shares": 40,
+  "ex_date": "2018-08-13",
+  "source": "https://fsmarket.fbs.com.tw/ECADMIN_Market/Bonus/NBbonus/images/GoodsImages/JsunFile/20190528145231561.pdf"
+ },
+ {
+  "date": "2018-10-11",
+  "code": "2834",
+  "kind": "STOCK_DELIVERY",
+  "shares": 67,
+  "ex_date": "2018-09-06",
+  "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20180101&endDate1=20181231&selectType=&stockNo=2834&response=json"
  },
  {
   "date": "2019-06-24",
@@ -546,7 +548,7 @@
   "date": "2019-07-08",
   "code": "2433",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1438.5,
+  "amount": 1442.0,
   "payment": "2019-07-24"
  },
  {
@@ -560,7 +562,7 @@
   "date": "2019-07-15",
   "code": "2903",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1152.6,
+  "amount": 1151.75,
   "payment": "2019-08-09"
  },
  {
@@ -574,17 +576,8 @@
   "date": "2019-07-18",
   "code": "4935",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 501.6,
+  "amount": 500.8,
   "payment": "2019-08-16"
- },
- {
-  "date": "2019-07-22",
-  "code": "6506",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 10,
-  "new_shares": 10,
-  "locked_shares": 10,
-  "fractional_receivable": 0.0
  },
  {
   "date": "2019-07-25",
@@ -594,54 +587,27 @@
   "payment": "2019-08-21"
  },
  {
-  "date": "2019-07-31",
-  "code": "8404",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 21,
-  "new_shares": 21,
-  "locked_shares": 21,
-  "fractional_receivable": 0.0
- },
- {
-  "date": "2019-08-12",
-  "code": "5820",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 40,
-  "new_shares": 40,
-  "locked_shares": 40,
-  "fractional_receivable": 0.0
- },
- {
-  "date": "2019-08-14",
-  "code": "2834",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 67,
-  "new_shares": 67,
-  "locked_shares": 67,
-  "fractional_receivable": 0.0
- },
- {
   "date": "2019-08-22",
   "code": "3680",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 69.560654,
+  "amount": 69.814525,
   "payment": "2019-09-11"
  },
  {
   "date": "2019-10-07",
   "code": "2316",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 379.99999999999994,
+  "amount": 381.99999999999994,
   "payment": null
  },
  {
   "date": "2019-10-07",
   "code": "2316",
   "kind": "CASH_CAPITAL_REDUCTION",
-  "old_shares": 380,
-  "new_shares": 342,
+  "old_shares": 382,
+  "new_shares": 343,
   "locked_shares": 0,
-  "fractional_receivable": 0.0
+  "fractional_receivable": 37.44000000000053
  },
  {
   "date": "2019-10-29",
@@ -661,63 +627,63 @@
   "date": "2020-04-22",
   "code": "2910",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 852.5999999999999,
+  "amount": 856.8,
   "payment": "2020-05-20"
  },
  {
   "date": "2020-06-08",
   "code": "2467",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 862.5,
+  "amount": 867.5,
   "payment": "2020-07-03"
  },
  {
   "date": "2020-06-15",
   "code": "2458",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1319.5,
+  "amount": 1326.0,
   "payment": "2020-07-03"
  },
  {
   "date": "2020-06-30",
   "code": "1760",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1143.0,
+  "amount": 1150.2,
   "payment": "2020-07-22"
  },
  {
   "date": "2020-07-01",
   "code": "5604",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2919.2999999999997,
+  "amount": 2930.4,
   "payment": "2020-07-15"
  },
  {
   "date": "2020-07-01",
   "code": "1604",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 855.0,
+  "amount": 861.0,
   "payment": "2020-07-17"
  },
  {
   "date": "2020-07-02",
   "code": "3325",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 971.5999999999999,
+  "amount": 975.8,
   "payment": "2020-07-29"
  },
  {
   "date": "2020-07-03",
   "code": "3540",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 772.8462000000001,
+  "amount": 775.95,
   "payment": "2020-07-24"
  },
  {
   "date": "2020-07-06",
   "code": "2417",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 149.22235679000002,
+  "amount": 149.73026134000003,
   "payment": "2020-08-07"
  },
  {
@@ -731,14 +697,14 @@
   "date": "2020-07-07",
   "code": "3231",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2111.68840256,
+  "amount": 2119.85740992,
   "payment": "2020-07-31"
  },
  {
   "date": "2020-07-13",
   "code": "1598",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 673.48822191,
+  "amount": 679.0176818599999,
   "payment": "2020-08-12"
  },
  {
@@ -752,7 +718,7 @@
   "date": "2020-07-21",
   "code": "5410",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1837.5,
+  "amount": 1845.0,
   "payment": "2020-08-20"
  },
  {
@@ -763,26 +729,17 @@
   "payment": "2020-08-18"
  },
  {
-  "date": "2020-07-22",
-  "code": "2834",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 67,
-  "new_shares": 67,
-  "locked_shares": 67,
-  "fractional_receivable": 0.0
- },
- {
   "date": "2020-07-23",
   "code": "2414",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 703.5,
+  "amount": 709.5,
   "payment": "2020-08-07"
  },
  {
   "date": "2020-07-31",
   "code": "3702",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2016.0,
+  "amount": 2023.1999999999998,
   "payment": "2020-08-28"
  },
  {
@@ -796,24 +753,15 @@
   "date": "2020-08-03",
   "code": "6477",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 794.0355273,
+  "amount": 797.86220454,
   "payment": "2020-08-31"
- },
- {
-  "date": "2020-08-17",
-  "code": "5820",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 40,
-  "new_shares": 40,
-  "locked_shares": 40,
-  "fractional_receivable": 0.0
  },
  {
   "date": "2020-08-17",
   "code": "8070",
   "kind": "SPLIT_FACTOR",
-  "old_shares": 147,
-  "new_shares": 1470,
+  "old_shares": 148,
+  "new_shares": 1480,
   "locked_shares": 0,
   "fractional_receivable": 0.0
  },
@@ -821,37 +769,37 @@
   "date": "2020-09-10",
   "code": "1513",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1085.27496778,
+  "amount": 1090.0611859399999,
   "payment": "2020-09-30"
  },
  {
   "date": "2020-09-17",
   "code": "2330",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 417.5,
+  "amount": 420.0,
   "payment": "2020-10-15"
  },
  {
   "date": "2020-10-16",
   "code": "2504",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1774.0800000000002,
+  "amount": 1781.2800000000002,
   "payment": null
  },
  {
   "date": "2020-10-16",
   "code": "2504",
   "kind": "CASH_CAPITAL_REDUCTION",
-  "old_shares": 1232,
-  "new_shares": 1054,
+  "old_shares": 1237,
+  "new_shares": 1058,
   "locked_shares": 0,
-  "fractional_receivable": 15.362399999996649
+  "fractional_receivable": 22.62840000000184
  },
  {
   "date": "2020-11-02",
   "code": "8936",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 401.12448264,
+  "amount": 401.81767011,
   "payment": "2020-11-30"
  },
  {
@@ -865,21 +813,21 @@
   "date": "2021-03-31",
   "code": "3005",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3066.9610779,
+  "amount": 3070.54816688,
   "payment": "2021-04-28"
  },
  {
   "date": "2021-04-16",
   "code": "4930",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3605.0,
+  "amount": 3601.5,
   "payment": "2021-04-29"
  },
  {
   "date": "2021-04-22",
   "code": "1229",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 991.1,
+  "amount": 989.4,
   "payment": "2021-05-20"
  },
  {
@@ -893,7 +841,7 @@
   "date": "2021-06-17",
   "code": "9911",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2566.4,
+  "amount": 2556.8,
   "payment": "2021-07-16"
  },
  {
@@ -942,7 +890,7 @@
   "date": "2021-08-05",
   "code": "6509",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1131.0,
+  "amount": 1132.0,
   "payment": "2021-09-01"
  },
  {
@@ -956,7 +904,7 @@
   "date": "2021-08-09",
   "code": "8374",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 922.1999999999999,
+  "amount": 921.5999999999999,
   "payment": "2021-08-31"
  },
  {
@@ -993,14 +941,14 @@
   "date": "2021-08-17",
   "code": "2538",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3705.5,
+  "amount": 3706.0,
   "payment": "2021-09-10"
  },
  {
   "date": "2021-08-19",
   "code": "1783",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 852.04630302,
+  "amount": 852.77704599,
   "payment": "2021-09-13"
  },
  {
@@ -1014,7 +962,7 @@
   "date": "2021-08-26",
   "code": "3056",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 6278.8,
+  "amount": 6283.200000000001,
   "payment": "2021-09-17"
  },
  {
@@ -1028,17 +976,17 @@
   "date": "2021-09-07",
   "code": "2887",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2496.22901568,
+  "amount": 2497.33943784,
   "payment": "2021-10-05"
  },
  {
   "date": "2021-09-07",
   "code": "2887",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 4496,
-  "new_shares": 4700,
+  "old_shares": 4498,
+  "new_shares": 4702,
   "locked_shares": 204,
-  "fractional_receivable": 4.288880237973899
+  "fractional_receivable": 5.933314793239718
  },
  {
   "date": "2021-09-07",
@@ -1048,200 +996,168 @@
   "payment": "2021-09-30"
  },
  {
-  "date": "2021-09-08",
-  "code": "2834",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 67,
-  "new_shares": 67,
-  "locked_shares": 67,
-  "fractional_receivable": 0.0
- },
- {
   "date": "2021-09-09",
   "code": "3663",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1492.0,
+  "amount": 1492.8000000000002,
   "payment": "2021-09-27"
  },
  {
-  "date": "2021-09-22",
-  "code": "4205",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 22,
-  "new_shares": 22,
-  "locked_shares": 22,
-  "fractional_receivable": 0.0
+  "date": "2021-09-17",
+  "code": "1773",
+  "kind": "STOCK_DELIVERY",
+  "shares": 37,
+  "ex_date": "2021-08-13",
+  "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20210101&endDate1=20211231&selectType=&stockNo=1773&response=json"
  },
  {
   "date": "2021-09-24",
   "code": "1229",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 867,
-  "new_shares": 953,
+  "old_shares": 868,
+  "new_shares": 954,
   "locked_shares": 86,
-  "fractional_receivable": 39.20000000000414
+  "fractional_receivable": 44.800000000004616
  },
  {
-  "date": "2021-11-05",
-  "code": "5820",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 40,
-  "new_shares": 40,
-  "locked_shares": 40,
-  "fractional_receivable": 0.0
+  "date": "2021-10-05",
+  "code": "2887",
+  "kind": "STOCK_DELIVERY",
+  "shares": 204,
+  "ex_date": "2021-09-07",
+  "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20210101&endDate1=20211231&selectType=&stockNo=2887&response=json"
+ },
+ {
+  "date": "2021-10-22",
+  "code": "1229",
+  "kind": "STOCK_DELIVERY",
+  "shares": 86,
+  "ex_date": "2021-09-24",
+  "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20210101&endDate1=20211231&selectType=&stockNo=1229&response=json"
  },
  {
   "date": "2022-03-24",
   "code": "8401",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 7661.211343839999,
+  "amount": 7650.81856336,
   "payment": "2022-04-21"
  },
  {
   "date": "2022-06-09",
   "code": "1568",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1069.8,
+  "amount": 1071.3,
   "payment": "2022-06-30"
  },
  {
   "date": "2022-06-21",
   "code": "1605",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3188.8,
+  "amount": 3195.2000000000003,
   "payment": "2022-07-19"
  },
  {
   "date": "2022-06-23",
   "code": "1319",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1598.0,
+  "amount": 1601.3999999999999,
   "payment": "2022-07-20"
- },
- {
-  "date": "2022-06-29",
-  "code": "1773",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 37,
-  "new_shares": 37,
-  "locked_shares": 37,
-  "fractional_receivable": 0.0
  },
  {
   "date": "2022-07-01",
   "code": "5353",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3567.6,
+  "amount": 3573.9,
   "payment": "2022-07-28"
  },
  {
   "date": "2022-07-07",
   "code": "6472",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1323.0,
+  "amount": 1326.5,
   "payment": "2022-08-02"
  },
  {
   "date": "2022-07-11",
   "code": "6605",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 4797.0,
+  "amount": 4833.0,
   "payment": "2022-07-29"
  },
  {
   "date": "2022-07-14",
   "code": "1522",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1929.0,
+  "amount": 1940.0,
   "payment": "2022-08-12"
  },
  {
   "date": "2022-07-14",
   "code": "6715",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1402.2,
+  "amount": 1409.4,
   "payment": "2022-08-10"
  },
  {
   "date": "2022-07-27",
   "code": "3531",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2150.4,
+  "amount": 2163.6,
   "payment": "2022-08-26"
- },
- {
-  "date": "2022-08-02",
-  "code": "2834",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 67,
-  "new_shares": 67,
-  "locked_shares": 67,
-  "fractional_receivable": 0.0
- },
- {
-  "date": "2022-08-24",
-  "code": "2887",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 204,
-  "new_shares": 204,
-  "locked_shares": 204,
-  "fractional_receivable": 0.0
- },
- {
-  "date": "2022-08-30",
-  "code": "1229",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 86,
-  "new_shares": 86,
-  "locked_shares": 86,
-  "fractional_receivable": 0.0
  },
  {
   "date": "2022-08-30",
   "code": "6472",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 359,
-  "new_shares": 395,
+  "old_shares": 361,
+  "new_shares": 397,
   "locked_shares": 36,
-  "fractional_receivable": 18.68759761200824
+  "fractional_receivable": 87.98390734800982
  },
  {
   "date": "2022-09-06",
   "code": "2468",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1808.8000000000002,
+  "amount": 1818.8000000000002,
   "payment": "2022-09-26"
  },
  {
   "date": "2022-09-08",
   "code": "8349",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 1487,
-  "new_shares": 1635,
-  "locked_shares": 148,
-  "fractional_receivable": 48.0203417274627
+  "old_shares": 1496,
+  "new_shares": 1645,
+  "locked_shares": 149,
+  "fractional_receivable": 41.160343795751494
  },
  {
-  "date": "2022-10-11",
-  "code": "1717",
-  "kind": "CASH_CAPITAL_REDUCTION",
-  "old_shares": 15,
-  "new_shares": 14,
-  "locked_shares": 14,
-  "fractional_receivable": 7.5
+  "date": "2022-10-06",
+  "code": "6472",
+  "kind": "STOCK_DELIVERY",
+  "shares": 36,
+  "ex_date": "2022-08-30",
+  "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20220101&endDate1=20221231&selectType=&stockNo=6472&response=json"
+ },
+ {
+  "date": "2022-10-28",
+  "code": "8349",
+  "kind": "STOCK_DELIVERY",
+  "shares": 149,
+  "ex_date": "2022-09-08",
+  "source": "https://www.tpex.org.tw/zh-tw/announce/market/reduction-tdr-detail.html?date=2022/10/25&op=8&type=IND&key=1&code=8349"
  },
  {
   "date": "2023-03-17",
   "code": "3029",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 5706.99026872,
+  "amount": 5739.3754594,
   "payment": "2023-04-13"
  },
  {
   "date": "2023-03-24",
   "code": "6235",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 589.60846612,
+  "amount": 591.70423081,
   "payment": "2023-04-26"
  },
  {
@@ -1255,24 +1171,24 @@
   "date": "2023-06-14",
   "code": "2486",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1197.6000000000001,
+  "amount": 1196.0,
   "payment": "2023-07-13"
  },
  {
   "date": "2023-06-15",
   "code": "5864",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 672.0,
+  "amount": 671.2,
   "payment": "2023-07-20"
  },
  {
   "date": "2023-06-15",
   "code": "5864",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 3360,
-  "new_shares": 3427,
+  "old_shares": 3356,
+  "new_shares": 3423,
   "locked_shares": 67,
-  "fractional_receivable": 5.15975293920053
+  "fractional_receivable": 3.0957532333203233
  },
  {
   "date": "2023-06-27",
@@ -1294,116 +1210,104 @@
   "date": "2023-06-29",
   "code": "2722",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 465.59999999999997,
+  "amount": 465.0,
   "payment": "2023-08-16"
  },
  {
   "date": "2023-06-29",
   "code": "2722",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 776,
-  "new_shares": 822,
+  "old_shares": 775,
+  "new_shares": 821,
   "locked_shares": 46,
-  "fractional_receivable": 52.97600000000425
+  "fractional_receivable": 47.30000000000403
  },
  {
   "date": "2023-07-05",
   "code": "3231",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 6780.06293246,
+  "amount": 6777.46421152,
   "payment": "2023-07-28"
  },
  {
   "date": "2023-07-06",
   "code": "6125",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3356.6400000000003,
+  "amount": 3355.0200000000004,
   "payment": "2023-07-28"
  },
  {
   "date": "2023-07-06",
   "code": "8085",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 159.70000000000002,
+  "amount": 159.5,
   "payment": "2023-08-10"
  },
  {
   "date": "2023-07-13",
   "code": "4979",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 56.52059071,
+  "amount": 56.40197457,
   "payment": "2023-08-09"
  },
  {
   "date": "2023-07-14",
   "code": "2618",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 4448.42558484,
+  "amount": 4442.8320912,
   "payment": "2023-08-18"
  },
  {
   "date": "2023-07-19",
   "code": "1535",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2394.0,
+  "amount": 2391.0,
   "payment": "2023-08-16"
+ },
+ {
+  "date": "2023-07-20",
+  "code": "5864",
+  "kind": "STOCK_DELIVERY",
+  "shares": 67,
+  "ex_date": "2023-06-15",
+  "source": "https://www.tpex.org.tw/zh-tw/announce/market/reduction-tdr-detail.html?date=2023/07/14&op=8&type=IND&key=1&code=5864"
  },
  {
   "date": "2023-07-25",
   "code": "6187",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2296.4919449999998,
+  "amount": 2287.30597722,
   "payment": "2023-08-17"
- },
- {
-  "date": "2023-07-26",
-  "code": "2887",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 204,
-  "new_shares": 204,
-  "locked_shares": 204,
-  "fractional_receivable": 0.0
- },
- {
-  "date": "2023-07-26",
-  "code": "1229",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 86,
-  "new_shares": 86,
-  "locked_shares": 86,
-  "fractional_receivable": 0.0
- },
- {
-  "date": "2023-07-26",
-  "code": "8404",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 21,
-  "new_shares": 21,
-  "locked_shares": 21,
-  "fractional_receivable": 0.0
  },
  {
   "date": "2023-07-27",
   "code": "3483",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3875.67281675,
+  "amount": 3859.73993775,
   "payment": "2023-08-30"
+ },
+ {
+  "date": "2023-08-04",
+  "code": "8942",
+  "kind": "STOCK_DELIVERY",
+  "shares": 58,
+  "ex_date": "2023-06-27",
+  "source": "https://www.tpex.org.tw/zh-tw/announce/market/reduction-tdr-detail.html?date=2023/07/31&op=8&type=IND&key=1&code=8942"
  },
  {
   "date": "2023-08-04",
   "code": "2376",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2783.8,
+  "amount": 2765.2000000000003,
   "payment": "2023-08-31"
  },
  {
-  "date": "2023-08-10",
-  "code": "6472",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 36,
-  "new_shares": 36,
-  "locked_shares": 36,
-  "fractional_receivable": 0.0
+  "date": "2023-08-16",
+  "code": "2722",
+  "kind": "STOCK_DELIVERY",
+  "shares": 46,
+  "ex_date": "2023-06-29",
+  "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20230101&endDate1=20231231&selectType=&stockNo=2722&response=json"
  },
  {
   "date": "2023-08-24",
@@ -1413,65 +1317,55 @@
   "payment": "2023-09-22"
  },
  {
-  "date": "2023-08-31",
-  "code": "2834",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 67,
-  "new_shares": 67,
-  "locked_shares": 67,
-  "fractional_receivable": 0.0
- },
- {
   "date": "2023-09-04",
   "code": "8927",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2235.03198304,
+  "amount": 2232.3838408799998,
   "payment": "2023-09-28"
  },
  {
   "date": "2023-09-04",
   "code": "8927",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 3376,
-  "new_shares": 3695,
-  "locked_shares": 319,
-  "fractional_receivable": 17.96812316424021
+  "old_shares": 3372,
+  "new_shares": 3690,
+  "locked_shares": 318,
+  "fractional_receivable": 56.450980838216005
  },
  {
   "date": "2023-09-05",
   "code": "6139",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 5306.0,
+  "amount": 5313.0,
   "payment": "2023-09-28"
- },
- {
-  "date": "2023-09-06",
-  "code": "8349",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 148,
-  "new_shares": 148,
-  "locked_shares": 148,
-  "fractional_receivable": 0.0
  },
  {
   "date": "2023-10-12",
   "code": "2543",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 4084.5,
+  "amount": 4090.7999999999997,
   "payment": "2023-11-03"
+ },
+ {
+  "date": "2023-10-30",
+  "code": "8927",
+  "kind": "STOCK_DELIVERY",
+  "shares": 318,
+  "ex_date": "2023-09-04",
+  "source": "https://www.tpex.org.tw/zh-tw/announce/market/reduction-tdr-detail.html?date=2023/10/20&op=8&type=IND&key=1&code=8927"
  },
  {
   "date": "2024-01-04",
   "code": "2454",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 8905.2,
+  "amount": 8929.800000000001,
   "payment": "2024-01-31"
  },
  {
   "date": "2024-03-11",
   "code": "3363",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 735.5,
+  "amount": 737.5,
   "payment": "2024-03-29"
  },
  {
@@ -1485,370 +1379,233 @@
   "date": "2024-04-02",
   "code": "3188",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 7491.200000000001,
+  "amount": 7494.400000000001,
   "payment": "2024-04-30"
  },
  {
   "date": "2024-06-13",
   "code": "2330",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1599.40388833,
+  "amount": 1595.90409864,
   "payment": "2024-07-11"
  },
  {
   "date": "2024-06-13",
   "code": "2615",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3783.0,
+  "amount": 3777.0,
   "payment": "2024-07-12"
  },
  {
   "date": "2024-06-20",
   "code": "4915",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2344.0,
+  "amount": 2336.0,
   "payment": "2024-07-18"
  },
  {
   "date": "2024-06-24",
   "code": "3374",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2210.0,
+  "amount": 2206.0,
   "payment": "2024-07-19"
- },
- {
-  "date": "2024-06-25",
-  "code": "5864",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 67,
-  "new_shares": 67,
-  "locked_shares": 67,
-  "fractional_receivable": 0.0
  },
  {
   "date": "2024-06-27",
   "code": "4545",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2069.0,
+  "amount": 2066.0,
   "payment": "2024-07-17"
  },
  {
   "date": "2024-06-27",
   "code": "3591",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3035.5,
+  "amount": 3030.5,
   "payment": "2024-07-22"
  },
  {
   "date": "2024-06-27",
   "code": "4938",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 4456.65072082,
+  "amount": 4448.64955256,
   "payment": "2024-07-18"
- },
- {
-  "date": "2024-06-28",
-  "code": "8942",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 58,
-  "new_shares": 58,
-  "locked_shares": 58,
-  "fractional_receivable": 0.0
  },
  {
   "date": "2024-07-02",
   "code": "2317",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 10006.2,
+  "amount": 9979.2,
   "payment": "2024-07-31"
  },
  {
   "date": "2024-07-05",
   "code": "8099",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2886.0,
+  "amount": 2882.3,
   "payment": "2024-07-31"
  },
  {
   "date": "2024-07-09",
   "code": "2609",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 5586.0,
+  "amount": 5574.0,
   "payment": "2024-07-31"
  },
  {
   "date": "2024-07-10",
   "code": "2359",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3702.6,
+  "amount": 3692.4,
   "payment": "2024-07-26"
  },
  {
   "date": "2024-07-11",
   "code": "3652",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1317.10167232,
+  "amount": 1315.02640708,
   "payment": "2024-08-07"
  },
  {
   "date": "2024-07-11",
   "code": "8114",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 4932.064074,
+  "amount": 4927.36687012,
   "payment": "2024-08-13"
- },
- {
-  "date": "2024-07-16",
-  "code": "2722",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 46,
-  "new_shares": 46,
-  "locked_shares": 46,
-  "fractional_receivable": 0.0
  },
  {
   "date": "2024-07-19",
   "code": "2881",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 5530.0,
+  "amount": 5515.0,
   "payment": "2024-08-21"
  },
  {
   "date": "2024-07-26",
   "code": "6442",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 529.2,
+  "amount": 527.1,
   "payment": "2024-08-21"
- },
- {
-  "date": "2024-07-26",
-  "code": "1229",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 86,
-  "new_shares": 86,
-  "locked_shares": 86,
-  "fractional_receivable": 0.0
  },
  {
   "date": "2024-08-01",
   "code": "6873",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 468,
-  "new_shares": 479,
+  "old_shares": 467,
+  "new_shares": 478,
   "locked_shares": 11,
-  "fractional_receivable": 156.56727266729078
- },
- {
-  "date": "2024-08-06",
-  "code": "2887",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 204,
-  "new_shares": 204,
-  "locked_shares": 204,
-  "fractional_receivable": 0.0
- },
- {
-  "date": "2024-08-08",
-  "code": "2834",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 67,
-  "new_shares": 67,
-  "locked_shares": 67,
-  "fractional_receivable": 0.0
+  "fractional_receivable": 150.41541952056576
  },
  {
   "date": "2024-08-27",
   "code": "2905",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2146.2000000000003,
+  "amount": 2143.8,
   "payment": "2024-09-18"
  },
  {
   "date": "2024-09-05",
-  "code": "8349",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 148,
-  "new_shares": 148,
-  "locked_shares": 148,
-  "fractional_receivable": 0.0
- },
- {
-  "date": "2024-09-06",
-  "code": "8927",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 319,
-  "new_shares": 319,
-  "locked_shares": 319,
-  "fractional_receivable": 0.0
+  "code": "6873",
+  "kind": "STOCK_DELIVERY",
+  "shares": 11,
+  "ex_date": "2024-08-01",
+  "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20240101&endDate1=20241231&selectType=&stockNo=6873&response=json"
  },
  {
   "date": "2024-09-09",
   "code": "2881",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 1054,
-  "new_shares": 1106,
+  "old_shares": 1055,
+  "new_shares": 1107,
   "locked_shares": 52,
-  "fractional_receivable": 60.20000000000391
+  "fractional_receivable": 64.50000000000428
+ },
+ {
+  "date": "2024-10-15",
+  "code": "2881",
+  "kind": "STOCK_DELIVERY",
+  "shares": 52,
+  "ex_date": "2024-09-09",
+  "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20240101&endDate1=20241231&selectType=&stockNo=2881&response=json"
  },
  {
   "date": "2024-12-05",
   "code": "6438",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2184.4909652,
+  "amount": 2182.5474679,
   "payment": "2025-01-02"
  },
  {
   "date": "2025-03-26",
   "code": "8930",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 16318.4,
+  "amount": 16349.199999999999,
   "payment": "2025-04-23"
- },
- {
-  "date": "2025-06-13",
-  "code": "1773",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 37,
-  "new_shares": 37,
-  "locked_shares": 37,
-  "fractional_receivable": 0.0
  },
  {
   "date": "2025-06-24",
   "code": "2615",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 9726.5,
+  "amount": 9758.0,
   "payment": "2025-07-23"
  },
  {
   "date": "2025-06-26",
   "code": "8210",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 4361.72761188,
+  "amount": 4376.71636656,
   "payment": "2025-07-31"
  },
  {
   "date": "2025-07-03",
   "code": "8021",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 6264.80236968,
+  "amount": 6278.077812959999,
   "payment": "2025-07-29"
- },
- {
-  "date": "2025-07-04",
-  "code": "5864",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 67,
-  "new_shares": 67,
-  "locked_shares": 67,
-  "fractional_receivable": 0.0
  },
  {
   "date": "2025-07-09",
   "code": "1616",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 9725.0112,
+  "amount": 9759.2796,
   "payment": "2025-08-01"
  },
  {
   "date": "2025-07-10",
   "code": "3577",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3432.0,
+  "amount": 3445.5,
   "payment": "2025-08-08"
  },
  {
   "date": "2025-07-18",
   "code": "6191",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 6823.90445314,
+  "amount": 6847.9852805,
   "payment": "2025-08-06"
  },
  {
   "date": "2025-07-22",
   "code": "2884",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 7119.599999999999,
+  "amount": 7137.599999999999,
   "payment": "2025-08-27"
  },
  {
   "date": "2025-07-22",
   "code": "2884",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 5933,
-  "new_shares": 5992,
+  "old_shares": 5948,
+  "new_shares": 6007,
   "locked_shares": 59,
-  "fractional_receivable": 13.936043852380463
+  "fractional_receivable": 18.923578094380435
  },
  {
   "date": "2025-07-24",
   "code": "1419",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 4890.0,
+  "amount": 4906.5,
   "payment": "2025-08-22"
- },
- {
-  "date": "2025-07-24",
-  "code": "8927",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 319,
-  "new_shares": 319,
-  "locked_shares": 319,
-  "fractional_receivable": 0.0
- },
- {
-  "date": "2025-07-24",
-  "code": "1229",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 86,
-  "new_shares": 86,
-  "locked_shares": 86,
-  "fractional_receivable": 0.0
- },
- {
-  "date": "2025-07-24",
-  "code": "8404",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 21,
-  "new_shares": 21,
-  "locked_shares": 21,
-  "fractional_receivable": 0.0
- },
- {
-  "date": "2025-07-28",
-  "code": "6873",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 11,
-  "new_shares": 11,
-  "locked_shares": 11,
-  "fractional_receivable": 0.0
- },
- {
-  "date": "2025-07-30",
-  "code": "4205",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 22,
-  "new_shares": 22,
-  "locked_shares": 22,
-  "fractional_receivable": 0.0
- },
- {
-  "date": "2025-08-04",
-  "code": "6472",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 36,
-  "new_shares": 36,
-  "locked_shares": 36,
-  "fractional_receivable": 0.0
- },
- {
-  "date": "2025-08-05",
-  "code": "2834",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 67,
-  "new_shares": 67,
-  "locked_shares": 67,
-  "fractional_receivable": 0.0
  },
  {
   "date": "2025-08-19",
@@ -1858,247 +1615,233 @@
   "payment": "2025-09-22"
  },
  {
-  "date": "2025-09-17",
-  "code": "8349",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 148,
-  "new_shares": 148,
-  "locked_shares": 148,
-  "fractional_receivable": 0.0
- },
- {
-  "date": "2025-09-25",
-  "code": "2881",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 52,
-  "new_shares": 52,
-  "locked_shares": 52,
-  "fractional_receivable": 0.0
+  "date": "2025-08-27",
+  "code": "2884",
+  "kind": "STOCK_DELIVERY",
+  "shares": 59,
+  "ex_date": "2025-07-22",
+  "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20250101&endDate1=20251231&selectType=&stockNo=2884&response=json"
  },
  {
   "date": "2025-11-10",
   "code": "2515",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 12138,
-  "new_shares": 12748,
-  "locked_shares": 610,
-  "fractional_receivable": 9.366220000003125
+  "old_shares": 12243,
+  "new_shares": 12858,
+  "locked_shares": 615,
+  "fractional_receivable": 14.23617000000204
  },
  {
   "date": "2025-12-11",
   "code": "2330",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 1615.0036111400002,
+  "amount": 1630.0036446800002,
   "payment": "2026-01-08"
+ },
+ {
+  "date": "2025-12-31",
+  "code": "2515",
+  "kind": "STOCK_DELIVERY",
+  "shares": 615,
+  "ex_date": "2025-11-10",
+  "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20250101&endDate1=20251231&selectType=&stockNo=2515&response=json"
  },
  {
   "date": "2026-03-17",
   "code": "2330",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2094.01246977,
+  "amount": 2112.01257696,
   "payment": "2026-04-09"
  },
  {
   "date": "2026-03-20",
   "code": "2006",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 12186.199999999999,
+  "amount": 12285.1,
   "payment": "2026-04-24"
  },
  {
   "date": "2026-03-27",
   "code": "2344",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 2294.0,
+  "amount": 2312.5,
   "payment": "2026-05-04"
  },
  {
   "date": "2026-06-08",
   "code": "4958",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3442.2283389,
+  "amount": 3455.9151315,
   "payment": "2026-07-14"
  },
  {
   "date": "2026-06-11",
   "code": "3481",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 13202.0,
+  "amount": 13312.0,
   "payment": "2026-07-10"
  },
  {
   "date": "2026-06-12",
   "code": "2327",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3029.25548355,
+  "amount": 3053.24958639,
   "payment": "2026-07-03"
  },
  {
   "date": "2026-06-22",
   "code": "3026",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3491.6,
+  "amount": 3520.6,
   "payment": "2026-07-17"
  },
  {
   "date": "2026-06-25",
   "code": "6585",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 8140.5,
+  "amount": 8208.0,
   "payment": "2026-07-16"
  },
  {
   "date": "2026-07-01",
   "code": "2881",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 11836.25,
+  "amount": 11929.75,
   "payment": "2026-07-31"
- },
- {
-  "date": "2026-07-03",
-  "code": "5864",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 67,
-  "new_shares": 67,
-  "locked_shares": 67,
-  "fractional_receivable": 0.0
  },
  {
   "date": "2026-07-06",
   "code": "8476",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3094.2000000000003,
+  "amount": 3119.4,
   "payment": "2026-07-30"
  },
  {
   "date": "2026-07-07",
   "code": "2454",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 4238.53724517,
+  "amount": 4287.53767575,
   "payment": "2026-07-31"
  },
  {
   "date": "2026-07-08",
   "code": "1303",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 663.2,
+  "amount": 668.8000000000001,
   "payment": "2026-08-07"
- },
- {
-  "date": "2026-07-08",
-  "code": "1229",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 86,
-  "new_shares": 86,
-  "locked_shares": 86,
-  "fractional_receivable": 0.0
  },
  {
   "date": "2026-07-08",
   "code": "2303",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 15888.43932104,
+  "amount": 16008.411121559999,
   "payment": "2026-07-30"
  },
  {
   "date": "2026-07-09",
   "code": "2493",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 3608.0,
+  "amount": 3636.0,
   "payment": "2026-08-05"
  },
  {
   "date": "2026-07-09",
   "code": "3284",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 4182.0,
+  "amount": 4215.5,
   "payment": "2026-08-03"
  },
  {
   "date": "2026-07-09",
   "code": "6446",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 447.045705,
+  "amount": 450.02600970000003,
   "payment": "2026-08-06"
  },
  {
   "date": "2026-07-09",
   "code": "6446",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 300,
-  "new_shares": 332,
-  "locked_shares": 32,
-  "fractional_receivable": 1006.6067880099843
- },
- {
-  "date": "2026-07-16",
-  "code": "2515",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 610,
-  "new_shares": 610,
-  "locked_shares": 610,
-  "fractional_receivable": 0.0
+  "old_shares": 302,
+  "new_shares": 335,
+  "locked_shares": 33,
+  "fractional_receivable": 2.450833263381327
  },
  {
   "date": "2026-07-21",
   "code": "2887",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 6057.0,
+  "amount": 6111.0,
   "payment": "2026-08-19"
  },
  {
   "date": "2026-07-21",
   "code": "2887",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 6261,
-  "new_shares": 6321,
-  "locked_shares": 264,
-  "fractional_receivable": 19.779000000001982
+  "old_shares": 6111,
+  "new_shares": 6172,
+  "locked_shares": 61,
+  "fractional_receivable": 3.8170000000019533
  },
  {
   "date": "2026-07-24",
   "code": "1617",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 6379.8,
+  "amount": 6433.2,
   "payment": "2026-08-26"
  },
  {
-  "date": "2026-08-04",
-  "code": "2834",
-  "kind": "STOCK_DIVIDEND",
-  "old_shares": 67,
-  "new_shares": 67,
-  "locked_shares": 67,
-  "fractional_receivable": 0.0
+  "date": "2026-08-06",
+  "code": "6446",
+  "kind": "STOCK_DELIVERY",
+  "shares": 33,
+  "ex_date": "2026-07-09",
+  "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20260101&endDate1=20261231&selectType=&stockNo=6446&response=json"
  },
  {
   "date": "2026-08-10",
   "code": "2546",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 23251.2,
+  "amount": 23452.8,
   "payment": "2026-09-04"
  },
  {
   "date": "2026-08-10",
   "code": "2546",
   "kind": "STOCK_DIVIDEND",
-  "old_shares": 4844,
-  "new_shares": 5425,
-  "locked_shares": 581,
-  "fractional_receivable": 25.92800000005011
+  "old_shares": 4886,
+  "new_shares": 5472,
+  "locked_shares": 586,
+  "fractional_receivable": 29.63200000004674
+ },
+ {
+  "date": "2026-08-19",
+  "code": "2887",
+  "kind": "STOCK_DELIVERY",
+  "shares": 61,
+  "ex_date": "2026-07-21",
+  "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20260101&endDate1=20261231&selectType=&stockNo=2887&response=json"
  },
  {
   "date": "2026-08-20",
   "code": "2377",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 4569.6,
+  "amount": 4893.0,
   "payment": "2026-09-17"
  },
  {
   "date": "2026-08-28",
   "code": "1709",
   "kind": "CASH_ENTITLEMENT",
-  "amount": 15181.0,
+  "amount": 19629.0,
   "payment": "2026-10-01"
+ },
+ {
+  "date": "2026-09-16",
+  "code": "2546",
+  "kind": "STOCK_DELIVERY",
+  "shares": 586,
+  "ex_date": "2026-08-10",
+  "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20260101&endDate1=20261231&selectType=&stockNo=2546&response=json"
  }
 ]
