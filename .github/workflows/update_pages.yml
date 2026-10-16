@@ -123,6 +123,7 @@ jobs:
       - name: 網站上線後發送同一份 Telegram 訊號
         if: >
           env.V4_SKIP_DEPLOY != '1' && steps.recovery.outputs.mode != 'skip' && (github.event_name == 'schedule'
+          || github.event_name == 'push'
           || (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'full'))
         env:
           TG_TOKEN: ${{ secrets.TG_TOKEN }}

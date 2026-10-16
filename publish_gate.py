@@ -135,6 +135,20 @@ def _tg_alert(text):
         print("[gate] TG 警報發送失敗：", e)
 
 
+def documented_upper_trade_block(signal, validation):
+    """Only a verified, still-held trading block can explain excess exposure."""
+    declared = {str(c) for c in signal.get('exposure_cap_blocked_codes', [])}
+    held = {str(a.get('stock_code')) for a in signal.get('actions', []) if a.get('post_shares', 0) > 0}
+    if not declared or not held or not held.issubset(declared):
+        return False
+    for detail in (validation or {}).get('checks', {}).get('exposure_upper_bound', {}).get('detail', []):
+        if (detail.get('date') == signal.get('rebalance_date') and detail.get('justified') is True
+                and {str(c) for c in detail.get('blocked_codes', [])} == declared
+                and abs(float(detail.get('exposure', -1)) - float(signal.get('stock_exposure', 0))) <= .000050001):
+            return True
+    return False
+
+
 def evaluate(force=False, today=None, output_dir=None, notify=True):
     today = today or datetime.datetime.now(TW).date()
     output_dir = output_dir or os.path.join(HERE, "output")
@@ -226,7 +240,11 @@ def evaluate(force=False, today=None, output_dir=None, notify=True):
         if sig.get("signal_mode") == "PRE_CLOSE_PLAN" and sig.get("price_basis_date") != sigd:
             reasons.append("收盤調倉計畫的參考價格日與訊號基準日不一致")
         tw = sum(float(a.get("target_weight", 0) or 0) for a in acts)
-        if tw > WEIGHT_SUM_CAP:
+        blocked_cap = documented_upper_trade_block(sig, val)
+        exposure = sig.get('stock_exposure')
+        if exposure is not None and (not math.isfinite(float(exposure)) or (float(exposure) > .95 + 1e-10 and not blocked_cap)):
+            reasons.append('股票倉位超過95%上限，且沒有已驗證的成交限制')
+        if tw > WEIGHT_SUM_CAP and not blocked_cap:
             reasons.append(f"target_weight 合計 {tw:.4f} 超過 {WEIGHT_SUM_CAP}")
         if not sig.get("generated_at") or not sig.get("commit_sha"):
             reasons.append("canonical 缺 generated_at/commit_sha（版本資訊不完整，不發布）")
@@ -241,7 +259,7 @@ def evaluate(force=False, today=None, output_dir=None, notify=True):
         reg_hist = _load_json(REG_PATH)
         baseline = _load_json(BASE_PATH)
         rd = sig.get("rebalance_date")
-        reg_key = rd + "|PRE_CLOSE_PLAN" if rd and sig.get("signal_mode") == "PRE_CLOSE_PLAN" else rd
+        reg_key = (RELEASE_VERSION + '|' + rd + ('|PRE_CLOSE_PLAN' if sig.get('signal_mode') == 'PRE_CLOSE_PLAN' else '')) if rd else None
 
         # 全歷史基準：perf.json 的 cagr/mdd；漂移 >1.0pp → FAIL；0.1~1.0（資料演進）→ 自動更新；無檔 → 建立
         perf = _load_json(os.path.join(output_dir, "perf.json"))

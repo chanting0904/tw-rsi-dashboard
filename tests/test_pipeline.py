@@ -125,6 +125,27 @@ class PublishTests(unittest.TestCase):
         signal["actions"][0]["target_weight"] = float("nan")
         self.assertFalse(self.evaluate(signal)["ok"])
 
+    def test_unexplained_exposure_over95_is_rejected_even_with_small_weight_sum(self):
+        signal = self.signal()
+        signal['stock_exposure'] = .96
+        self.assertFalse(self.evaluate(signal)['ok'])
+
+    def test_declaring_blocked_codes_alone_cannot_bypass_exposure_cap(self):
+        signal = self.signal()
+        signal['stock_exposure'] = .97
+        signal['exposure_cap_blocked_codes'] = ['2330']
+        self.assertFalse(self.evaluate(signal)['ok'])
+
+    def test_verified_block_must_cover_all_held_positions_and_match_exposure(self):
+        signal = self.signal()
+        signal.update(stock_exposure=.97, exposure_cap_blocked_codes=['2330'])
+        signal['actions'][0]['post_shares'] = 970
+        validation = {'checks': {'exposure_upper_bound': {'detail': [{
+            'date': signal['rebalance_date'], 'justified': True, 'blocked_codes': ['2330'], 'exposure': .97}]}}}
+        self.assertTrue(gate.documented_upper_trade_block(signal, validation))
+        signal['actions'].append({'stock_code': '2409', 'post_shares': 1})
+        self.assertFalse(gate.documented_upper_trade_block(signal, validation))
+
     def test_changed_quantity_changes_notification_key(self):
         signal = self.signal()
         changed = copy.deepcopy(signal)

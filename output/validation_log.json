@@ -1,21 +1,20 @@
 {
  "strategy_version": "V4",
- "release_version": "V4.0.2",
- "generated_at": "2026-10-16T06:26:30.876826+08:00",
+ "release_version": "V4.0.3",
+ "generated_at": "2026-10-16T13:35:47.529814+08:00",
  "rebalance_date": "2026-10-16",
  "v4_consistency": true,
  "fixed_anchor": {
   "pass": true,
   "values": {
    "date": "2026-10-08",
-   "cagr": 0.429557418049612,
-   "mdd": -0.3254059584738598,
-   "release_version": "V4.0.2"
+   "cagr": 0.4273593906117785,
+   "mdd": -0.32259780375376146,
+   "release_version": "V4.0.3"
   }
  },
  "warning_checks": [
-  "limit_dn",
-  "exposure_band"
+  "limit_dn"
  ],
  "checks": {
   "duplicate": {
@@ -56,35 +55,23 @@
     ],
     [
      "2026-06-26",
-     3.7
+     4.4
     ],
     [
      "2026-07-03",
-     4.4
+     4.5
     ]
    ]
   },
   "exposure_band": {
-   "pass": 16,
-   "fail": 4,
-   "detail": [
-    [
-     "2026-06-26",
-     95.7
-    ],
-    [
-     "2026-07-17",
-     95.8
-    ],
-    [
-     "2026-08-21",
-     99.3
-    ],
-    [
-     "2026-08-28",
-     99.0
-    ]
-   ]
+   "pass": 20,
+   "fail": 0,
+   "detail": []
+  },
+  "exposure_upper_bound": {
+   "pass": 20,
+   "fail": 0,
+   "detail": []
   },
   "share_qty": {
    "pass": 20,

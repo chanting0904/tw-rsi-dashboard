@@ -9,6 +9,7 @@ test('different capitals conserve money and use whole shares', () => {
     assert.ok(result.cash >= 0);
     assert.ok(Object.values(result.quantities).every(Number.isInteger));
     assert.ok(Math.abs(result.cash + result.invested + result.fees - capital) < 1e-7);
+    assert.ok(result.exposure <= .95 + 1e-10);
   }
 });
 test('high price under one target share is reported', () => assert.ok(previewAllocation(targets, 100000).unaffordable.includes('3443')));
@@ -27,4 +28,14 @@ test('missing quotes get zero shares and a warning', () => {
   const result = previewAllocation([{code:'x', target_weight:.95, price:null}], 100000);
   assert.equal(result.quantities.x, 0);
   assert.deepEqual(result.missing, ['x']);
+});
+test('95 percent ceiling includes fees and survives rounded target weights', () => {
+  for (const capital of [100000,200000,1000000]) {
+    for (const weight of [.95,.95004,1]) {
+      const result = previewAllocation([{code:'x', target_weight:weight, price:1}],capital);
+      assert.ok(result.exposure <= .95 + 1e-10);
+      assert.ok(Math.abs(result.cash + result.invested + result.fees - capital) < 1e-7);
+      assert.equal(result.details[0].reason,'exposure_limit');
+    }
+  }
 });

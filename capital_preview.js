@@ -8,11 +8,16 @@ function previewAllocation(targets, capital, buyFee = .0004) {
   for (const row of targets) {
     const code = String(row.code), weight = Number(row.target_weight ?? 0), price = Number(row.price);
     if (Object.hasOwn(quantities, code) || !Number.isFinite(weight) || weight < 0) throw new Error('Invalid target list');
-    let qty = 0;
+    let qty = 0, capLimited = false;
     if (weight > 0) {
       if (!Number.isFinite(price) || price <= 0) missing.push(code);
       else {
-        qty = Math.max(0, Math.min(Math.floor(capital * weight / price), Math.floor(Math.max(0, cash) / (price * (1 + buyFee)))));
+        const targetQty = Math.floor(capital * weight / price);
+        const cashQty = Math.floor(Math.max(0, cash) / (price * (1 + buyFee)));
+        const headroom = Math.max(0, .95 * (cash + invested) - invested);
+        const capQty = Math.max(0, Math.floor(headroom / (price * (1 + .95 * buyFee))));
+        qty = Math.max(0, Math.min(targetQty, cashQty, capQty));
+        capLimited = qty < targetQty && capQty <= cashQty;
         if (!qty) unaffordable.push(code);
         const amount = qty * price, fee = amount * buyFee;
         cash -= amount + fee;
@@ -24,7 +29,7 @@ function previewAllocation(targets, capital, buyFee = .0004) {
     const targetAmount = capital * weight;
     const amount = qty && Number.isFinite(price) ? qty * price : 0;
     const reason = weight <= 0 ? null : (!Number.isFinite(price) || price <= 0) ? 'missing_price' :
-      targetAmount < price ? 'under_one_share' : qty < Math.floor(targetAmount / price) ? 'cash_limit' : 'rounding';
+      targetAmount < price ? 'under_one_share' : capLimited ? 'exposure_limit' : qty < Math.floor(targetAmount / price) ? 'cash_limit' : 'rounding';
     details.push({code, quantity:qty, target_amount:targetAmount, invested:amount,
                   shortfall:Math.max(0, targetAmount - amount), reason});
   }

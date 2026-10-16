@@ -51,6 +51,7 @@ def build_message(signal):
         lines.append("⚠️ " + escape(warning)[:1000])
     lines.extend(["\n收盤調倉；未成交部分於下週第一個交易日用市價單補調倉。",
                   "網頁與本訊息使用同一份策略結果。請在網頁輸入資金，查看試算股數。",
+                  "若同週收到修正版，請以版本較新、與網頁一致的計畫為準。",
                   "系統持倉為策略模擬；實際下單請對照券商持股。",
                   "https://chanting0904.github.io/tw-rsi-dashboard/"])
     return "\n".join(lines)

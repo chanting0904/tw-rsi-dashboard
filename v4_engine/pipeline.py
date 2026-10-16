@@ -61,7 +61,7 @@ def publish(ctx, output_dir, root, *, end=None, report_only=False):
     validation = {'strategy_version': STRATEGY_VERSION, 'release_version': RELEASE_VERSION, 'generated_at': datetime.datetime.now(ZoneInfo('Asia/Taipei')).isoformat(),
                   'rebalance_date': latest['date'].strftime('%Y-%m-%d'), 'v4_consistency': anchor_ok,
                   'fixed_anchor': {'pass': anchor_ok, 'values': anchor}, 'warning_checks': warnings,
-                  'checks': {key: {**value, 'detail': value['detail'][:5]} for key, value in checks.items()},
+                  'checks': {key: {**value, 'detail': value['detail'][-5:] if key == 'exposure_upper_bound' else value['detail'][:5]} for key, value in checks.items()},
                   'verdict': 'PASS' if valid else 'FAIL'}
     write_json(output_dir / 'validation_log.json', validation)
     if not valid:
