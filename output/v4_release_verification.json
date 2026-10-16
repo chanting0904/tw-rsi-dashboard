@@ -1,116 +1,125 @@
 {
- "release_version": "V4.0.3",
+ "release_version": "V4.1.0",
  "date": "2026-10-16",
+ "config": {
+  "start_capital": 100000,
+  "start_date": "2015-01-01",
+  "buy_fee": 0.0004,
+  "sell_fee": 0.003,
+  "limit": 0.099,
+  "threshold": 1.0,
+  "buffer": 0.05,
+  "exposure_min": 0.9,
+  "exposure_max": 0.95,
+  "exposure_aim": 0.925,
+  "max_hold_a": 15,
+  "max_hold_b": 4,
+  "a_rank_days": 3,
+  "a_retention_rank": 20,
+  "weight_a": 0.6,
+  "weight_b": 0.4,
+  "cap_threshold": 600000.0,
+  "dynamic_a": true
+ },
  "research_period": {
   "start": "2015-01-05",
   "end": "2026-10-08",
   "rebalance_count": 606,
-  "max_post_exposure": 0.9499998316453947,
-  "unexplained_upper_violations": 0,
+  "max_post_exposure": 0.9499998986180558,
   "cash_overdraft_days": 0,
-  "research_fix_relative_nav_difference": 3.0161065710521265e-16,
-  "cagr": 0.42460098853436556,
-  "daily_mdd": -0.3500112262643289
+  "approved_candidate_relative_nav_difference": 2.860857750004749e-16,
+  "cagr": 0.45590750569352756,
+  "daily_mdd": -0.3315767913814488,
+  "trade_count": 8321
  },
  "production_anchor": {
   "date": "2026-10-08",
   "strategy_version": "V4",
-  "release_version": "V4.0.3",
+  "release_version": "V4.1.0",
   "parameters": {
    "threshold": 1.0,
    "buy_fee": 0.0004,
    "sell_fee": 0.003
   },
-  "cagr": 0.4273593906117785,
-  "mdd": -0.32259780375376146,
-  "final_nav": 6589622.639789339
+  "selection_rules": {
+   "a_rank_days": 3,
+   "a_entry_rank": 15,
+   "a_retention_rank": 20,
+   "b_max_names": 4
+  },
+  "cagr": 0.45768880243066046,
+  "mdd": -0.2855322567037789,
+  "final_nav": 8439918.727092098
  },
  "current_plan": {
   "rebalance_date": "2026-10-16",
   "price_basis_date": "2026-10-15",
   "stock_exposure": 0.95,
-  "cash": 307655.0,
+  "cash": 397022.0,
   "counts": {
-   "BUY": 11,
-   "SELL": 8,
+   "BUY": 9,
+   "SELL": 7,
    "REBALANCE_BUY": 0,
-   "REBALANCE_SELL": 1,
-   "HOLD": 7
+   "REBALANCE_SELL": 6,
+   "HOLD": 5
   },
-  "fingerprint": "7063574ff7b1d2da"
+  "fingerprint": "b21002867e0d8325"
  },
  "publication_gate": {
   "ok": true,
   "reason": "PASS",
   "rebalance_date": "2026-10-16",
-  "canonical_hash": "7063574ff7b1d2da",
+  "canonical_hash": "b21002867e0d8325",
   "expected_rebalance_date": "2026-10-16",
   "forced": false,
   "regression_baseline": "已固化"
  },
- "rules_unchanged": {
-  "RSI": 75,
-  "confirmation_days": 3,
-  "A_names": 15,
-  "B_names": 4,
-  "A_B_budget": [
-   0.6,
-   0.4
-  ],
-  "A_coefficients": [
-   1.5,
-   1.0,
-   0.5
-  ],
-  "drift_threshold": 1.0
- },
- "blocking_policy": "missing quote or limit-down may prevent forced sales; publish only independently verified restriction warnings",
- "generated_at": "2026-10-16T13:35:47.973976+08:00",
- "code_commit": "b64845cef8068fc7c3a6f8e21f3e1aac014ab790",
+ "previous_release": "V4.0.3",
+ "archived_previous_outputs": "output\\archive\\v4_0_3_before_v4_1_0",
+ "selection_bias": "This history was used for comparison; neither release is certified free from historical overfitting.",
+ "generated_at": "2026-10-16T20:19:38.460455+08:00",
+ "code_commit": "be1ced81df0fda304b00a4ffd587b775c367a91e",
  "removed_stale_history": [],
  "source_hashes": {
-  ".github/workflows/update_pages.yml": "1504ab14e044a0d6c60980dfae30befba25ea5dab73e467289e782f1a789bd2a",
-  "VERSION_HISTORY.txt": "4519ff8f4c5eecc6bea33cb91479f95078a17c16324b4332d7702d9252146594",
-  "v4_engine/execution.py": "68022a3358e57718a584baabb2f27c2afb93a988c0ec090db79e0edd8ffe62d0",
-  "v4_engine/validation.py": "ddf9127fd69bd02b16487bb0465877c09af554dfe50664051e20bb6325ed15f0",
-  "v4_engine/canonical.py": "8a188ebe05182b509968bfadcb674a0eedac85ff0838ef51ce61fa16440f2db1",
-  "v4_engine/pipeline.py": "925a5e0d021f59a5bf29b32a289dba69261085b122caf01d6a597df1cc589a8f",
-  "v4_engine/allocation.py": "bc6bebeb7ba71190f08c48b666c9bc5922f5f63cc3a03bbfeda12bcd5be7fca4",
-  "publish_gate.py": "c17bf1807f16c9e763a7c4f7a08240d92eb0fa52c82a5c9bdd49ebc23286720e",
-  "tg_push_v4.py": "36ba6c9c6088e4432db4fb69aab9277a61dadf3eed0f83e8c104204d6fc5c43a",
-  "capital_preview.js": "aee303b49c2bac538205e33c5f784321232c48703858d829cf611ceca55fe5d0",
-  "update_data.py": "96c05e201622ec14c536d3edbbbe95be02e0b432c41fb7e801185cba8588a101",
-  "tests/test_accounting.py": "5982c7c5c3ee33f233021085275413ba208377ef3c675b94345bdbd8b36aa439",
-  "tests/test_pipeline.py": "a2dbf6f77f9afa4bf8b0266bbdfdff51e6e7e07c12a68fa1e26675e173773ab2",
-  "tests/test_capital_preview.cjs": "24d787a4309f23e3fe3c6e05fc4ac948ef88f88d323d5a0ce4e49ecec452cec6",
-  "v4_baseline.json": "3a31d9f428dd50aa962e9aa2218b8c912a4f6cb8043e74a871fb701dc8ca0854"
+  "VERSION_HISTORY.txt": "22a1a1a7727d69872880943e1be05f64177ceead0e3f47247658bbfce1899d34",
+  "README.md": "92cba15b4cedcb1c8bc00701f8ae3483319f5d8ddf91f8d4410596ed17a63570",
+  "v4_engine/config.py": "980f6998b9790d8ec4bd96d7113f4cc6ea3963604cfe1933eedebe0a7744a17a",
+  "v4_engine/context.py": "be80394d7376dcfc3c1a38c7630073729a1ae5cc52257376a2a635563ecfd11d",
+  "v4_engine/market.py": "35b271a0fb6d1ab2b29c88fc5d8d6ff4ef761522749a45558ac3591aff8a82fe",
+  "v4_engine/selection.py": "52b37ca695c843f42d254fb71ca3acc409b6ea7bf3e1a46fc347382d9b760007",
+  "v4_engine/canonical.py": "57d644af137f35c269393fd98be76031808f0fd262f0937734739d40dbe3e6f1",
+  "v4_engine/pipeline.py": "fff4b268084b234458253a7902ddb2b2530792d6e8dee21398c7a6d37cc3eada",
+  "tg_push_v4.py": "d24be482f4ffd6f05cd8c12209346e48d1bd05d977b04529f54b5cfbfb8faed2",
+  "update_data.py": "12562ed87f4ac1eb8189377c6c863fb531f6407f0157b7153df7ddcc223722d4",
+  "tests/test_selection.py": "49bc4343615e289f6441b5d84ffa89a79c93377207aa1464d945f01c5df47683",
+  "v4_baseline.json": "376b9b92b1f52489d52f09581d3cf00b4843317887331d86f8d49c8f9bc299cb"
  },
  "actual_capital_previews": {
   "100000": {
-   "cash": 9624.51425999999,
-   "invested": 90339.35,
-   "fees": 36.13574,
-   "exposure": 0.9037200659333535
+   "cash": 9986.458979999996,
+   "invested": 89977.55,
+   "fees": 35.99102,
+   "exposure": 0.9000994549748599
   },
   "200000": {
-   "cash": 18426.199519999984,
-   "invested": 181501.2,
-   "fees": 72.60048,
-   "exposure": 0.9078355464821783
+   "cash": 18086.51370000004,
+   "invested": 181840.75,
+   "fees": 72.73630000000001,
+   "exposure": 0.9095345308824929
   },
   "1000000": {
-   "cash": 58458.58401999979,
-   "invested": 941164.9500000001,
-   "fees": 376.46598000000006,
-   "exposure": 0.9415194000236191
+   "cash": 57610.89508000016,
+   "invested": 942012.2999999999,
+   "fees": 376.80492,
+   "exposure": 0.9423673886684977
   }
  },
  "offline_checks": {
-  "python_tests": 60,
+  "python_tests": 68,
   "javascript_tests": 19,
   "pass": true,
   "web_canonical_fingerprint_match": true,
   "python_javascript_preview_match": true
  },
- "rendered_html_sha256": "1324c4f6b0982126997c4ab1d465947ff6aa44a2e7558c65bd5349b3cc7b7a11"
+ "rendered_html_sha256": "ce4739f292a05dc6ef5cd251ebf9fec68218cd61ade5d47798672c705254aee3"
 }
