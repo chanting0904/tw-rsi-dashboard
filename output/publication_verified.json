@@ -1,11 +1,11 @@
 {
-  "release_version": "V4.3.1",
-  "canonical_hash": "f5d9982e34ab3f35",
+  "release_version": "V4.3.2",
+  "canonical_hash": "8e92dd9daa75ce01",
   "rebal_date": "2026-10-16",
   "sig_date": "2026-10-15",
   "price_basis_date": "2026-10-16",
   "sig_validated": true,
-  "html_sha256": "8ab8c115abc0086b09fcd549498f00220f5870e1a77fb4bfad90fda61f13f38e",
-  "verified_at": "2026-10-16T23:17:44.143529+00:00",
+  "html_sha256": "541e611f38862082910bfc2c1012639c24db1a008392e246bf24b74f896fd955",
+  "verified_at": "2026-10-16T23:35:34.808446+00:00",
   "url": "https://chanting0904.github.io/tw-rsi-dashboard/"
 }
