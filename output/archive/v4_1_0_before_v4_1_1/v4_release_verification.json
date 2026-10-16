@@ -1,0 +1,125 @@
+{
+ "release_version": "V4.1.0",
+ "date": "2026-10-16",
+ "config": {
+  "start_capital": 100000,
+  "start_date": "2015-01-01",
+  "buy_fee": 0.0004,
+  "sell_fee": 0.003,
+  "limit": 0.099,
+  "threshold": 1.0,
+  "buffer": 0.05,
+  "exposure_min": 0.9,
+  "exposure_max": 0.95,
+  "exposure_aim": 0.925,
+  "max_hold_a": 15,
+  "max_hold_b": 4,
+  "a_rank_days": 3,
+  "a_retention_rank": 20,
+  "weight_a": 0.6,
+  "weight_b": 0.4,
+  "cap_threshold": 600000.0,
+  "dynamic_a": true
+ },
+ "research_period": {
+  "start": "2015-01-05",
+  "end": "2026-10-08",
+  "rebalance_count": 606,
+  "max_post_exposure": 0.9499998986180558,
+  "cash_overdraft_days": 0,
+  "approved_candidate_relative_nav_difference": 2.860857750004749e-16,
+  "cagr": 0.45590750569352756,
+  "daily_mdd": -0.3315767913814488,
+  "trade_count": 8321
+ },
+ "production_anchor": {
+  "date": "2026-10-08",
+  "strategy_version": "V4",
+  "release_version": "V4.1.0",
+  "parameters": {
+   "threshold": 1.0,
+   "buy_fee": 0.0004,
+   "sell_fee": 0.003
+  },
+  "selection_rules": {
+   "a_rank_days": 3,
+   "a_entry_rank": 15,
+   "a_retention_rank": 20,
+   "b_max_names": 4
+  },
+  "cagr": 0.45768880243066046,
+  "mdd": -0.2855322567037789,
+  "final_nav": 8439918.727092098
+ },
+ "current_plan": {
+  "rebalance_date": "2026-10-16",
+  "price_basis_date": "2026-10-15",
+  "stock_exposure": 0.95,
+  "cash": 397022.0,
+  "counts": {
+   "BUY": 9,
+   "SELL": 7,
+   "REBALANCE_BUY": 0,
+   "REBALANCE_SELL": 6,
+   "HOLD": 5
+  },
+  "fingerprint": "b21002867e0d8325"
+ },
+ "publication_gate": {
+  "ok": true,
+  "reason": "PASS",
+  "rebalance_date": "2026-10-16",
+  "canonical_hash": "b21002867e0d8325",
+  "expected_rebalance_date": "2026-10-16",
+  "forced": false,
+  "regression_baseline": "已固化"
+ },
+ "previous_release": "V4.0.3",
+ "archived_previous_outputs": "output\\archive\\v4_0_3_before_v4_1_0",
+ "selection_bias": "This history was used for comparison; neither release is certified free from historical overfitting.",
+ "generated_at": "2026-10-16T20:19:38.460455+08:00",
+ "code_commit": "be1ced81df0fda304b00a4ffd587b775c367a91e",
+ "removed_stale_history": [],
+ "source_hashes": {
+  "VERSION_HISTORY.txt": "22a1a1a7727d69872880943e1be05f64177ceead0e3f47247658bbfce1899d34",
+  "README.md": "92cba15b4cedcb1c8bc00701f8ae3483319f5d8ddf91f8d4410596ed17a63570",
+  "v4_engine/config.py": "980f6998b9790d8ec4bd96d7113f4cc6ea3963604cfe1933eedebe0a7744a17a",
+  "v4_engine/context.py": "be80394d7376dcfc3c1a38c7630073729a1ae5cc52257376a2a635563ecfd11d",
+  "v4_engine/market.py": "35b271a0fb6d1ab2b29c88fc5d8d6ff4ef761522749a45558ac3591aff8a82fe",
+  "v4_engine/selection.py": "52b37ca695c843f42d254fb71ca3acc409b6ea7bf3e1a46fc347382d9b760007",
+  "v4_engine/canonical.py": "57d644af137f35c269393fd98be76031808f0fd262f0937734739d40dbe3e6f1",
+  "v4_engine/pipeline.py": "fff4b268084b234458253a7902ddb2b2530792d6e8dee21398c7a6d37cc3eada",
+  "tg_push_v4.py": "d24be482f4ffd6f05cd8c12209346e48d1bd05d977b04529f54b5cfbfb8faed2",
+  "update_data.py": "12562ed87f4ac1eb8189377c6c863fb531f6407f0157b7153df7ddcc223722d4",
+  "tests/test_selection.py": "49bc4343615e289f6441b5d84ffa89a79c93377207aa1464d945f01c5df47683",
+  "v4_baseline.json": "376b9b92b1f52489d52f09581d3cf00b4843317887331d86f8d49c8f9bc299cb"
+ },
+ "actual_capital_previews": {
+  "100000": {
+   "cash": 9986.458979999996,
+   "invested": 89977.55,
+   "fees": 35.99102,
+   "exposure": 0.9000994549748599
+  },
+  "200000": {
+   "cash": 18086.51370000004,
+   "invested": 181840.75,
+   "fees": 72.73630000000001,
+   "exposure": 0.9095345308824929
+  },
+  "1000000": {
+   "cash": 57610.89508000016,
+   "invested": 942012.2999999999,
+   "fees": 376.80492,
+   "exposure": 0.9423673886684977
+  }
+ },
+ "offline_checks": {
+  "python_tests": 68,
+  "javascript_tests": 19,
+  "pass": true,
+  "web_canonical_fingerprint_match": true,
+  "python_javascript_preview_match": true
+ },
+ "rendered_html_sha256": "ce4739f292a05dc6ef5cd251ebf9fec68218cd61ade5d47798672c705254aee3"
+}
