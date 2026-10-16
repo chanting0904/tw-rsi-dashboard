@@ -46,8 +46,10 @@
     "parts": [
       {
         "sha256": "741fb85b7c6bcaa845e70a28755fa52427da176a5f45892dea59239766656de1",
-        "status": "sending",
-        "started_at": "2026-10-16T05:45:13.368582+00:00"
+        "status": "confirmed",
+        "started_at": "2026-10-16T05:45:13.368582+00:00",
+        "message_id": 294,
+        "confirmed_at": "2026-10-16T05:45:14.960467+00:00"
       }
     ]
   },
