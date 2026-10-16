@@ -100,9 +100,10 @@ def perf_document(result, config, anchor=None):
             'start_capital': config.start_capital, 'strategy_version': STRATEGY_VERSION, 'release_version': RELEASE_VERSION,
             'buy_fee': config.buy_fee, 'sell_fee': config.sell_fee,
             'completed_through': nav.index[-1].strftime('%Y-%m-%d'),
+            'nav_frequency': 'daily', 'delisted_valuation': config.delisted_valuation,
             'fixed_anchor': anchor,
             'nav': [[day.strftime('%Y-%m-%d'), round(float(value), 0)] for day, value in series.items()],
-            'dd': [[day.strftime('%Y-%m-%d'), round(float(value), 2)] for day, value in ((series / series.cummax() - 1) * 100).items()],
+            'dd': [[day.strftime('%Y-%m-%d'), round(float(value), 2)] for day, value in ((series / series.cummax().clip(lower=config.start_capital) - 1) * 100).items()],
             'yearly': [{**item, 'ret': round(item['ret'], 2), 'mdd': round(item['mdd'], 2)} for item in annual],
             'accounting_version': 'v4_cash_entitlements_and_share_actions', 'dividend_policy': 'receivable_on_ex_date_cash_on_payment_date', 'stock_grant_policy': 'ex_date_integer_shares_fractional_rights_locked_receivable', 'rebalance_threshold': config.threshold}
 
@@ -114,12 +115,12 @@ def summarize_simulation(nav_hist, trades, close, config, weekday, mode, coefs, 
     final = float(nav_df["nav"].iloc[-1])
     years = (nav_df.index[-1] - nav_df.index[0]).days / 365.25
     cagr = (final / config.start_capital) ** (1 / years) - 1 if years > 0 else 0.0
-    peak = nav_df["nav"].cummax()
+    peak = nav_df["nav"].cummax().clip(lower=config.start_capital)
     mdd = float(((nav_df["nav"] - peak) / peak).min())
     rets = nav_df["nav"].pct_change().dropna()
-    sharpe = float(rets.mean() / rets.std() * np.sqrt(52)) if rets.std() > 0 else 0
+    sharpe = float(rets.mean() / rets.std() * np.sqrt(252)) if rets.std() > 0 else 0
     dn = rets[rets < 0]
-    sortino = float(rets.mean() / dn.std() * np.sqrt(52)) if len(dn) and dn.std() > 0 else 0
+    sortino = float(rets.mean() / dn.std() * np.sqrt(252)) if len(dn) and dn.std() > 0 else 0
     calmar = cagr / abs(mdd) if mdd != 0 else 0
 
     # 週期配對（PF / 勝率 / AvgWin / AvgLoss / 最大連虧 / Rank / MFE / MAE）

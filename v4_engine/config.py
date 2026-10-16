@@ -22,6 +22,7 @@ class StrategyConfig:
     weight_b: float = .40
     cap_threshold: float = 6e5
     dynamic_a: bool = True
+    delisted_valuation: str = 'zero'
 
     def __post_init__(self):
         if not math.isfinite(self.start_capital) or self.start_capital <= 0:
@@ -32,6 +33,8 @@ class StrategyConfig:
             raise ValueError('A ranking window must be a positive integer')
         if not isinstance(self.a_retention_rank, int) or self.a_retention_rank < self.max_hold_a:
             raise ValueError('A retention rank must cover the entry rank limit')
+        if self.delisted_valuation not in ('zero', 'last_quote'):
+            raise ValueError('Unknown delisted asset valuation policy')
 
 
 V4_COEFFICIENTS = (1.5, 1.0, .5)

@@ -32,8 +32,9 @@ def fixed_anchor(result, config):
         return None, False
     years = (nav.index[-1] - nav.index[0]).days / 365.25
     cagr = (float(nav.iloc[-1]) / config.start_capital) ** (1 / years) - 1 if years > 0 else 0
-    mdd = float((nav / nav.cummax() - 1).min())
-    parameters = {'threshold': config.threshold, 'buy_fee': config.buy_fee, 'sell_fee': config.sell_fee}
+    mdd = float((nav / nav.cummax().clip(lower=config.start_capital) - 1).min())
+    parameters = {'threshold': config.threshold, 'buy_fee': config.buy_fee, 'sell_fee': config.sell_fee,
+                  'delisted_valuation': config.delisted_valuation, 'nav_frequency': 'daily'}
     selection_rules = {'a_rank_days': config.a_rank_days, 'a_entry_rank': config.max_hold_a,
                        'a_retention_rank': config.a_retention_rank, 'b_max_names': config.max_hold_b}
     ok = (result['nav'].index[-1] >= anchor_day and parameters == expected['parameters']
