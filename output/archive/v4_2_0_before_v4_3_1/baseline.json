@@ -1,0 +1,13 @@
+{
+ "cagr": 43.613960831035506,
+ "mdd": -34.08843706667586,
+ "anchor_date": "2026-10-08",
+ "release_version": "V4.2.0",
+ "selection_rules": {
+  "a_rank_days": 3,
+  "a_entry_rank": 15,
+  "a_retention_rank": 20,
+  "b_max_names": 4
+ },
+ "migration_reason": "User conditionally approved V4.2.0 after same-repair comparison with V4.0.3"
+}

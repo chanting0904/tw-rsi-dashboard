@@ -1,132 +1,147 @@
 {
- "release_version": "V4.2.0",
- "previous_release": "V4.1.1",
- "date": "2026-10-17",
- "authorization": "User authorized deployment after V4.0.3 same-repair CAGR and MDD both worse",
- "config": {
-  "start_capital": 100000,
-  "start_date": "2015-01-01",
-  "buy_fee": 0.0004,
-  "sell_fee": 0.003,
-  "limit": 0.099,
-  "threshold": 1.0,
-  "buffer": 0.05,
-  "exposure_min": 0.9,
-  "exposure_max": 0.95,
-  "exposure_aim": 0.925,
-  "max_hold_a": 15,
-  "max_hold_b": 4,
-  "a_rank_days": 3,
-  "a_retention_rank": 20,
-  "weight_a": 0.6,
-  "weight_b": 0.4,
-  "cap_threshold": 600000.0,
-  "dynamic_a": true,
-  "delisted_valuation": "zero"
- },
- "production_anchor": {
-  "date": "2026-10-08",
-  "strategy_version": "V4",
-  "release_version": "V4.2.0",
-  "parameters": {
-   "threshold": 1.0,
-   "buy_fee": 0.0004,
-   "sell_fee": 0.003,
-   "delisted_valuation": "zero",
-   "nav_frequency": "daily"
-  },
-  "selection_rules": {
-   "a_rank_days": 3,
-   "a_entry_rank": 15,
-   "a_retention_rank": 20,
-   "b_max_names": 4
-  },
-  "cagr": 0.43613960831035503,
-  "mdd": -0.3408843706667586,
-  "final_nav": 7047839.608143281
- },
- "research_period": {
-  "cagr": 0.4316135575668789,
-  "daily_mdd": -0.3408843706667586,
-  "final_nav": 6844674.173273281,
-  "rebalance_count": 607,
-  "cash_overdraft_days": 0,
-  "unexplained_upper_violations": 0,
-  "unexplained_under90_weeks": 0,
-  "research_native_nav_max_relative_difference": 4.987945592009067e-16
- },
+ "release_version": "V4.3.1",
+ "previous_release": "V4.2.0",
+ "code_commit": "04e974d648875850a95ee4dad1e1daa752017f85",
+ "authorized_to_deploy": true,
  "current_plan": {
   "rebalance_date": "2026-10-16",
+  "sig_date": "2026-10-15",
   "price_basis_date": "2026-10-16",
+  "signal_mode": "CLOSE_SIMULATION",
   "stock_exposure": 0.95,
-  "fingerprint": "3f6d68b61e1cac2f",
+  "fingerprint": "f5d9982e34ab3f35",
   "counts": {
    "BUY": 9,
    "SELL": 7,
    "REBALANCE_BUY": 0,
    "REBALANCE_SELL": 7,
    "HOLD": 3
-  },
-  "signal_mode": "CLOSE_SIMULATION"
+  }
  },
  "publication_gate": {
   "ok": true,
   "reason": "PASS",
   "rebalance_date": "2026-10-16",
-  "canonical_hash": "3f6d68b61e1cac2f",
+  "canonical_hash": "f5d9982e34ab3f35",
   "expected_rebalance_date": "2026-10-16",
   "forced": false,
   "regression_baseline": "已固化"
  },
- "actual_capital_previews": {
+ "offline_checks": {
+  "python_tests": 124,
+  "javascript_tests": 21,
+  "preview_cases": 2500
+ },
+ "native_cash_and_shares": {
+  "passed": true,
+  "live_root_unchanged": true,
+  "capitals": [
+   {
+    "capital": 100000,
+    "fills": 10188,
+    "orders": 9554,
+    "max_cash_error": 2.459273673593998e-09,
+    "locked_sold": 0,
+    "minimum_daily_cash": 3944.4313777391326,
+    "over95": 0,
+    "negative_cash_days": 0,
+    "pending_count": 23
+   },
+   {
+    "capital": 200000,
+    "fills": 10224,
+    "orders": 9587,
+    "max_cash_error": 7.450580596923828e-09,
+    "locked_sold": 0,
+    "minimum_daily_cash": 7954.686528019134,
+    "over95": 0,
+    "negative_cash_days": 0,
+    "pending_count": 23
+   },
+   {
+    "capital": 1000000,
+    "fills": 10249,
+    "orders": 9626,
+    "max_cash_error": 1.6298145055770874e-08,
+    "locked_sold": 0,
+    "minimum_daily_cash": 39928.245889638,
+    "over95": 0,
+    "negative_cash_days": 0,
+    "pending_count": 23
+   }
+  ]
+ },
+ "fresh_completed": {
+  "kind": "completed",
+  "failures": [],
+  "warnings": [
+   "limit_dn",
+   "exposure_band"
+  ],
+  "cagr": 0.420339675491038,
+  "mdd": -0.34267252405751525,
+  "weeks": 607,
+  "latest_exposure": 0.9499990024698757,
+  "signal_mode": "CLOSE_SIMULATION",
+  "sig_date": "2026-10-15",
+  "rebalance_date": "2026-10-16",
+  "projections": {},
+  "unknown_live_actions": [],
+  "pending_count": 23,
+  "sources": 19,
+  "below90": [
+   "2015-08-21",
+   "2015-08-28"
+  ],
+  "over95": []
+ },
+ "fresh_live": {
+  "kind": "live",
+  "failures": [],
+  "warnings": [
+   "limit_dn",
+   "exposure_band"
+  ],
+  "cagr": 0.4194688830189506,
+  "mdd": -0.34267252405751525,
+  "weeks": 607,
+  "latest_exposure": 0.9499993200316408,
+  "signal_mode": "PRE_CLOSE_PLAN",
+  "sig_date": "2026-10-15",
+  "rebalance_date": "2026-10-16",
+  "projections": {},
+  "unknown_live_actions": [],
+  "pending_count": 23,
+  "sources": 19,
+  "below90": [
+   "2015-08-21",
+   "2015-08-28"
+  ],
+  "over95": []
+ },
+ "capital_previews": {
   "100000": {
-   "invested": 91238.85,
-   "cash": 8724.654459999994,
-   "fees": 36.495540000000005,
-   "exposure": 0.912721602677594
+   "cash": 8724.33222885001,
+   "invested": 91238.84999999999,
+   "fees": 36.817771150000006,
+   "exposure": 0.9127245448341469
   },
   "200000": {
-   "invested": 183027.0,
-   "cash": 16899.7892,
-   "fees": 73.2108,
-   "exposure": 0.9154701114961936
+   "cash": 16899.972227000027,
+   "invested": 183026.99999999997,
+   "fees": 73.02777300000001,
+   "exposure": 0.9154692734114357
   },
   "1000000": {
-   "invested": 942735.2,
-   "cash": 56887.705920000044,
-   "fees": 377.09408,
-   "exposure": 0.9430908339703924
+   "cash": 56761.59798219993,
+   "invested": 942862.2000000001,
+   "fees": 376.2020178000001,
+   "exposure": 0.9432170401537292
   }
  },
- "6505_shares_at_100k": 12,
- "offline_checks": {
-  "python_tests": 86,
-  "javascript_tests": 19,
-  "python_javascript_preview_cases": 2321
- },
- "archived_previous_outputs": "output/archive/v4_1_1_before_v4_2_0",
- "generated_at": "2026-10-17T06:17:15.144680+08:00",
- "code_commit": "55d8d9dac3f796c67f6755467c5f68d07fa9c58a",
- "rendered_html_sha256": "5c92469d9b19807469aed0d29b939e5239accddbe7b0a4980c1c98541cd953fd",
- "source_hashes": {
-  "README.md": "11bcdd7860fadb85c9972fe45cbc0df75f517e7e5e6cf8c8fec5d6b237ebddde",
-  "VERSION_HISTORY.txt": "617078bdba91f65fe6bf3d0abd873ef31be31d0c564bc9061800eef139ff2fa8",
-  "capital_preview.js": "4ff480df2966bfe9762aee2b0128dd7cc38e02b0491dfdc65170ad0383379040",
-  "update_data.py": "d8fce96dfc45cda02bd586daf229f13e495bc9c970c482b551a666fd6ce9b02c",
-  "tg_push_v4.py": "fad1650aa00422ebfa770bada77e51b6b1840e06b216a93f38fdd15d88eb1d7b",
-  "v4_baseline.json": "b37b2fd61cc7630141d689ec3c42d6c96406da1bfae3bcdf8aa49b47d00113d0",
-  "v4_engine/allocation.py": "f483698f1bf0cfff71667e26b1b635ad881db6a26981905c7300a25ed52b4c09",
-  "v4_engine/canonical.py": "8967c832bf702044463021c8c30f262c02ad770edbea6b0e3d3c18cc2eff3500",
-  "v4_engine/config.py": "7867514d8f03daa93bc21e9ee1fce6d2db39a8aa2ad720331affea66c0d80797",
-  "v4_engine/execution.py": "fa0463b5c93e77424df02c95b0d43edc7e059104933f4cf6ec48ab6f1232cc05",
-  "v4_engine/performance.py": "2acbdfd27524645f5cf441ebf4c53310a19d7886884f2223762bbc634c4b6e4d",
-  "v4_engine/pipeline.py": "f097f42a2fe19a186fc7b3012cddf39356a24c674ae6ad3c4d7a733f70fc5a86",
-  "v4_engine/simulation.py": "402b9f50f10fd75ee1449164534cebef2aceaaba78c28043dd38ce56b660dc80",
-  "v4_engine/sizing.py": "e02d674641698d8fcc314969206f09f5b8ea659421013cd6d5d6bc7b10df579b",
-  "v4_engine/valuation.py": "4e4e4998cbd306de0c9372560d601c525a33433a026533a4bd675e4f0e0cc9b7",
-  "tests/test_allocation_repair.py": "a9de4aa02204d916b4d3096a390e3139475551288530cae96360ff0011957a5c",
-  "tests/test_release_delivery.py": "33ffbcceeb87a7b2a1210aaf214212efda448c668fcf85be6f2b5815433dff1f",
-  "research_notes/v4_2_0_comparison.md": "091d26ab13f9cdb83e0aa1bcf9dc9f9452726beb8d1ee03cdef3f6da045de253",
-  "research_notes/v4_2_0_comparison.json": "52be2d075fdf2372469e7968d9df4b77333fd8f689f73240dbd83be8c9782870"
- }
+ "historical_delivery_dates_complete": false,
+ "unknown_stock_deliveries": 23,
+ "limitations": "Historical stock-delivery dates remain unverified; pending rights are conservatively locked. Not a full live-account reconstruction.",
+ "html_sha256": "aaccdaa076dda1a80c7d3922bba4c63ba7e7578ca7876a42157a498b62637886",
+ "telegram_chunks": 1
 }
