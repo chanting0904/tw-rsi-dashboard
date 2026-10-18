@@ -18,3 +18,10 @@ test('available storage still saves and resets capital',()=>{
  let value=null;const scope={...elements(),localStorage:{getItem:()=>value,setItem:(k,v)=>value=v,removeItem:()=>value=null}};
  vm.runInNewContext(functionSource('capitalStorage')+";capitalStorage('setItem','150000');",scope);assert.equal(value,'150000');vm.runInNewContext("capitalStorage('removeItem');",scope);assert.equal(value,null);
 });
+
+test('actual holdings budget cannot fall back to a different target when the primary plan is invalid',()=>{
+ const line=source.split('\n').find(line=>line.startsWith('ORDER_PLANNER_UI=initOrderPlanner('));assert.ok(line);
+ let captured;const scope={initOrderPlanner:options=>(captured=options),DATA:{},M:String,USER_CAPITAL:100000,WEEKLY_CAPITAL_UI:null};vm.runInNewContext(line,scope);
+ assert.throws(()=>captured.getTargets(),/兩週總資金/);scope.WEEKLY_CAPITAL_UI={getTargets:()=>null};assert.throws(()=>captured.getTargets(),/兩週總資金/);
+ const target=[{code:'1101',name:'fixture',quantity:10}];scope.WEEKLY_CAPITAL_UI={getTargets:()=>target};assert.equal(captured.getTargets(),target);
+});

@@ -1,13 +1,13 @@
 {
- "release_version": "V4.5.2",
- "previous_release": "V4.5.1",
- "code_commit": "637448e788e613cb9027509f8296361b2bb341e4",
- "canonical_hash": "bf448df441553309",
+ "release_version": "V4.5.3",
+ "previous_release": "V4.5.2",
+ "code_commit": "61b990c09779ad0084799c15fc1da9172b7be281",
+ "canonical_hash": "55e6117c5bf65b19",
  "publication_gate": {
   "ok": true,
   "reason": "PASS",
   "rebalance_date": "2026-10-16",
-  "canonical_hash": "bf448df441553309",
+  "canonical_hash": "55e6117c5bf65b19",
   "expected_rebalance_date": "2026-10-16",
   "forced": false,
   "regression_baseline": "已固化"
@@ -23,12 +23,35 @@
   "sizing.py",
   "performance.py"
  ],
- "python_tests": 175,
- "javascript_tests": 68,
- "random_two_capital_cases": 1500,
+ "python_tests": 176,
+ "javascript_tests": 78,
+ "random_two_capital_cases": 10000,
  "policy": "personal theoretical shares; retain shares unless exit, entry, 100 percent gap, or exposure/capital repair",
  "personal_plan_not_backtested": true,
- "html_sha256": "e580a3db80894054aebef55a0588461398fd815130e097cba4c034093cee0563",
+ "capital_rules_audit": {
+  "randomScenarios": 10000,
+  "ledgerChecks": "PASS",
+  "outside90to95Cases": 5766,
+  "blockedOverBudgetCases": 172,
+  "historicalComparisons": [
+   {
+    "pattern": "same",
+    "weeks": 20,
+    "changedWeeks": 0
+   },
+   {
+    "pattern": "monthly_add",
+    "weeks": 20,
+    "changedWeeks": 5
+   },
+   {
+    "pattern": "withdraw",
+    "weeks": 20,
+    "changedWeeks": 4
+   }
+  ]
+ },
+ "html_sha256": "d0daab29e88c736d7e8add00326d86f76cce145271465ea3e33aa2889e3e0973",
  "performance_unchanged_from_previous_release": {
   "cagr": 0.4199,
   "mdd": -0.342,

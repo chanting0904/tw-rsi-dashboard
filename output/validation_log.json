@@ -1,6 +1,6 @@
 {
  "strategy_version": "V4",
- "release_version": "V4.5.2",
+ "release_version": "V4.5.3",
  "verdict": "PASS",
  "rebalance_date": "2026-10-16",
  "v4_consistency": true,
@@ -156,6 +156,6 @@
    "detail": []
   }
  },
- "signal_digest": "e827a3888311ca59a286c5e12fe613eb9ff5c1225066b2fd27957c578255f934",
- "performance_digest": "6e5e8efa5ec8a9d60de9d61577c9dc33dda829d64ee7a0ec50ec3b18cd438cce"
+ "signal_digest": "5c529c26b097f1e9ac9812f832f9e2e8ab55e65a17ef4f1b5b1774ea362216b2",
+ "performance_digest": "dcb6ca570d12f2027271dfad67e9b333c03a156803fb509dbef0ece06034a456"
 }

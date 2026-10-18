@@ -10,21 +10,26 @@
     const fee=(amount,sell=false)=>amount>0?Math.max(min,amount*rate)+(sell?amount*tax:0):0;
     const before=(previous.actions||[]).filter(a=>a.allocation_eligible!==false&&a.action!=='SELL'&&a.post_shares>0);
     const priorTargets=before.map(a=>({code:a.stock_code,price:a.price,target_weight:a.post_weight??a.target_weight,channel:a.channel}));
-    const reconstructed=root.previewAllocation(priorTargets,previousCapital,previous.buy_fee??rate,previous.minimum_commission??min);
-    if(reconstructed.missing.length)throw Error('上週模型缺少股價，無法推算上週股數。');
-    let source='reconstructed',held=reconstructed.quantities;
+    let source='reconstructed',held={};
     if(snapshot){
       if(snapshot.schema!==1||snapshot.rebalance_date!==previous.rebalance_date||snapshot.capital!==previousCapital||!Array.isArray(snapshot.holdings))throw Error('上週儲存試算與輸入不符。');
       const known=new Set((previous.actions||[]).map(a=>a.stock_code));held={};
       for(const h of snapshot.holdings){if(!known.has(h.code)||Object.hasOwn(held,h.code)||!Number.isSafeInteger(h.shares)||h.shares<0)throw Error('上週儲存股數無效，請清除試算紀錄後重算。');held[h.code]=h.shares;}
       source='saved';
+    }else{
+      const reconstructed=root.previewAllocation(priorTargets,previousCapital,previous.buy_fee??rate,previous.minimum_commission??min);
+      if(reconstructed.missing.length)throw Error('上週模型缺少股價，無法推算上週股數。');
+      held=reconstructed.quantities;
     }
-    const prior=new Map(before.map(a=>[a.stock_code,a]));
+    const prior=new Map((previous.actions||[]).filter(a=>a.post_shares>0).map(a=>[a.stock_code,a]));
     const actions=new Map();
     for(const a of current.actions||[]){if(actions.has(a.stock_code))throw Error('本週模型股票代號重複。');actions.set(a.stock_code,a);}
+    const writtenOff=new Set((current.restricted_assets||[]).filter(a=>a.policy==='zero'&&a.book_value===0).map(a=>String(a.code)));
     const rows=[];
     for(const code of new Set([...Object.keys(held),...actions.keys()])){
       const a=actions.get(code),p=prior.get(code);let shares=held[code]||0;
+      // A confirmed zero valuation is a write-off, never a sale or cash receipt.
+      if(writtenOff.has(String(code))&&a?.allocation_eligible!==true&&!(a?.action==='SELL'&&a.estimated_sell_amount>0))continue;
       if(shares&&!a)throw Error(code+' 缺少本週處置資料，暫不產生下單清單。');
       // Canonical pre-shares are available shares, including verified deliveries/splits.
       if(shares&&p&&a&&p.post_shares>0){const ratio=a.current_shares/p.post_shares;if(!Number.isFinite(ratio)||ratio<=0)throw Error(code+' 股數銜接待確認。');shares=Math.floor(shares*ratio+1e-8);}
@@ -35,12 +40,14 @@
       const weight=eligible?Number(a.target_weight):0,ideal=capital*weight;
       if(!Number.isFinite(weight)||weight<0||weight>1)throw Error('本週模型權重無效。');
       const desired=Math.floor(ideal/price);
+      if(!Number.isSafeInteger(desired))throw Error('股數超過安全整數範圍，請確認價格與資金。');
       let target=shares,reason='續抱不動';
       if(!eligible&&tradable){target=0;reason='退出本週名單';}
       else if(eligible&&!shares&&tradable){target=desired;reason='本週新買';}
       else if(eligible&&tradable){
         const normalIdeal=capital*Number(a.strategy_target_weight??weight);
-        if(normalIdeal>0&&shares*price>2*normalIdeal+price){target=Math.floor(normalIdeal/price);reason='超過100%差距門檻';}
+        const thresholdTolerance=Math.max(1e-7,Math.abs(normalIdeal)*Number.EPSILON*8);
+        if(normalIdeal>0&&shares*price>2*normalIdeal+thresholdTolerance){target=Math.floor(normalIdeal/price);reason='超過100%差距門檻';}
       }
       if(!tradable)reason='交易狀態受限，保留股數';
       if(!Number.isSafeInteger(target)||!Number.isSafeInteger(shares))throw Error('股數過大。');
@@ -58,7 +65,7 @@
       const old=r.target;r.target=0;
       if(!fits()){r.reason='總資金／95%上限調整';continue;}
       let low=0,high=old;
-      while(low<high){const mid=Math.ceil((low+high)/2);r.target=mid;if(fits())low=mid;else high=mid-1;}
+      while(low<high){const mid=low+Math.ceil((high-low)/2);r.target=mid;if(fits())low=mid;else high=mid-1;}
       r.target=low;r.reason='總資金／95%上限調整';
     }
     if(totals().exposure<.90){
@@ -68,7 +75,7 @@
         const t=totals();if(t.exposure>=.925)break;
         const old=r.target,goal=Math.max(old,Math.min(Math.floor(r.ideal/r.price),old+Math.ceil((.925*t.nav-t.invested)/r.price)));
         let low=old,high=goal;
-        while(low<high){const mid=Math.ceil((low+high)/2);r.target=mid;if(fits())low=mid;else high=mid-1;}
+        while(low<high){const mid=low+Math.ceil((high-low)/2);r.target=mid;if(fits())low=mid;else high=mid-1;}
         r.target=low;if(low!==old)r.reason='整體低於90%，補足配置';
       }
     }

@@ -309,7 +309,7 @@ HTML = """<!DOCTYPE html>
         <label for="order-mode">委託價格</label><select id="order-mode"><option value="stress">買進＋10%／賣出－10%估算</option><option value="reference">依頁面基準行情</option></select>
         <button id="order-calc">計算買賣差額</button><button id="order-clear" class="ghost">清除當次資料</button>
       </div>
-      <div class="note">目標股數沿用上方總資金試算；下表的委託價可逐檔修改。±10%只是資金壓力試算，<b>不是當日官方漲跌停價，也不保證成交</b>；除權息等情況會改變基準。掛單請以券商顯示的有效價格為準。<br>行情及交易狀態都有各自基準日，委託前請再確認當日狀態。只依上方輸入的總資金核對整份調倉是否超支，不需另填現金。已計算兩週資金時，沿用上方本週目標；尚未計算時，沿用模型整組配置參考。資金檢查以清單全數成交為前提。</div>
+      <div class="note">目標股數沿用上方總資金試算；下表的委託價可逐檔修改。±10%只是資金壓力試算，<b>不是當日官方漲跌停價，也不保證成交</b>；除權息等情況會改變基準。掛單請以券商顯示的有效價格為準。<br>行情及交易狀態都有各自基準日，委託前請再確認當日狀態。只依上方輸入的總資金核對整份調倉是否超支，不需另填現金。請先完成上方兩週總資金計算；此處只核對同一份目標與實際持股，不另外產生另一組配置。資金檢查以清單全數成交為前提。</div>
       <div id="order-error" class="note" role="alert"></div>
       <div id="order-results" hidden><div id="order-summary" class="note" role="status"></div><div class="order-controls"><button id="order-copy" class="ghost">複製買賣清單</button><span id="order-copy-note" class="note"></span></div><div style="overflow-x:auto"><table id="order-table"></table></div></div>
     </details>
@@ -867,7 +867,7 @@ renderSellNote();
 renderCharts();
 renderHist();
 initPerfCalc();
-ORDER_PLANNER_UI=initOrderPlanner({data:DATA,money:M,getCapital:()=>USER_CAPITAL,getTargets:()=>WEEKLY_CAPITAL_UI?.getTargets()||allHolds().map(row=>({code:String(row.code),name:row.name,quantity:tgtShares(row)}))});
+ORDER_PLANNER_UI=initOrderPlanner({data:DATA,money:M,getCapital:()=>USER_CAPITAL,getTargets:()=>{const targets=WEEKLY_CAPITAL_UI?.getTargets();if(!targets)throw Error('請先完成上方兩週總資金計算，再核對實際持股。');return targets;}});
 WEEKLY_CAPITAL_UI=initWeeklyCapital({data:DATA,money:M,isReady:()=>weeklyCapitalReady(DATA,taipeiDate(),publicWeeklyStatus),onChange:()=>{if(ORDER_PLANNER_UI)ORDER_PLANNER_UI.render();}});
 const deliveryCheck=DATA.share_delivery_check||{};
 $("delivery-check-note").textContent=deliveryCheck.as_of?'配股公告核對基準 '+deliveryCheck.as_of+'｜'+(deliveryCheck.status==='PASS'?'官方來源核對完成':'部分來源或日期待確認，未核實配股仍鎖定'):'配股公告將於下次策略計算時自動核對；未確認日期仍保持鎖定。';

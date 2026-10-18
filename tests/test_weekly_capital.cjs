@@ -26,3 +26,42 @@ test('deterministic random capital and price cases conserve total assets',()=>{
  let seed=1718;const rand=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;};
  for(let i=0;i<1500;i++){const f=fixture();f.previousCapital=Math.round(10000+rand()*990000);f.capital=Math.round(10000+rand()*1990000);for(const q of Object.values(f.quotes))q.price=Math.round((10+rand()*190)*100)/100;check(weeklyCapitalPlan(f));}
 });
+
+test('one share can be fully sold when its value exceeds twice the current target',()=>{
+ const f=fixture();f.previous.actions=[action('1101',1,.0003,'HOLD',30),action('1102',947,.947)];
+ f.current.actions=structuredClone(f.previous.actions);f.current.actions[0].target_weight=.00061;
+ f.quotes[1101].price=61;f.snapshot={schema:1,rebalance_date:f.previous.rebalance_date,capital:100000,holdings:[{code:'1101',shares:1},{code:'1102',shares:947}]};
+ const p=weeklyCapitalPlan(f);check(p);assert.equal(p.rows.find(r=>r.code==='1101').change,-1);
+});
+test('exactly double the target does not cross the general 100 percent threshold',()=>{
+ const f=fixture();f.previous.actions=[action('1101',1,.0003,'HOLD',30),action('1102',947,.947)];f.current.actions=structuredClone(f.previous.actions);
+ f.quotes[1101].price=60;f.snapshot={schema:1,rebalance_date:f.previous.rebalance_date,capital:100000,holdings:[{code:'1101',shares:1},{code:'1102',shares:947}]};
+ const p=weeklyCapitalPlan(f);check(p);assert.equal(p.rows.find(r=>r.code==='1101').change,0);
+});
+test('confirmed zero write-off does not create a sale, cash or a missing-action failure',()=>{
+ for(const present of [false,true]){const f=fixture();f.capital=52600;f.current.restricted_assets=[{code:'1102',book_value:0,policy:'zero',shares:474}];
+  f.current.actions[0].target_weight=.90;f.current.actions[0].strategy_target_weight=.90;
+  if(present){f.current.actions[1].allocation_eligible=false;f.quotes[1102].tradable=false;}else f.current.actions.pop();
+  const p=weeklyCapitalPlan(f);check(p);assert.equal(p.rows.length,1);assert.equal(p.rows[0].change,0);assert.equal(p.invested,47400);assert.equal(p.cash,5200);assert.equal(p.fees,0);assert.ok(!p.snapshot.holdings.some(r=>r.code==='1102'));
+ }
+});
+test('real tradable holdings are not written off by a historical zero record',()=>{
+ const f=fixture();f.current.restricted_assets=[{code:'1102',book_value:0,policy:'zero'}];const p=weeklyCapitalPlan(f);check(p);assert.ok(p.rows.some(r=>r.code==='1102'));
+});
+test('valid saved shares do not require an unused prior-week price reconstruction',()=>{
+ const f=fixture();f.previous.actions[0].price=null;f.snapshot={schema:1,rebalance_date:f.previous.rebalance_date,capital:100000,holdings:[{code:'1101',shares:474},{code:'1102',shares:474}]};const p=weeklyCapitalPlan(f);check(p);assert.equal(p.source,'saved');assert.ok(p.rows.every(r=>r.change===0));
+});
+test('verified delivery after a restricted prior position is a share adjustment, not a buy',()=>{
+ const f=fixture();f.previous.actions[0].allocation_eligible=false;f.current.actions[0].current_shares=948;f.quotes[1101].price=50;
+ f.snapshot={schema:1,rebalance_date:f.previous.rebalance_date,capital:100000,holdings:[{code:'1101',shares:474},{code:'1102',shares:474}]};const p=weeklyCapitalPlan(f);check(p);assert.equal(p.rows.find(r=>r.code==='1101').current,948);assert.ok(p.rows.every(r=>r.change===0));
+});
+test('mark to market gains change total capital once, leaving unchanged cash and no fake trades',()=>{
+ const f=fixture();f.previous.actions=[action('1101',930,.93)];f.current.actions=structuredClone(f.previous.actions);f.quotes={1101:{price:101,tradable:true}};f.capital=100930;
+ f.snapshot={schema:1,rebalance_date:f.previous.rebalance_date,capital:100000,holdings:[{code:'1101',shares:930}]};const p=weeklyCapitalPlan(f);check(p);assert.equal(p.invested,93930);assert.equal(p.cash,7000);assert.equal(p.fees,0);assert.equal(p.rows[0].change,0);
+});
+
+test('invalid tiny quote with existing shares fails quickly before quantity search',()=>{
+ const {spawnSync}=require('node:child_process');const modulePath=require.resolve('../weekly_capital.js');
+ const code='const {weeklyCapitalPlan}=require('+JSON.stringify(modulePath)+');const a={stock_code:"1101",post_shares:1,current_shares:1,allocation_eligible:true,action:"HOLD",target_weight:.95,strategy_target_weight:.95};try{weeklyCapitalPlan({previous:{rebalance_date:"2026-10-08",actions:[a]},current:{rebalance_date:"2026-10-16",actions:[a]},previousCapital:100000,capital:1000000000000,quotes:{1101:{price:1e-10,tradable:true}},snapshot:{schema:1,rebalance_date:"2026-10-08",capital:100000,holdings:[{code:"1101",shares:1}]}});process.exit(2);}catch(e){if(!e.message.includes("安全整數"))throw e;}';
+ const r=spawnSync(process.execPath,['-e',code],{timeout:3000,encoding:'utf8'});assert.equal(r.error,undefined);assert.equal(r.status,0,r.stderr);
+});

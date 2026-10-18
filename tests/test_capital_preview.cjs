@@ -57,3 +57,9 @@ test('oversized capital or unsafe quantities fail fast without a rounding loop',
  assert.throws(()=>previewAllocation([{code:'2330',target_weight:.95,price:.01}],1e100));
  assert.throws(()=>previewAllocation([{code:'2330',target_weight:.95,price:1e-10}],1e12));
 });
+
+test('rounding repair near the safe integer boundary finishes with safe quantities',()=>{
+ const {spawnSync}=require('node:child_process');const modulePath=require.resolve('../capital_preview.js');
+ const code='const {previewAllocation}=require('+JSON.stringify(modulePath)+');const p=previewAllocation([{code:"1101",target_weight:.5,price:.000105},{code:"1102",target_weight:.45,price:450000000000}],1000000000000);if(!Object.values(p.quantities).every(Number.isSafeInteger))process.exit(2);';
+ const r=spawnSync(process.execPath,['-e',code],{timeout:3000,encoding:'utf8'});assert.equal(r.error,undefined);assert.equal(r.status,0,r.stderr);
+});
