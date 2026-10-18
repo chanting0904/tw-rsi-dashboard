@@ -1,7 +1,7 @@
 {
  "release_version": "V4.4.0",
  "previous_release": "V4.3.2",
- "code_commit": "ca21c8f0a5560467db4a7c75776d435b344d4c22",
+ "code_commit": "3fadf4eeaa8798cd2c90117e7924c894c5a6f0cd",
  "authorized_to_deploy": true,
  "current_plan": {
   "rebalance_date": "2026-10-16",
@@ -368,6 +368,6 @@
  "unknown_stock_deliveries": 0,
  "date_evidence": "22 exchange announcements; 1 actual delivery confirmed by issuer annual report, observed only on delivery day; no fabricated advance announcement.",
  "limitations": "Simulation; actual brokerage fills, fractional rights payout and personal dividend tax are not fully reproduced. Future unverified delivery dates remain locked.",
- "html_sha256": "6a04d1ab52c46086a4dba8bd03ebf4b82dca9858ef39152080cd764daa709f43",
+ "html_sha256": "96b78c72877c9d19d03a59bd7797971582b57e775ac465ac4ab272b675b7d03f",
  "telegram_chunks": 1
 }
