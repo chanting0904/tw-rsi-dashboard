@@ -55,9 +55,12 @@ def classify_day(wp, trades_df):
 
 def prev_trading_day(ctx, d):
     close = ctx.close
-    idx = close.dropna(how="all").index
-    idx = idx[idx < d]
-    return idx[-1] if len(idx) else d
+    offset = close.index.searchsorted(d, side='left') - 1
+    while offset >= 0:
+        if close.iloc[offset].notna().any():
+            return close.index[offset]
+        offset -= 1
+    return d
 
 
 def canonical_for(ctx, wp, trades_df, commit_sha):
