@@ -128,10 +128,12 @@ def summarize_simulation(nav_hist, trades, close, config, weekday, mode, coefs, 
     cagr = (final / config.start_capital) ** (1 / years) - 1 if years > 0 else 0.0
     peak = nav_df["nav"].cummax().clip(lower=config.start_capital)
     mdd = float(((nav_df["nav"] - peak) / peak).min())
-    rets = nav_df["nav"].pct_change().dropna()
+    rets = nav_df["nav"].pct_change()
+    rets.iloc[0] = float(nav_df["nav"].iloc[0]) / config.start_capital - 1
+    rets = rets.dropna()
     sharpe = float(rets.mean() / rets.std() * np.sqrt(252)) if rets.std() > 0 else 0
-    dn = rets[rets < 0]
-    sortino = float(rets.mean() / dn.std() * np.sqrt(252)) if len(dn) and dn.std() > 0 else 0
+    downside = float(np.sqrt(np.mean(np.minimum(rets, 0.) ** 2)))
+    sortino = float(rets.mean() / downside * np.sqrt(252)) if downside > 0 else (float('inf') if rets.mean() > 0 else 0.)
     calmar = cagr / abs(mdd) if mdd != 0 else 0
 
     # 週期配對（PF / 勝率 / AvgWin / AvgLoss / 最大連虧 / Rank / MFE / MAE）
