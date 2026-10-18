@@ -41,15 +41,13 @@
   "asset": 100000,
   "last_update_id": 0,
   "telegram_delivery": {
-    "delivery_key": "0387fcdfb4fda25ce9176414c86d52565aedce7cc4d237b94b0ad26f89a2fc24",
-    "canonical_key": "f1e26241352c5578",
+    "delivery_key": "aa8f9364ad324dc8dbc1f4527642e8a88861610e4c808704f7426db53a11c0af",
+    "canonical_key": "ab780957c478807d",
     "parts": [
       {
-        "sha256": "aed50721a013e10793b8d0570dc53a76efd47f847a7433eb726f529746d68a5f",
-        "status": "confirmed",
-        "started_at": "2026-10-18T03:05:48.451527+00:00",
-        "message_id": 303,
-        "confirmed_at": "2026-10-18T03:05:50.330492+00:00"
+        "sha256": "8c403a2be53831608e0b0760abd1ff19bdb9b3f22c58732f8690b6ea00a39186",
+        "status": "sending",
+        "started_at": "2026-10-18T03:14:36.109059+00:00"
       }
     ]
   },
