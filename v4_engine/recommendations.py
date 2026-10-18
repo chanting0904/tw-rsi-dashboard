@@ -1,9 +1,39 @@
 """Separate executable allocation advice from historical blocked model assets."""
 import json
+import math
+import re
 from functools import lru_cache
 from pathlib import Path
 import pandas as pd
 from .security_status import status_at
+
+
+def hidden_zero_asset_codes(signal):
+    """Hide written-off history only; current executable positions stay visible."""
+    active = {str(row['stock_code']) for row in signal.get('actions', [])
+              if row.get('allocation_eligible', True)
+              or (row.get('action') == 'SELL' and row.get('estimated_sell_amount', 0) > 0)}
+    return {str(asset['code']) for asset in signal.get('restricted_assets', [])
+            if asset.get('policy') == 'zero'
+            and isinstance(asset.get('book_value'), (int, float))
+            and not isinstance(asset['book_value'], bool)
+            and math.isfinite(asset['book_value']) and asset['book_value'] == 0
+            and str(asset['code']) not in active}
+
+
+def public_warnings(signal):
+    """Remove written-off codes from the blocked-exit notice, preserving live issues."""
+    hidden = hidden_zero_asset_codes(signal)
+    result = []
+    for warning in signal.get('warnings', []):
+        match = re.fullmatch(r'有 \d+ 檔持股因(.*?)：([\d、]+)', warning)
+        if match:
+            codes = [code for code in match[2].split('、') if code not in hidden]
+            if codes:
+                result.append(f'有 {len(codes)} 檔持股因{match[1]}：' + '、'.join(codes))
+        else:
+            result.append(warning)
+    return result
 
 
 @lru_cache(maxsize=1)

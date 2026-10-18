@@ -14,6 +14,7 @@ from zoneinfo import ZoneInfo
 from publish_gate import evaluate, fingerprint, load_holidays, last_trading_day_of_week
 from publication_check import verify_public_index
 from delivery_state import deliver_parts, save_state, RejectedDelivery
+from v4_engine.recommendations import hidden_zero_asset_codes, public_warnings
 
 ROOT = Path(__file__).resolve().parent
 STATE_FILE = ROOT / "state.json"
@@ -55,8 +56,11 @@ def build_message(signal):
                 lines.append('  ' + escape(row['recommendation_note']))
         if not rows:
             lines.append("（無）")
-    restricted = [a for a in signal.get('actions', []) if a['action'] != 'SELL' and not a.get('allocation_eligible', True)]
+    hidden = hidden_zero_asset_codes(signal)
+    restricted = [a for a in signal.get('actions', []) if str(a['stock_code']) not in hidden and a['action'] != 'SELL' and not a.get('allocation_eligible', True)]
     for asset in signal.get('restricted_assets', []):
+        if str(asset['code']) in hidden:
+            continue
         if any(row['stock_code']==asset['code'] for row in restricted):
             continue
         restricted.append({'stock_code':asset['code'],'stock_name':asset.get('name',asset['code']),
@@ -68,7 +72,7 @@ def build_message(signal):
     if signal.get('pending_assets'):
         lines.append(f"\n<b>模擬待領配股：{len(signal['pending_assets'])}筆，目前不用另外下單</b>")
         lines.append('原有股票可照策略賣出，應領配股不會取消。配股日期及股數可在網頁展開查看。')
-    for warning in signal.get("warnings", []):
+    for warning in public_warnings(signal):
         lines.append("⚠️ " + escape(warning)[:1000])
     lines.extend(["\n收盤調倉；未成交部分於下週第一個交易日用市價單補調倉。",
                   "網頁與本訊息使用同一份策略結果。請在網頁輸入資金，查看整股後的試算股數與權重；不同本金會有取整差異。",
