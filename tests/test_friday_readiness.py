@@ -138,3 +138,12 @@ class PreviewRangeTests(unittest.TestCase):
         from v4_engine.allocation import preview_allocation
         with self.assertRaises(ValueError):preview_allocation([{'code':'2330','target_weight':.95,'price':.01}],1e100)
         with self.assertRaises(ValueError):preview_allocation([{'code':'2330','target_weight':.95,'price':1e-10}],1e12)
+
+
+class PublicationPersistenceTests(unittest.TestCase):
+    def test_final_receipt_commit_stages_gate_generated_baselines(self):
+        source=(ROOT/'.github/workflows/update_pages.yml').read_text(encoding='utf-8')
+        stage=source.split('保存公開核對結果及已確認的推播進度',1)[1].split('- name:',1)[0]
+        for name in ['output/publication_verified.json','output/regression_history.json','output/baseline.json']:
+            self.assertIn(name,stage)
+        self.assertIn('git add -- "$file"',stage)
