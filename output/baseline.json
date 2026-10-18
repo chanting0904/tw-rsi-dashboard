@@ -1,6 +1,7 @@
 {
- "cagr": 42.43382889098053,
- "mdd": -34.20351918122827,
+ "cagr": 45.58864138688048,
+ "mdd": -34.71446654728846,
  "anchor_date": "2026-10-08",
- "release_version": "V4.5.4"
+ "release_version": "V4.6.0",
+ "execution_policy": "guarded_weekly_capital_v1"
 }

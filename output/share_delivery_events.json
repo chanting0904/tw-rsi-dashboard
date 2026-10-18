@@ -82,16 +82,6 @@
    "subject": "勝一化工股份有限公司（公司代號：1773）110年除權配股股票上市掛牌日期。"
   },
   {
-   "code": "2887",
-   "ex_date": "2021-09-07",
-   "announced_on": "2021-09-29",
-   "tradable_date": "2021-10-05",
-   "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20210101&endDate1=20211231&selectType=&stockNo=2887&response=json",
-   "security_form": "ORDINARY_SHARE",
-   "announcement_id": "2021092901",
-   "subject": "台新金融控股股份有限公司（公司代號：2887）110年除權配股股票上市掛牌日期。"
-  },
-  {
    "code": "1229",
    "ex_date": "2021-09-24",
    "announced_on": "2021-10-14",
@@ -190,16 +180,6 @@
    "security_form": "ORDINARY_SHARE",
    "announcement_id": "2025081901",
    "subject": "玉山金融控股股份有限公司（公司代號：2884）114年除權配股股票上市掛牌日期。"
-  },
-  {
-   "code": "2515",
-   "ex_date": "2025-11-10",
-   "announced_on": "2025-12-23",
-   "tradable_date": "2025-12-31",
-   "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20250101&endDate1=20251231&selectType=&stockNo=2515&response=json",
-   "security_form": "ORDINARY_SHARE",
-   "announcement_id": "2025122301",
-   "subject": "中華工程股份有限公司（公司代號：2515）114年除權配股股票上市掛牌日期。"
   },
   {
    "code": "6446",
