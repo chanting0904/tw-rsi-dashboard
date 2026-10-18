@@ -1,13 +1,13 @@
 {
- "release_version": "V4.5.0",
- "previous_release": "V4.4.2",
- "code_commit": "8477a9f8c27813bf62b50d89474b68baa7e60a51",
- "canonical_hash": "f1e26241352c5578",
+ "release_version": "V4.5.1",
+ "previous_release": "V4.5.0",
+ "code_commit": "9f322ac773d4a5af56e3ae53c427c13bad39e899",
+ "canonical_hash": "ab780957c478807d",
  "publication_gate": {
   "ok": true,
   "reason": "PASS",
   "rebalance_date": "2026-10-16",
-  "canonical_hash": "f1e26241352c5578",
+  "canonical_hash": "ab780957c478807d",
   "expected_rebalance_date": "2026-10-16",
   "forced": false,
   "regression_baseline": "已固化"
@@ -23,12 +23,12 @@
   "sizing.py",
   "performance.py"
  ],
- "python_tests": 168,
+ "python_tests": 169,
  "javascript_tests": 68,
  "random_two_capital_cases": 1500,
  "policy": "personal theoretical shares; retain shares unless exit, entry, 100 percent gap, or exposure/capital repair",
  "personal_plan_not_backtested": true,
- "html_sha256": "db60cbc9913af37780a4a3538dfcf7a61a78675e3335554467fd443299cafe20",
+ "html_sha256": "1c77027ed88e09eadb681eef65dd8c7566130808baa3bfb825ff359c743c9c48",
  "performance_unchanged_from_previous_release": {
   "cagr": 0.4199,
   "mdd": -0.342,

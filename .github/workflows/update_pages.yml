@@ -28,6 +28,8 @@ on:
       - 'capital_preview.js'
       - 'order_planner.js'
       - 'order_planner_ui.js'
+      - 'weekly_capital.js'
+      - 'weekly_capital_ui.js'
       - 'version.py'
       - 'VERSION_HISTORY.txt'
       - 'v4_baseline.json'
@@ -139,9 +141,10 @@ jobs:
           git config user.name "rsi-bot"
           git config user.email "bot@rsi.local"
           git add state.json
-          if [ -f output/publication_verified.json ]; then
-            git add output/publication_verified.json
-          fi
+          # The publication gate can also persist regression and fee baselines.
+          for file in output/publication_verified.json output/regression_history.json output/baseline.json; do
+            if [ -f "$file" ]; then git add -- "$file"; fi
+          done
           if ! git diff --cached --quiet; then
             git commit -m "record publication and telegram delivery [skip ci]"
             python retry_runner.py -- git pull --rebase
