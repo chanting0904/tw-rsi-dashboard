@@ -37,8 +37,8 @@
         if(!plan.complete){text.push('有缺價或交易狀態未確認的項目，上述僅為已可估項目的小計；整份資金檢查尚未通過。');summary.className='warnbox';}
         else if(!plan.budgetComplete){text.push('部分現有持股缺少行情，無法核對總資金；請等待報價補齊。');summary.className='warnbox';}
         else{
-          text.push('依頁面行情估算目前持股 '+money(plan.currentValue)+'；由總資金推算交割後淨現金 '+money(plan.netCash)+'。');
-          text.push(plan.withinCapital?'總資金檢查通過：假設清單全部成交，調倉及費用未超過輸入總資金，預估剩餘 '+money(plan.budgetBalance)+'。':plan.netCash<0?'輸入總資金少於目前持股估值，請確認本金欄已包含所有持股與未交割款。':'委託價壓力估算超出總資金 '+money(-plan.budgetBalance)+'；請調整價格或減少買進股數。');
+          text.push('本次總資金以網頁輸入的 '+money(plan.capital)+' 為準。');
+          text.push(plan.withinCapital?'總資金檢查通過：假設清單全部成交，調倉及費用未超過輸入總資金，預估剩餘 '+money(plan.budgetBalance)+'。':plan.netCash<0?'輸入總資金少於目前持股估值，請確認輸入總資金或當次持股。':'委託價壓力估算超出總資金 '+money(-plan.budgetBalance)+'；請調整價格或減少買進股數。');
           if(!plan.withinCapital)summary.className='warnbox';
         }
         summary.textContent=text.join('　');
