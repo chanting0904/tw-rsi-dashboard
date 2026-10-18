@@ -1,7 +1,7 @@
 {
  "release_version": "V4.5.0",
  "previous_release": "V4.4.2",
- "code_commit": "7a6df186ad4bb55ff7ff9eb4c170b85db686d7ca",
+ "code_commit": "8477a9f8c27813bf62b50d89474b68baa7e60a51",
  "canonical_hash": "f1e26241352c5578",
  "publication_gate": {
   "ok": true,
@@ -28,7 +28,7 @@
  "random_two_capital_cases": 1500,
  "policy": "personal theoretical shares; retain shares unless exit, entry, 100 percent gap, or exposure/capital repair",
  "personal_plan_not_backtested": true,
- "html_sha256": "407ff9700e79710b9387b2c8ab87e4e5a39b90f112b08e01ff06f03206e86ec7",
+ "html_sha256": "db60cbc9913af37780a4a3538dfcf7a61a78675e3335554467fd443299cafe20",
  "performance_unchanged_from_previous_release": {
   "cagr": 0.4199,
   "mdd": -0.342,

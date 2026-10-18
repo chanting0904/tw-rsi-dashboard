@@ -17,7 +17,7 @@
  "rebalance_date": "2026-05-29",
  "sig_date": "2026-05-28",
  "generated_at": "2026-10-16T20:48:32+08:00",
- "commit_sha": "7a6df186",
+ "commit_sha": "8477a9f8",
  "tsm_on": true,
  "wa_eff": 0.6,
  "wb_eff": 0.4,
