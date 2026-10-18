@@ -1,6 +1,7 @@
 from version import STRATEGY_VERSION, RELEASE_VERSION
 """Serialize verified simulated positions and fills for Web/TG."""
 import datetime
+import pandas as pd
 from zoneinfo import ZoneInfo
 from .recommendations import recommendation_metadata
 from .security_status import snapshot_hash
@@ -100,6 +101,9 @@ def canonical_for(ctx, wp, trades_df, commit_sha):
         })
         # Web/TG recommend the executed model position, including HOLD drift.
         # Recommending raw ranking targets would undo the reduced-rebalance rule.
+        if 'planner_target_weight' in o:
+            acts[-1]['planner_target_weight'] = o['planner_target_weight']
+            acts[-1]['strategy_target_weight'] = o['strategy_target_weight']
         acts[-1]['target_weight'] = acts[-1]['post_weight']
         acts[-1]['target_shares'] = acts[-1]['post_shares']
         acts[-1]['weight_diff'] = round(acts[-1]['target_weight']-acts[-1]['current_weight'],5)
@@ -108,6 +112,15 @@ def canonical_for(ctx, wp, trades_df, commit_sha):
         if acts[-1]['stock_name'] == o['code'] and known_name:
             acts[-1]['stock_name'] = known_name
         acts[-1].update(metadata)
+        from .security_status import can_trade
+        frame = ctx.adjusted_close if ctx.adjusted_close is not None else ctx.close
+        index = frame.index.get_loc(wp['date'])
+        prior_price = frame.iloc[index-1].get(o['code']) if index else None
+        current_price = frame.iloc[index].get(o['code'])
+        change = current_price/prior_price-1 if prior_price is not None and prior_price>0 else 0.
+        allowed = can_trade(ctx,o['code'],wp['date'])
+        acts[-1]['buy_allowed'] = bool(allowed and not change>=cfg.limit)
+        acts[-1]['sell_allowed'] = bool(allowed and not change<=-cfg.limit)
         if not metadata['allocation_eligible']:
             acts[-1]['target_weight'] = 0.0
             acts[-1]['target_shares'] = 0
@@ -163,9 +176,12 @@ def canonical_for(ctx, wp, trades_df, commit_sha):
         "strategy_version": STRATEGY_VERSION, "release_version": RELEASE_VERSION,
         "share_delivery_check": {k:delivery_status[k] for k in ['as_of','status','discovered','registered','conflicts'] if k in delivery_status},
         "restricted_assets": wp.get('restricted_assets', []),
-        "pending_assets": wp.get('pending_assets', []),
+        "pending_assets": [{**asset,'grant_ratio':(ctx.corporate_events.get(pd.Timestamp(asset['ex_date']),{}).get(asset['code'],{}).get('ratio'))} for asset in wp.get('pending_assets',[])],
+        "stock_deliveries": [{"code":str(d['code']),"ex_date":str(d['ex_date'])[:10],"tradable_date":str(d['tradable_date'])[:10]} for d in (getattr(ctx,'share_delivery_events',[]) or [])
+            if str(d.get('announced_on') or d.get('confirmed_on') or '')[:10]<=str(wp['date'].date()) and str((wp['date']-pd.Timedelta(days=7)).date())<str(d['tradable_date'])[:10]<=str(wp['date'].date())],
         "security_status_checked_for": (getattr(ctx,'security_status',None) or {}).get('checked_for'),
         "security_status_hash": snapshot_hash(ctx.security_status) if getattr(ctx,'security_status',None) else None,
+        "execution_policy": wp.get("execution_policy", "legacy_v4"),
         "selection_rules": {"a_rank_days": cfg.a_rank_days, "a_entry_rank": cfg.max_hold_a,
                             "a_retention_rank": cfg.a_retention_rank, "b_max_names": cfg.max_hold_b},
         "start_capital": cfg.start_capital, "buy_fee": cfg.buy_fee, "sell_fee": cfg.sell_fee,
@@ -192,6 +208,7 @@ def canonical_for(ctx, wp, trades_df, commit_sha):
         "restricted_exposure": round(sum(a['post_weight'] for a in acts if not a['allocation_eligible']), 5),
         "exposure_cap_blocked_codes": list(wp.get('exposure_cap_blocked_codes', [])),
         "portfolio_value": round(float(wp["nav"]), 0),
+        "capital_basis": wp.get("capital_basis",wp["nav"]),
         "buy_total": round(buy_total, 0),
         "sell_total": round(sell_total, 0),
         "counts": counts,

@@ -1,0 +1,103 @@
+{
+ "release_version": "V4.0.2",
+ "end_date": "2026-10-08",
+ "annual": [
+  {
+   "year": 2015,
+   "end_date": "2015-12-31",
+   "V4": 0.545547,
+   "corrected_25pct": 0.557703,
+   "TAIEX_total_return": -0.068712,
+   "0050_adjusted": -0.062806
+  },
+  {
+   "year": 2016,
+   "end_date": "2016-12-30",
+   "V4": 0.739922,
+   "corrected_25pct": 0.684643,
+   "TAIEX_total_return": 0.155898,
+   "0050_adjusted": 0.196484
+  },
+  {
+   "year": 2017,
+   "end_date": "2017-12-29",
+   "V4": 0.788491,
+   "corrected_25pct": 0.819319,
+   "TAIEX_total_return": 0.195234,
+   "0050_adjusted": 0.181389
+  },
+  {
+   "year": 2018,
+   "end_date": "2018-12-28",
+   "V4": -0.074336,
+   "corrected_25pct": -0.095411,
+   "TAIEX_total_return": -0.04827,
+   "0050_adjusted": -0.049385
+  },
+  {
+   "year": 2019,
+   "end_date": "2019-12-27",
+   "V4": 0.320263,
+   "corrected_25pct": 0.316987,
+   "TAIEX_total_return": 0.299343,
+   "0050_adjusted": 0.349672
+  },
+  {
+   "year": 2020,
+   "end_date": "2020-12-31",
+   "V4": 0.756768,
+   "corrected_25pct": 0.79201,
+   "TAIEX_total_return": 0.261284,
+   "0050_adjusted": 0.29734
+  },
+  {
+   "year": 2021,
+   "end_date": "2021-12-30",
+   "V4": 0.393637,
+   "corrected_25pct": 0.355924,
+   "TAIEX_total_return": 0.270631,
+   "0050_adjusted": 0.219233
+  },
+  {
+   "year": 2022,
+   "end_date": "2022-12-30",
+   "V4": 0.096512,
+   "corrected_25pct": 0.101677,
+   "TAIEX_total_return": -0.186772,
+   "0050_adjusted": -0.213747
+  },
+  {
+   "year": 2023,
+   "end_date": "2023-12-29",
+   "V4": 0.677419,
+   "corrected_25pct": 0.720609,
+   "TAIEX_total_return": 0.314827,
+   "0050_adjusted": 0.275152
+  },
+  {
+   "year": 2024,
+   "end_date": "2024-12-27",
+   "V4": 0.328164,
+   "corrected_25pct": 0.35824,
+   "TAIEX_total_return": 0.331089,
+   "0050_adjusted": 0.51036
+  },
+  {
+   "year": 2025,
+   "end_date": "2025-12-26",
+   "V4": 0.300691,
+   "corrected_25pct": 0.222384,
+   "TAIEX_total_return": 0.263316,
+   "0050_adjusted": 0.322017
+  },
+  {
+   "year": 2026,
+   "end_date": "2026-10-08",
+   "V4": 0.468024,
+   "corrected_25pct": 0.559352,
+   "TAIEX_total_return": 0.754904,
+   "0050_adjusted": 0.821146
+  }
+ ],
+ "basis": "Common weekly observation dates; TAIEX dividend-inclusive and 0050 adjusted-price buy-and-hold proxies before investor fees. V4 and corrected 25% simulate integer shares and modeled fees with documented corporate-action assumptions. 2026 incomplete."
+}

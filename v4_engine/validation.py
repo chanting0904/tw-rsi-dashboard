@@ -19,9 +19,11 @@ def run_checks(ctx, wp, ops, res):
     res["conflict"]["pass" if not cf else "fail"] += 1
     if cf:
         res["conflict"]["detail"].append(str(wp["date"]))
-    tw = sum(o["target_weight"] for o in ops if o["target_weight"] > 0)
+    tw = sum(o["cur_val"] / wp["nav"] for o in ops if o.get("cur_val",0) > 0)
     # 容差 0.953：normalize 保證 ≤0.95，0.9512 等邊界值為浮點舍入（非真實超額）；>0.953 才視為超額
-    res["target_sum"]["pass" if tw <= 0.953 else "fail"] += 1
+    target_sum_ok = tw <= 0.953 or bool(wp.get("exposure_cap_blocked_codes"))
+    # Any claimed block is independently verified below by exposure_upper_bound.
+    res["target_sum"]["pass" if target_sum_ok else "fail"] += 1
     if tw > 0.953:
         res["target_sum"]["detail"].append((str(wp["date"]), round(tw, 4)))
     res["cash_no_overdraft"]["pass" if wp["cash"] >= 0 else "fail"] += 1

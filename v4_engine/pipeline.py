@@ -40,6 +40,7 @@ def fixed_anchor(result, config):
                        'a_retention_rank': config.a_retention_rank, 'b_max_names': config.max_hold_b}
     ok = (result['nav'].index[-1] >= anchor_day and parameters == expected['parameters']
           and selection_rules == expected.get('selection_rules')
+          and result.get('execution_policy') == expected.get('execution_policy')
           and abs(cagr - expected['cagr']) < .005 and abs(mdd - expected['mdd']) < .005)
     return {'date': expected['date'], 'cagr': cagr, 'mdd': mdd, 'release_version': RELEASE_VERSION,
             'selection_rules': selection_rules}, bool(ok)
