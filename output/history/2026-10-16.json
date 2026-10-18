@@ -1,6 +1,13 @@
 {
  "strategy_version": "V4",
- "release_version": "V4.3.2",
+ "release_version": "V4.4.0",
+ "share_delivery_check": {
+  "as_of": "2026-10-16",
+  "status": "PASS",
+  "discovered": 1798,
+  "registered": 1821,
+  "conflicts": []
+ },
  "restricted_assets": [
   {
    "code": "3089",
@@ -39,8 +46,8 @@
  "calculation_date": "2026-10-16",
  "rebalance_date": "2026-10-16",
  "sig_date": "2026-10-15",
- "generated_at": "2026-10-17T07:31:27+08:00",
- "commit_sha": "c5a0eae5",
+ "generated_at": "2026-10-18T10:03:36+08:00",
+ "commit_sha": "ca21c8f0",
  "tsm_on": true,
  "wa_eff": 0.6,
  "wb_eff": 0.4,
