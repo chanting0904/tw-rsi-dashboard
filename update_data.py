@@ -291,7 +291,7 @@ HTML = """<!DOCTYPE html>
   <section>
     <details id="order-planner"><summary style="cursor:pointer;font-weight:700">🧾 算這次要買賣幾股／檢查委託資金（選用）</summary>
       <div class="note">每行輸入「股票代號 股數」，例如 2033 100；單位是股，不是張。目前沒有持股請填「空手」。<b>請輸入完整、已可交易的持股；待領配股不要算入。</b>內容不會上傳或寫回模擬持倉。</div>
-      <label for="order-holdings">當次持股</label><textarea id="order-holdings" class="order-input" placeholder="2033 100&#10;6199 33"></textarea>
+      <label for="order-holdings">當次持股</label><textarea id="order-holdings" class="order-input" placeholder="2330 10&#10;2317 20"></textarea>
       <div class="order-controls">
         <label for="order-mode">委託價格</label><select id="order-mode"><option value="stress">買進＋10%／賣出－10%估算</option><option value="reference">依頁面基準行情</option></select>
         <button id="order-calc">計算買賣差額</button><button id="order-clear" class="ghost">清除當次資料</button>

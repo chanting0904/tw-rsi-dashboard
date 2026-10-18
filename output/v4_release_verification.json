@@ -368,6 +368,6 @@
  "unknown_stock_deliveries": 0,
  "date_evidence": "22 exchange announcements; 1 actual delivery confirmed by issuer annual report, observed only on delivery day; no fabricated advance announcement.",
  "limitations": "Simulation; actual brokerage fills, fractional rights payout and personal dividend tax are not fully reproduced. Future unverified delivery dates remain locked.",
- "html_sha256": "e771cf0392a848870116fbc391fc8f4b3ac135bc9c1e382960b9a73bf5b27c93",
+ "html_sha256": "6b34c66a5549b9407757148c1191089d8797afb0cb2274be83cce4e80131c8e6",
  "telegram_chunks": 1
 }
