@@ -1,6 +1,6 @@
 {
  "strategy_version": "V4",
- "release_version": "V4.1.1",
+ "release_version": "V4.5.0",
  "selection_rules": {
   "a_rank_days": 3,
   "a_entry_rank": 15,
@@ -17,7 +17,7 @@
  "rebalance_date": "2026-05-29",
  "sig_date": "2026-05-28",
  "generated_at": "2026-10-16T20:48:32+08:00",
- "commit_sha": "5b164d06",
+ "commit_sha": "8477a9f8",
  "tsm_on": true,
  "wa_eff": 0.6,
  "wb_eff": 0.4,

@@ -52,4 +52,15 @@ function weeklyReadiness(data, today = taipeiDate(), status = data.weekly_status
     detail: suffix + `下方仍是 ${data.rebal_date || '尚無日期'} 的資料，尚非本週新計畫。`};
 }
 
-if (typeof module !== 'undefined' && module.exports) module.exports = {taipeiDate, weeklyReadiness};
+/* The latest confirmed close remains usable for next-session remainder orders. */
+function weeklyCapitalReady(data,today=taipeiDate(),status=data.weekly_status||{}) {
+  const current=weeklyReadiness(data,today,status);
+  if(current.state==='ready')return true;
+  if(current.state==='failed'||!current.expected||today>=current.expected)return false;
+  if(status.rebalance_date===current.expected&&['running','retrying','failed'].includes(status.state))return false;
+  const day=new Date(today+'T00:00:00Z');
+  day.setUTCDate(day.getUTCDate()-((day.getUTCDay()+6)%7)-1);
+  return weeklyReadiness(data,day.toISOString().slice(0,10),status).state==='ready';
+}
+
+if (typeof module !== 'undefined' && module.exports) module.exports = {taipeiDate, weeklyReadiness, weeklyCapitalReady};

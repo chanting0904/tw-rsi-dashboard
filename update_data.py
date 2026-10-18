@@ -138,7 +138,10 @@ _calendar = read_optional('holidays.json')
 _validation = read_optional('output/validation_log.json')
 from v4_engine.order_quotes import build_order_quotes
 _order_quotes=build_order_quotes(SIG,prices,px_date,read_optional('output/security_status.json'))
+_previous_capital_signal = next((h for h in reversed(history) if h.get('rebalance_date','') < SIG.get('rebalance_date','')), None)
 DATA = {
+    "capital_signal": SIG,
+    "previous_capital_signal": _previous_capital_signal,
     "canonical_hash": fingerprint(SIG),
     "order_quotes": _order_quotes,
     "fee_model": SIG.get("fee_model", {}),
@@ -276,20 +279,22 @@ HTML = """<!DOCTYPE html>
   <section>
     <h2>💰 總資金（持股市值＋現金）</h2>
     <div class="capbar">
-      <input type="number" id="cap" min="10000" step="10000" placeholder="請輸入實際本金">
-      <button id="cap-apply">套用本金</button>
+      <label for="cap-previous">上週總資金</label><input type="number" id="cap-previous" min="10000" max="1000000000000" step="1" placeholder="手動輸入上週總資金">
+      <label for="cap">本週總資金</label><input type="number" id="cap" min="10000" step="10000" placeholder="手動輸入本週總資金">
+      <button id="cap-apply">計算本週買賣</button>
       <button id="cap-reset" class="ghost">重新設定</button>
-      <span class="cap-info">試算資金：<b id="cap-now"></b>｜配置後預估現金（<span id="cap-bufpct"></span>）：<b id="cap-cash"></b>｜整股預估投入：<b id="cap-invest"></b></span>
     </div>
-    <div class="note">🔸 以 V4.0.0 模擬配置為基礎，依輸入本金、整股與模型費用計算；整股後權重可能略有調整。<br>
-    🔸 輸入後按「套用本金」記住（存你瀏覽器，重新整理不會消失）；「重新設定」回預設 100,000。<br>
-    🔸 主清單顯示每檔目標股數；需要知道這次買賣差額時，可展開下方試算，輸入當次持股。持股資料只在本頁記憶體，重新整理即清除，不改動策略模擬。</div>
+    <div class="note">兩週金額都由你手動輸入，均指「股票市值＋現金」，不是累計投入。續抱股原則上不動；退出、新買、100%差距門檻及90～95%倉位修復才調整。不需輸入交割款。原模型回測績效未包含你個人的加減資金與此份試算。<br>下方「買賣清單」才是兩週資金試算結果；展開的模型資料是參考，不是個人下單清單。</div>
     <div id="cap-storage-note" class="note" role="status"></div>
-    <div id="selectionnote" class="note"></div>
-    <div id="allocationnote" class="note"></div>
-    <details id="allocationdetails" class="note"><summary>查看配置差額：哪些股票少了多少</summary><div id="allocationrows" style="overflow-x:auto"></div></details>
+
   </section>
 
+  <section>
+    <h2>📋 買賣清單（依你輸入的兩週總資金）</h2>
+    <div id="weekly-capital-error" class="note" role="status">請輸入兩週總資金，再按「計算本週買賣」。</div>
+    <div id="weekly-capital-results" hidden><div id="weekly-capital-summary" class="note"></div><div id="weekly-capital-basis" class="note"></div><button id="weekly-capital-copy" class="ghost">複製買賣清單</button><span id="weekly-capital-copy-note" class="note"></span><div style="overflow-x:auto"><table id="weekly-capital-table"></table></div></div>
+    <button id="weekly-capital-clear" class="ghost">清除理論股數紀錄</button>
+  </section>
   <section>
     <details id="order-planner"><summary style="cursor:pointer;font-weight:700">🧾 算這次要買賣幾股／檢查委託資金（選用）</summary>
       <div class="note">每行輸入「股票代號 股數」，例如 2033 100；單位是股，不是張。目前沒有持股請填「空手」。<b>請輸入完整、已可交易的持股；待領配股不要算入。</b>內容不會上傳或寫回模擬持倉。</div>
@@ -298,13 +303,18 @@ HTML = """<!DOCTYPE html>
         <label for="order-mode">委託價格</label><select id="order-mode"><option value="stress">買進＋10%／賣出－10%估算</option><option value="reference">依頁面基準行情</option></select>
         <button id="order-calc">計算買賣差額</button><button id="order-clear" class="ghost">清除當次資料</button>
       </div>
-      <div class="note">目標股數沿用上方總資金試算；下表的委託價可逐檔修改。±10%只是資金壓力試算，<b>不是當日官方漲跌停價，也不保證成交</b>；除權息等情況會改變基準。掛單請以券商顯示的有效價格為準。<br>行情及交易狀態都有各自基準日，委託前請再確認當日狀態。只依上方輸入的總資金核對整份調倉是否超支，不需另填現金。本金變動的當次會依新本金重算目標股數，續抱股也可能需要加減碼；本金不變時，依策略續抱規則執行。資金檢查以清單全數成交為前提。</div>
+      <div class="note">目標股數沿用上方總資金試算；下表的委託價可逐檔修改。±10%只是資金壓力試算，<b>不是當日官方漲跌停價，也不保證成交</b>；除權息等情況會改變基準。掛單請以券商顯示的有效價格為準。<br>行情及交易狀態都有各自基準日，委託前請再確認當日狀態。只依上方輸入的總資金核對整份調倉是否超支，不需另填現金。已計算兩週資金時，沿用上方本週目標；尚未計算時，沿用模型整組配置參考。資金檢查以清單全數成交為前提。</div>
       <div id="order-error" class="note" role="alert"></div>
       <div id="order-results" hidden><div id="order-summary" class="note" role="status"></div><div class="order-controls"><button id="order-copy" class="ghost">複製買賣清單</button><span id="order-copy-note" class="note"></span></div><div style="overflow-x:auto"><table id="order-table"></table></div></div>
     </details>
     <div id="delivery-check-note" class="note"></div>
   </section>
 
+  <details id="model-reference"><summary style="cursor:pointer;font-weight:700">📚 策略模型參考（不是本次個人下單清單）</summary>
+      <span class="cap-info">試算資金：<b id="cap-now"></b>｜配置後預估現金（<span id="cap-bufpct"></span>）：<b id="cap-cash"></b>｜整股預估投入：<b id="cap-invest"></b></span>
+    <div id="selectionnote" class="note"></div>
+    <div id="allocationnote" class="note"></div>
+    <details id="allocationdetails" class="note"><summary>查看配置差額：哪些股票少了多少</summary><div id="allocationrows" style="overflow-x:auto"></div></details>
   <div class="cards" id="cards"></div>
 
   <section>
@@ -342,6 +352,8 @@ HTML = """<!DOCTYPE html>
     </div>
     <div id="histview"></div>
   </section>
+
+  </details>
 
   <section>
     <h2>📊 V4 歷史績效互動計算器 <span class="tag">策略 V4｜全期 CAGR <span id="p-cagr" class="up"></span>｜全期 MDD <span id="p-mdd" class="down"></span></span></h2>
@@ -383,6 +395,8 @@ __ORDER_PLANNER_UI_JS__
 const DATA = __DATA_JSON__;
 __WEEKLY_STATUS_JS__
 __CAPITAL_PREVIEW_JS__
+__WEEKLY_CAPITAL_JS__
+__WEEKLY_CAPITAL_UI_JS__
 
 const $ = (id) => document.getElementById(id);
 const F = (n, d) => (n==null || isNaN(n)) ? "—" : Number(n).toLocaleString("zh-TW", {minimumFractionDigits: d||0, maximumFractionDigits: d||0});
@@ -409,6 +423,7 @@ let USER_CAPITAL = parseFloat(capitalStorage('getItem') || "100000") || 100000;
 if (!Number.isFinite(USER_CAPITAL) || USER_CAPITAL < 10000 || USER_CAPITAL > 1e12) USER_CAPITAL = 100000;
 let CAPITAL_PREVIEW = null;
 let ORDER_PLANNER_UI = null;
+let WEEKLY_CAPITAL_UI = null;
 function updateCapitalPreview() {
   CAPITAL_PREVIEW = previewAllocation(allHolds().map(row => ({code:row.code, target_weight:row.target_weight, price:row.px || row.price, channel:row.channel})), USER_CAPITAL, DATA.buy_fee, DATA.minimum_commission);
 }
@@ -472,6 +487,7 @@ if (warns.length) {
 let publicWeeklyStatus = DATA.weekly_status || {};
 function renderFreshnessStatus() {
   const result = weeklyReadiness(DATA, taipeiDate(), publicWeeklyStatus);
+  if(WEEKLY_CAPITAL_UI)WEEKLY_CAPITAL_UI.validateFreshness();
   const box = $("freshnessbox");
   box.className = 'freshnessbox weekly-' + result.state;
   $("weekly-title").textContent = result.title;
@@ -508,7 +524,7 @@ sw.innerHTML = DATA.tsm_on
 function persistCap() {
   const v = parseFloat($("cap").value);
   if (Number.isFinite(v) && v >= 10000 && v <= 1e12) { $('cap-storage-note').textContent=''; USER_CAPITAL = v; capitalStorage('setItem', String(v)); }
-  else { $('cap-storage-note').textContent='請輸入10,000元至1兆元的有效本金；目前仍使用上一個有效數字。'; }
+  else { $('cap-storage-note').textContent='請輸入10,000元至1兆元的有效本金；本次未計算。'; return; }
   $("cap").value = USER_CAPITAL;
   renderAll();
 }
@@ -521,7 +537,7 @@ $("cap-reset").addEventListener("click", () => {
   $('cap-storage-note').textContent='';
   capitalStorage('removeItem');
   USER_CAPITAL = 100000;
-  $("cap").value = 100000;
+  $("cap").value = "";
   renderAll();
 });
 
@@ -839,13 +855,14 @@ function renderAll() {
   if (ORDER_PLANNER_UI) ORDER_PLANNER_UI.render();
   if ($("histsel").options.length) $("histsel").dispatchEvent(new Event("change"));
 }
-$("cap").value = USER_CAPITAL;
+$("cap").value = "";
 renderAll();
 renderSellNote();
 renderCharts();
 renderHist();
 initPerfCalc();
-ORDER_PLANNER_UI=initOrderPlanner({data:DATA,money:M,getCapital:()=>USER_CAPITAL,getTargets:()=>allHolds().map(row=>({code:String(row.code),name:row.name,quantity:tgtShares(row)}))});
+ORDER_PLANNER_UI=initOrderPlanner({data:DATA,money:M,getCapital:()=>USER_CAPITAL,getTargets:()=>WEEKLY_CAPITAL_UI?.getTargets()||allHolds().map(row=>({code:String(row.code),name:row.name,quantity:tgtShares(row)}))});
+WEEKLY_CAPITAL_UI=initWeeklyCapital({data:DATA,money:M,isReady:()=>weeklyCapitalReady(DATA,taipeiDate(),publicWeeklyStatus),onChange:()=>{if(ORDER_PLANNER_UI)ORDER_PLANNER_UI.render();}});
 const deliveryCheck=DATA.share_delivery_check||{};
 $("delivery-check-note").textContent=deliveryCheck.as_of?'配股公告核對基準 '+deliveryCheck.as_of+'｜'+(deliveryCheck.status==='PASS'?'官方來源核對完成':'部分來源或日期待確認，未核實配股仍鎖定'):'配股公告將於下次策略計算時自動核對；未確認日期仍保持鎖定。';
 </script>
@@ -860,7 +877,7 @@ with open(os.path.join(HERE, 'weekly_status.js'), encoding='utf-8') as _source:
 with open(os.path.join(HERE, 'capital_preview.js'), encoding='utf-8') as _source:
     HTML = HTML.replace('__CAPITAL_PREVIEW_JS__', _source.read())
 
-for _name,_placeholder in [('order_planner.js','__ORDER_PLANNER_JS__'),('order_planner_ui.js','__ORDER_PLANNER_UI_JS__')]:
+for _name,_placeholder in [('weekly_capital.js','__WEEKLY_CAPITAL_JS__'),('weekly_capital_ui.js','__WEEKLY_CAPITAL_UI_JS__'),('order_planner.js','__ORDER_PLANNER_JS__'),('order_planner_ui.js','__ORDER_PLANNER_UI_JS__')]:
     with open(os.path.join(HERE,_name),encoding='utf-8') as _source:
         HTML=HTML.replace(_placeholder,_source.read())
 
