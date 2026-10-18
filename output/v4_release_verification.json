@@ -1,7 +1,7 @@
 {
- "release_version": "V4.4.0",
- "previous_release": "V4.3.2",
- "code_commit": "3fadf4eeaa8798cd2c90117e7924c894c5a6f0cd",
+ "release_version": "V4.4.1",
+ "previous_release": "V4.4.0",
+ "code_commit": "1ac4112cf885fc40b574e8ecc2e3fd5209db010c",
  "authorized_to_deploy": true,
  "current_plan": {
   "rebalance_date": "2026-10-16",
@@ -9,7 +9,7 @@
   "price_basis_date": "2026-10-16",
   "signal_mode": "CLOSE_SIMULATION",
   "stock_exposure": 0.95,
-  "fingerprint": "1b1243eecaace4dd",
+  "fingerprint": "cbe7a238b5b9cc85",
   "counts": {
    "BUY": 9,
    "SELL": 7,
@@ -22,7 +22,7 @@
   "ok": true,
   "reason": "PASS",
   "rebalance_date": "2026-10-16",
-  "canonical_hash": "1b1243eecaace4dd",
+  "canonical_hash": "cbe7a238b5b9cc85",
   "expected_rebalance_date": "2026-10-16",
   "forced": false,
   "regression_baseline": "已固化"
@@ -368,6 +368,6 @@
  "unknown_stock_deliveries": 0,
  "date_evidence": "22 exchange announcements; 1 actual delivery confirmed by issuer annual report, observed only on delivery day; no fabricated advance announcement.",
  "limitations": "Simulation; actual brokerage fills, fractional rights payout and personal dividend tax are not fully reproduced. Future unverified delivery dates remain locked.",
- "html_sha256": "96b78c72877c9d19d03a59bd7797971582b57e775ac465ac4ab272b675b7d03f",
+ "html_sha256": "e771cf0392a848870116fbc391fc8f4b3ac135bc9c1e382960b9a73bf5b27c93",
  "telegram_chunks": 1
 }
