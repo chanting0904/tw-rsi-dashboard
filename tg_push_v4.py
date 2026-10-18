@@ -136,6 +136,13 @@ def main():
                         force=FORCE, event_name=os.environ.get('GITHUB_EVENT_NAME')):
         print("非本週最後交易日，跳過推播")
         return
+    if os.environ.get('GITHUB_EVENT_NAME') == 'push':
+        signal = json.loads(SIG_FILE.read_text(encoding='utf-8'))
+        monday = today - datetime.timedelta(days=today.weekday())
+        if datetime.date.fromisoformat(signal['rebalance_date']) < monday:
+            verify_public_index(attempts=3)
+            print('版本網頁已核對；保留上週清單，不重發調倉通知')
+            return
     gate = evaluate(force=FORCE, notify=not DRY_RUN)
     if not gate["ok"]:
         raise RuntimeError("發布檢查未通過：" + gate["reason"])
