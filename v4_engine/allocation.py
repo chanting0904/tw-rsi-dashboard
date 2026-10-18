@@ -52,7 +52,7 @@ def preview_allocation(targets, capital, buy_fee=.000399, minimum_commission=1.)
     def max_add(row):
         code,price=row['code'],row['price']
         previous=quantities[code]*price
-        low,high=0,max(0,math.floor((capital-invested-fees)/price))
+        low,high=0,min(2**53-1-quantities[code],max(0,math.floor((capital-invested-fees)/price)))
         if high>2**53-1:raise ValueError('Quantity exceeds safe integer range')
         while low<high:
             qty=(low+high+1)//2

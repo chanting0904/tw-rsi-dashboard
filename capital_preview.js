@@ -21,7 +21,7 @@ function previewAllocation(targets,capital,buyFee=.000399,minimumCommission=1) {
   const fee=amount=>amount>0?Math.max(minimumCommission,amount*buyFee):0;
   function totals() {const invested=active.reduce((s,r)=>s+quantities[r.code]*r.price,0),fees=active.reduce((s,r)=>s+fee(quantities[r.code]*r.price),0);return {invested,fees,nav:capital-fees};}
   let {invested,fees,nav}=totals();
-  function maxAdd(r) {const previous=quantities[r.code]*r.price;let low=0,high=Math.max(0,Math.floor((capital-invested-fees)/r.price));if(!Number.isSafeInteger(high))throw new Error('Quantity exceeds safe integer range');while(low<high){const qty=Math.floor((low+high+1)/2),extra=fee(previous+qty*r.price)-fee(previous);if(invested+qty*r.price+fees+extra<=capital+1e-9&&invested+qty*r.price<=.95*(nav-extra)+1e-9)low=qty;else high=qty-1;}return low;}
+  function maxAdd(r) {const previous=quantities[r.code]*r.price;let low=0,high=Math.min(Number.MAX_SAFE_INTEGER-quantities[r.code],Math.max(0,Math.floor((capital-invested-fees)/r.price)));if(!Number.isSafeInteger(high))throw new Error('Quantity exceeds safe integer range');while(low<high){const qty=low+Math.ceil((high-low)/2),extra=fee(previous+qty*r.price)-fee(previous);if(invested+qty*r.price+fees+extra<=capital+1e-9&&invested+qty*r.price<=.95*(nav-extra)+1e-9)low=qty;else high=qty-1;}return low;}
   if(active.length&&invested/nav<.90) {
     for(let i=0;i<active.length*3+3;i++) {
       if(invested/nav>=.925)break;

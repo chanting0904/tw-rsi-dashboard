@@ -1,7 +1,7 @@
 {
  "date": "2026-10-08",
  "strategy_version": "V4",
- "release_version": "V4.5.2",
+ "release_version": "V4.5.3",
  "parameters": {
   "threshold": 1,
   "buy_fee": 0.000399,
