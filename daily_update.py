@@ -3,10 +3,11 @@
 TWSE+TPEx 官方免費源（台灣/本機最穩）-> FinLab（國外 runner 兜底，token）-> yfinance（最後）。
 所有源皆失敗 -> exit(1) 讓 workflow 紅叉，絕不假成功。
 本版（V4 canonical）：另寫 output/prices.json 供 Web 顯示每日最新價（持股買賣不變）。"""
-import os, re, sys, json, ssl, urllib.request
+import os, re, sys, json, ssl, urllib.request, math
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from publish_gate import load_holidays, last_trading_day_of_week
+from publish_gate import load_holidays, last_trading_day_of_week, prev_trading_day_str, is_trading
+from v4_engine.jsonio import write_json
 from market_dates import quote_date
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -43,22 +44,20 @@ def twse_prices():
 
 
 def tpex_prices():
-    rows = json.loads(_get("https://www.tpex.org.tw/openapi/v1/tpex_mainboard_quotes"))
-    px, dstr = {}, None
-    for r in rows:
+    rows = json.loads(_get('https://www.tpex.org.tw/openapi/v1/tpex_mainboard_quotes'))
+    px, dates = {}, set()
+    for row in rows:
+        code = str(row.get('SecuritiesCompanyCode', '')).strip()
         try:
-            c = str(r.get("SecuritiesCompanyCode", "")).strip()
-            v = str(r.get("Close", "")).replace(",", "").strip()
-            if c and v and v != "--":
-                px[c] = float(v)
-                dstr = str(r.get("Date"))
-        except Exception:
-            pass
-    if not px:
-        raise RuntimeError("TPEx 無價格")
-    if dstr:
-        dstr = quote_date(dstr).replace("-", "")
-    return px, dstr
+            value = float(str(row.get('Close', '')).replace(',', '').strip())
+        except (TypeError, ValueError):
+            continue
+        if code and math.isfinite(value) and value > 0:
+            dates.add(quote_date(row.get('Date')))
+            px[code] = value
+    if not px or len(dates) != 1:
+        raise RuntimeError('TPEx 無價格、缺日期或混合不同日期')
+    return px, next(iter(dates))
 
 
 def finlab_prices(token):
@@ -128,66 +127,79 @@ def update_file(path, px, sig, expected_rebal_date):
     os.replace(tmp, path)   # 原子替換，防寫一半斷電毀檔
 
 
+def checked_prices(prices, stamp, earliest, latest):
+    """Reject stale/future/invalid batches before touching published files."""
+    day = quote_date(stamp)
+    if not earliest <= day <= latest:
+        raise ValueError(f'行情日期 {day} 不在可接受區間 {earliest}～{latest}')
+    valid = {}
+    for code, value in prices.items():
+        try:
+            price = float(value)
+            if math.isfinite(price) and price > 0:
+                valid[str(code)] = price
+        except (TypeError, ValueError):
+            continue
+    if not valid:
+        raise ValueError('行情沒有有效正數價格')
+    return valid, day
+
+
 def main():
-    token = os.environ.get("FINLAB_TOKEN", "")
-    today_tw = datetime.now(ZoneInfo("Asia/Taipei")).date()
-    last_day = last_trading_day_of_week(today_tw, load_holidays())
+    token = os.environ.get('FINLAB_TOKEN', '')
+    now_tw = datetime.now(ZoneInfo('Asia/Taipei'))
+    today_tw = now_tw.date()
+    holidays = load_holidays()
+    last_day = last_trading_day_of_week(today_tw, holidays)
     expected_rebal_date = last_day.isoformat() if last_day else None
-    px, dstr = {}, None
+    earliest = prev_trading_day_str(today_tw, holidays)
+    latest = today_tw.isoformat() if is_trading(today_tw,holidays) and now_tw.hour*60+now_tw.minute>=810 else earliest
     batches = []
-    for name, fn in (("TWSE", twse_prices), ("TPEx", tpex_prices)):
+    def collect(name, getter):
         try:
-            p, d = fn()
-            batches.append((p, d))
-            if d:
-                dstr = max(dstr, d) if dstr else d
-            print(f"[OK] {name} OK {len(p)}")
-        except Exception as e:
-            print(f"[FAIL] {name}: {e}")
+            prices, day = checked_prices(*getter(), earliest, latest)
+            batches.append((prices, day))
+            print(f'[OK] {name} {len(prices)} 檔，{day}')
+            return True
+        except Exception as error:
+            print(f'[FAIL] {name}: {error}')
+            return False
+    official = [collect(name, fn) for name, fn in [('TWSE',twse_prices),('TPEx',tpex_prices)]]
+    # A surviving official market must not suppress fallback for the missing one.
+    if token and (not all(official) or len({day for _,day in batches}) > 1):
+        collect('FinLab', lambda: finlab_prices(token))
+    if not batches:
+        for path in (IDX, SRC):
+            if os.path.exists(path):
+                with open(path, encoding='utf-8') as stream:
+                    _, data = read_data(stream.read())
+                codes = codes_of(data)
+                if codes and collect('yfinance', lambda: yf_prices(codes)):
+                    break
+    if not batches:
+        raise RuntimeError('所有來源皆無有效近期行情，保留原價格資料')
+    sig = max(day for _, day in batches)
+    px = {}
     for prices, day in batches:
-        if day == dstr:
-            px.update(prices)
+        if day == sig:
+            for code, price in prices.items():
+                px.setdefault(code, price)  # Same-date official quotes take precedence.
         else:
-            print(f"[WARN] 不混用 {day} 與 {dstr} 的行情")
-    if not px and token:
-        try:
-            px, dstr = finlab_prices(token)
-            print(f"[OK] FinLab OK {len(px)}")
-        except Exception as e:
-            print(f"[FAIL] FinLab: {e}")
-    if not px:
-        try:
-            for p in (SRC, IDX):
-                if os.path.exists(p):
-                    _, d = read_data(open(p, encoding="utf-8").read())
-                    px, dstr = yf_prices(codes_of(d))
-                    if px:
-                        break
-            if px:
-                print(f"[OK] yfinance OK {len(px)}")
-        except Exception as e:
-            print(f"[FAIL] yfinance: {e}")
-    if not px:
-        print("[FAIL] 所有來源皆失敗")
-        sys.exit(1)
-
-    if not dstr:
-        raise RuntimeError("價格來源沒有資料日期，不將舊行情標成今天")
-    sig = "%s-%s-%s" % (dstr[:4], dstr[4:6], dstr[6:8])
-    for p in (SRC, IDX):
-        if os.path.exists(p):
-            update_file(p, px, sig, expected_rebal_date)
-            print("[OK] 已更新", os.path.basename(p), "->", sig)
-    # [V4 canonical] 同步寫 output/prices.json（供 Web 每日股價顯示）
-    try:
-        op = os.path.join(HERE, "output")
-        os.makedirs(op, exist_ok=True)
-        with open(os.path.join(op, "prices.json"), "w", encoding="utf-8") as f:
-            json.dump({"px_date": sig, "prices": px}, f, ensure_ascii=False)
-        print("[OK] 已寫 output/prices.json（", len(px), "檔，", sig, "）")
-    except Exception as e:
-        print("[FAIL] 寫 prices.json:", e)
+            print(f'[WARN] 不混用 {day} 與 {sig} 的行情')
+    price_path = os.path.join(HERE, 'output', 'prices.json')
+    if os.path.exists(price_path):
+        with open(price_path, encoding='utf-8') as stream:
+            previous = json.load(stream)
+        if previous.get('px_date', '') > sig:
+            raise RuntimeError('拒絕用較舊行情覆蓋既有價格資料')
+    # Atomic write and propagate disk errors. No success or HTML update on failure.
+    write_json(price_path, {'px_date': sig, 'prices': px})
+    print(f'[OK] 已寫 output/prices.json（{len(px)} 檔，{sig}）')
+    for path in (SRC, IDX):
+        if os.path.exists(path):
+            update_file(path, px, sig, expected_rebal_date)
+            print('[OK] 已更新', os.path.basename(path), '->', sig)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

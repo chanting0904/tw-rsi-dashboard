@@ -1,5 +1,6 @@
 """Prepare an indicative close-rebalance plan from the previous trading day's data."""
 import pandas as pd
+import numpy as np
 from publish_gate import prev_trading_day_str, last_trading_day_of_week
 
 
@@ -22,8 +23,14 @@ def prepare_prices(close, open_, high, low, turnover, rebalance_date, holidays):
     signal_day = pd.Timestamp(prev_trading_day_str(day.date(), holidays))
     frames = [frame.loc[frame.index <= signal_day].copy()
               for frame in (close, open_, high, low, turnover)]
-    if frames[0].dropna(how="all").index[-1] != signal_day:
-        raise ValueError(f"缺少訊號基準日 {signal_day.date()} 的收盤資料，不產生本週計畫")
+    for name,frame in zip(['收盤價','開盤價','最高價','最低價','成交金額'],frames):
+        if not frame.index.is_unique or not frame.index.is_monotonic_increasing:
+            raise ValueError(f'{name}日期重複或未排序，不產生本週計畫')
+        if signal_day not in frame.index:
+            raise ValueError(f'缺少訊號基準日 {signal_day.date()} 的{name}資料，不產生本週計畫')
+        row=pd.to_numeric(frame.loc[signal_day],errors='coerce')
+        if not (np.isfinite(row)&(row>0)).any():
+            raise ValueError(f'訊號基準日 {signal_day.date()} 的{name}資料無有效值，不產生本週計畫')
     # The extra row supplies reference prices only. All selection indicators shift
     # by one session, so the rebalance decision sees actual signal-day data.
     reference = frames[0].loc[signal_day]

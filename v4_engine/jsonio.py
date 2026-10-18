@@ -1,3 +1,4 @@
+import hashlib
 import datetime
 import json
 import math
@@ -25,3 +26,15 @@ def write_json(path, data):
     temp = path.with_suffix(path.suffix + '.tmp')
     temp.write_text(json.dumps(clean_json(data), ensure_ascii=False, indent=1, allow_nan=False), encoding='utf-8')
     temp.replace(path)
+
+
+def document_digest(document):
+    """Bind the complete JSON document using its on-disk normalization."""
+    body=json.dumps(clean_json(document),ensure_ascii=False,sort_keys=True,separators=(',',':'),allow_nan=False)
+    return hashlib.sha256(body.encode('utf-8')).hexdigest()
+
+
+def validation_matches(signal,validation,performance=None):
+    if not isinstance(validation,dict) or validation.get('signal_digest')!=document_digest(signal):
+        return False
+    return performance is None or validation.get('performance_digest')==document_digest(performance)

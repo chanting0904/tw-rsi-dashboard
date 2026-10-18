@@ -21,9 +21,13 @@ def main(argv=None):
         from v4_engine.market import load_market
         from v4_engine.pipeline import publish
         root = Path(__file__).resolve().parent
+        default_output = root / 'audit_reports' / ('capital_' + format(args.capital, 'g')) if args.report_only else root / 'output'
+        output = Path(os.environ.get('V4_OUTPUT_DIR') or default_output)
+        if args.report_only and output.resolve() == (root / 'output').resolve():
+            raise ValueError('研究報表不得覆蓋正式output，請另指定資料夾')
         context = load_market(config, root, live_rebalance=args.live_rebalance,
                               data_root=os.environ.get('V4_DATA_ROOT'))
-        publish(context, os.environ.get('V4_OUTPUT_DIR', root / 'output'), root,
+        publish(context, output, root,
                 end=args.end, report_only=args.report_only)
         print('V4 完成：', '績效報表' if args.report_only else '已驗證訊號')
         return 0

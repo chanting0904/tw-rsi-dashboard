@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo
 from publish_gate import load_holidays, last_trading_day_of_week, fingerprint
 from v4_engine.config import StrategyConfig
 from version import RELEASE_VERSION
+from v4_engine.jsonio import validation_matches
 HERE = os.path.dirname(os.path.abspath(__file__))
 os.chdir(HERE)
 
@@ -147,7 +148,7 @@ DATA = {
     "calendar_years": list(_calendar),
     "holidays": sorted({day for days in _calendar.values() for day in days}),
     "weekly_status": read_optional('output/weekly_status.json'),
-    "sig_validated": _validation.get('verdict') == 'PASS' and _validation.get('strategy_version') == 'V4' and _validation.get('rebalance_date') == SIG.get('rebalance_date') and _validation.get('release_version') == SIG.get('release_version') == RELEASE_VERSION,
+    "sig_validated": validation_matches(SIG,_validation,perf) and _validation.get('verdict') == 'PASS' and _validation.get('strategy_version') == 'V4' and _validation.get('rebalance_date') == SIG.get('rebalance_date') and _validation.get('release_version') == SIG.get('release_version') == RELEASE_VERSION,
     "signal_mode": SIG.get("signal_mode", "CLOSE_SIMULATION"),
     "price_basis_date": SIG.get("price_basis_date") or SIG.get("rebalance_date"),
     "strategy_version": SIG.get("strategy_version", "V4"),
@@ -283,6 +284,7 @@ HTML = """<!DOCTYPE html>
     <div class="note">🔸 以 V4.0.0 模擬配置為基礎，依輸入本金、整股與模型費用計算；整股後權重可能略有調整。<br>
     🔸 輸入後按「套用本金」記住（存你瀏覽器，重新整理不會消失）；「重新設定」回預設 100,000。<br>
     🔸 主清單顯示每檔目標股數；需要知道這次買賣差額時，可展開下方試算，輸入當次持股。持股資料只在本頁記憶體，重新整理即清除，不改動策略模擬。</div>
+    <div id="cap-storage-note" class="note" role="status"></div>
     <div id="selectionnote" class="note"></div>
     <div id="allocationnote" class="note"></div>
     <details id="allocationdetails" class="note"><summary>查看配置差額：哪些股票少了多少</summary><div id="allocationrows" style="overflow-x:auto"></div></details>
@@ -392,8 +394,19 @@ const ACT_CLS = {BUY:"b-buy", SELL:"b-sell", REBALANCE_BUY:"b-rebup", REBALANCE_
 const ORDER = ["SELL", "REBALANCE_SELL", "BUY", "REBALANCE_BUY", "HOLD"];
 
 /* ================= 唯一資金基準 ================= */
-let USER_CAPITAL = parseFloat(localStorage.getItem("v4_user_capital") || "100000") || 100000;
-if (!Number.isFinite(USER_CAPITAL) || USER_CAPITAL < 10000) USER_CAPITAL = 100000;
+function capitalStorage(action, value) {
+  try {
+    if (action === 'getItem') return localStorage.getItem('v4_user_capital');
+    if (action === 'setItem') localStorage.setItem('v4_user_capital', value);
+    if (action === 'removeItem') localStorage.removeItem('v4_user_capital');
+  } catch (_) {
+    const note = $('cap-storage-note');
+    if (note) note.textContent = '瀏覽器無法記住本金，本次試算仍有效；重新整理後請再確認輸入。';
+  }
+  return null;
+}
+let USER_CAPITAL = parseFloat(capitalStorage('getItem') || "100000") || 100000;
+if (!Number.isFinite(USER_CAPITAL) || USER_CAPITAL < 10000 || USER_CAPITAL > 1e12) USER_CAPITAL = 100000;
 let CAPITAL_PREVIEW = null;
 let ORDER_PLANNER_UI = null;
 function updateCapitalPreview() {
@@ -494,17 +507,19 @@ sw.innerHTML = DATA.tsm_on
 /* ================= 本金輸入 ================= */
 function persistCap() {
   const v = parseFloat($("cap").value);
-  if (Number.isFinite(v) && v >= 10000) { USER_CAPITAL = v; localStorage.setItem("v4_user_capital", String(v)); }
+  if (Number.isFinite(v) && v >= 10000 && v <= 1e12) { $('cap-storage-note').textContent=''; USER_CAPITAL = v; capitalStorage('setItem', String(v)); }
+  else { $('cap-storage-note').textContent='請輸入10,000元至1兆元的有效本金；目前仍使用上一個有效數字。'; }
   $("cap").value = USER_CAPITAL;
   renderAll();
 }
 $("cap").addEventListener("input", (e) => {
   const v = parseFloat(e.target.value);
-  if (Number.isFinite(v) && v >= 10000) { USER_CAPITAL = v; renderAll(); }   // 即時預覽
+  if (Number.isFinite(v) && v >= 10000 && v <= 1e12) { if ($('cap-storage-note').textContent.startsWith('請輸入')) $('cap-storage-note').textContent=''; USER_CAPITAL = v; renderAll(); }   // 即時預覽
 });
 $("cap-apply").addEventListener("click", persistCap);
 $("cap-reset").addEventListener("click", () => {
-  localStorage.removeItem("v4_user_capital");
+  $('cap-storage-note').textContent='';
+  capitalStorage('removeItem');
   USER_CAPITAL = 100000;
   $("cap").value = 100000;
   renderAll();
@@ -699,6 +714,16 @@ function renderRestrictedHoldings() {
 
 /* ================= 績效圖（回測口徑，不隨本金） ================= */
 function renderCharts() {
+  $("p-cagr").textContent = P(DATA.perf.cagr, 2);
+  $("p-mdd").textContent = P(DATA.perf.mdd, 2);
+  $("p-nav").textContent = M(DATA.perf.final_nav);
+  $("p-initial").textContent = F(DATA.perf.start_capital || 100000, 0);
+  $("p-period").textContent = (DATA.perf.nav?.[0]?.[0] || '—') + ' ～ ' + (DATA.perf.completed_through || DATA.perf.nav?.at(-1)?.[0] || '—');
+  function unavailable() {
+    for (const id of ['chart-nav','chart-dd']) $(id).textContent='圖表暫時無法載入；買賣清單與股數試算仍可使用。';
+  }
+  if (typeof echarts === 'undefined') { unavailable(); return; }
+  try {
   const navData = (DATA.perf.nav||[]).map(x => [x[0], x[1]]);
   const ddData = (DATA.perf.dd||[]).map(x => [x[0], x[1]]);
   const navChart = echarts.init($("chart-nav"));
@@ -717,11 +742,8 @@ function renderCharts() {
     yAxis:{type:"value", splitLine:{lineStyle:{color:"#1f293d"}}, axisLabel:{color:"#8fa0b8", formatter:v => v+"%"}},
     series:[{type:"line", data:ddData, showSymbol:false, lineStyle:{color:"#3ddc84", width:2}}]
   });
-  $("p-cagr").textContent = P(DATA.perf.cagr, 2);
-  $("p-mdd").textContent = P(DATA.perf.mdd, 2);
-  $("p-nav").textContent = M(DATA.perf.final_nav);
-  $("p-initial").textContent = F(DATA.perf.start_capital || 100000, 0);
-  $("p-period").textContent = (DATA.perf.nav?.[0]?.[0] || '—') + ' ～ ' + (DATA.perf.completed_through || DATA.perf.nav?.at(-1)?.[0] || '—');
+
+  } catch (_) { unavailable(); }
 }
 
 /* ================= 歷史週（金額按目前本金估算） ================= */

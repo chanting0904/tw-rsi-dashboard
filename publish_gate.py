@@ -285,6 +285,9 @@ def evaluate(force=False, today=None, output_dir=None, notify=True):
         perf = _load_json(os.path.join(output_dir, "perf.json"))
         if not perf:
             reasons.append("缺少有效的歷史績效資料")
+        from v4_engine.jsonio import validation_matches
+        if not validation_matches(sig,val,perf):
+            reasons.append('驗證檔未綁定本次完整訊號與績效，停止發布')
         if sig.get("signal_mode") == "PRE_CLOSE_PLAN" and (not perf.get("completed_through") or perf["completed_through"] >= rd):
             reasons.append("歷史績效必須截止於本週計畫之前的已完成交易週")
         if perf and perf.get('release_version') != RELEASE_VERSION:

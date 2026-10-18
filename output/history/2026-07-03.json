@@ -1,6 +1,6 @@
 {
  "strategy_version": "V4",
- "release_version": "V4.4.1",
+ "release_version": "V4.4.2",
  "share_delivery_check": {
   "as_of": "2026-10-16",
   "status": "PASS",
@@ -22,7 +22,7 @@
  ],
  "pending_assets": [],
  "security_status_checked_for": "2026-10-16",
- "security_status_hash": "65eefe45e919bab5573f44512ed80f1cab7aa6ca2ed6f4b7391a43ceb2530c45",
+ "security_status_hash": "7b231a5eb7f463a2700092a123249d6b9708bc87757ab15a3dfb05ebc7a6e665",
  "selection_rules": {
   "a_rank_days": 3,
   "a_entry_rank": 15,
@@ -46,8 +46,8 @@
  "calculation_date": "2026-07-03",
  "rebalance_date": "2026-07-03",
  "sig_date": "2026-07-02",
- "generated_at": "2026-10-18T10:11:36+08:00",
- "commit_sha": "1ac4112c",
+ "generated_at": "2026-10-18T10:34:17+08:00",
+ "commit_sha": "2a19aaec",
  "tsm_on": true,
  "wa_eff": 0.6,
  "wb_eff": 0.4,

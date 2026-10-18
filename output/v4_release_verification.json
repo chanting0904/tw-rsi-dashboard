@@ -1,7 +1,7 @@
 {
- "release_version": "V4.4.1",
- "previous_release": "V4.4.0",
- "code_commit": "1ac4112cf885fc40b574e8ecc2e3fd5209db010c",
+ "release_version": "V4.4.2",
+ "previous_release": "V4.4.1",
+ "code_commit": "2a19aaec7a2a0a0136e46f7216b34949a8645c75",
  "authorized_to_deploy": true,
  "current_plan": {
   "rebalance_date": "2026-10-16",
@@ -9,7 +9,7 @@
   "price_basis_date": "2026-10-16",
   "signal_mode": "CLOSE_SIMULATION",
   "stock_exposure": 0.95,
-  "fingerprint": "cbe7a238b5b9cc85",
+  "fingerprint": "37447027ebe672e8",
   "counts": {
    "BUY": 9,
    "SELL": 7,
@@ -22,14 +22,14 @@
   "ok": true,
   "reason": "PASS",
   "rebalance_date": "2026-10-16",
-  "canonical_hash": "cbe7a238b5b9cc85",
+  "canonical_hash": "37447027ebe672e8",
   "expected_rebalance_date": "2026-10-16",
   "forced": false,
   "regression_baseline": "已固化"
  },
  "offline_checks": {
-  "python_tests": 139,
-  "javascript_tests": 39,
+  "python_tests": 168,
+  "javascript_tests": 44,
   "preview_cases": 2500
  },
  "cash_and_shares": {
@@ -128,7 +128,7 @@
     "year": 2015,
     "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20150101&endDate1=20151231&selectType=&stockNo=&response=json",
     "ok": true,
-    "cached": false,
+    "cached": true,
     "records": 0
    },
    {
@@ -136,7 +136,7 @@
     "year": 2015,
     "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2015%2F12%2F01&endDate=2015%2F12%2F31&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
     "ok": true,
-    "cached": false,
+    "cached": true,
     "records": 0
    },
    {
@@ -144,7 +144,7 @@
     "year": 2016,
     "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20160101&endDate1=20161231&selectType=&stockNo=&response=json",
     "ok": true,
-    "cached": false,
+    "cached": true,
     "records": 120
    },
    {
@@ -152,7 +152,7 @@
     "year": 2016,
     "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2016%2F01%2F01&endDate=2016%2F12%2F31&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
     "ok": true,
-    "cached": false,
+    "cached": true,
     "records": 92
    },
    {
@@ -160,7 +160,7 @@
     "year": 2017,
     "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20170101&endDate1=20171231&selectType=&stockNo=&response=json",
     "ok": true,
-    "cached": false,
+    "cached": true,
     "records": 112
    },
    {
@@ -168,7 +168,7 @@
     "year": 2017,
     "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2017%2F01%2F01&endDate=2017%2F12%2F31&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
     "ok": true,
-    "cached": false,
+    "cached": true,
     "records": 90
    },
    {
@@ -176,7 +176,7 @@
     "year": 2018,
     "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20180101&endDate1=20181231&selectType=&stockNo=&response=json",
     "ok": true,
-    "cached": false,
+    "cached": true,
     "records": 106
    },
    {
@@ -184,7 +184,7 @@
     "year": 2018,
     "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2018%2F01%2F01&endDate=2018%2F12%2F31&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
     "ok": true,
-    "cached": false,
+    "cached": true,
     "records": 90
    },
    {
@@ -192,7 +192,7 @@
     "year": 2019,
     "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20190101&endDate1=20191231&selectType=&stockNo=&response=json",
     "ok": true,
-    "cached": false,
+    "cached": true,
     "records": 96
    },
    {
@@ -200,7 +200,7 @@
     "year": 2019,
     "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2019%2F01%2F01&endDate=2019%2F12%2F31&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
     "ok": true,
-    "cached": false,
+    "cached": true,
     "records": 85
    },
    {
@@ -208,7 +208,7 @@
     "year": 2020,
     "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20200101&endDate1=20201231&selectType=&stockNo=&response=json",
     "ok": true,
-    "cached": false,
+    "cached": true,
     "records": 78
    },
    {
@@ -216,7 +216,7 @@
     "year": 2020,
     "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2020%2F01%2F01&endDate=2020%2F12%2F31&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
     "ok": true,
-    "cached": false,
+    "cached": true,
     "records": 72
    },
    {
@@ -224,7 +224,7 @@
     "year": 2021,
     "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20210101&endDate1=20211231&selectType=&stockNo=&response=json",
     "ok": true,
-    "cached": false,
+    "cached": true,
     "records": 85
    },
    {
@@ -232,7 +232,7 @@
     "year": 2021,
     "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2021%2F01%2F01&endDate=2021%2F12%2F31&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
     "ok": true,
-    "cached": false,
+    "cached": true,
     "records": 90
    },
    {
@@ -240,7 +240,7 @@
     "year": 2022,
     "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20220101&endDate1=20221231&selectType=&stockNo=&response=json",
     "ok": true,
-    "cached": false,
+    "cached": true,
     "records": 86
    },
    {
@@ -248,7 +248,7 @@
     "year": 2022,
     "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2022%2F01%2F01&endDate=2022%2F12%2F31&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
     "ok": true,
-    "cached": false,
+    "cached": true,
     "records": 112
    },
    {
@@ -256,7 +256,7 @@
     "year": 2023,
     "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20230101&endDate1=20231231&selectType=&stockNo=&response=json",
     "ok": true,
-    "cached": false,
+    "cached": true,
     "records": 99
    },
    {
@@ -264,7 +264,7 @@
     "year": 2023,
     "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2023%2F01%2F01&endDate=2023%2F12%2F31&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
     "ok": true,
-    "cached": false,
+    "cached": true,
     "records": 133
    },
    {
@@ -272,7 +272,7 @@
     "year": 2024,
     "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20240101&endDate1=20241231&selectType=&stockNo=&response=json",
     "ok": true,
-    "cached": false,
+    "cached": true,
     "records": 91
    },
    {
@@ -280,7 +280,7 @@
     "year": 2024,
     "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2024%2F01%2F01&endDate=2024%2F12%2F31&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
     "ok": true,
-    "cached": false,
+    "cached": true,
     "records": 116
    },
    {
@@ -288,7 +288,7 @@
     "year": 2025,
     "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20250101&endDate1=20251231&selectType=&stockNo=&response=json",
     "ok": true,
-    "cached": false,
+    "cached": true,
     "records": 91
    },
    {
@@ -296,7 +296,7 @@
     "year": 2025,
     "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2025%2F01%2F01&endDate=2025%2F12%2F31&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
     "ok": true,
-    "cached": false,
+    "cached": true,
     "records": 114
    },
    {
@@ -304,7 +304,7 @@
     "year": 2026,
     "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20260101&endDate1=20261016&selectType=&stockNo=&response=json",
     "ok": true,
-    "cached": false,
+    "cached": true,
     "records": 68
    },
    {
@@ -312,7 +312,7 @@
     "year": 2026,
     "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2026%2F01%2F01&endDate=2026%2F10%2F16&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
     "ok": true,
-    "cached": false,
+    "cached": true,
     "records": 86
    }
   ],
@@ -332,16 +332,86 @@
   ],
   "policy": "Only verified dates unlock shares; unavailable or ambiguous dates remain locked."
  },
+ "fresh_data_verification": {
+  "completed": {
+   "kind": "completed",
+   "failures": [],
+   "warnings": [
+    "limit_dn",
+    "exposure_band"
+   ],
+   "cagr": 0.41989376370881426,
+   "mdd": -0.34203519181228276,
+   "weeks": 607,
+   "latest_exposure": 0.9499979543785103,
+   "signal_mode": "CLOSE_SIMULATION",
+   "sig_date": "2026-10-15",
+   "rebalance_date": "2026-10-16",
+   "projections": {},
+   "unknown_live_actions": [],
+   "pending_count": 0,
+   "sources": 19,
+   "below90": [
+    "2015-08-21",
+    "2015-08-28"
+   ],
+   "over95": []
+  },
+  "live": {
+   "kind": "live",
+   "failures": [],
+   "warnings": [
+    "limit_dn",
+    "exposure_band"
+   ],
+   "cagr": 0.419037247985794,
+   "mdd": -0.34203519181228276,
+   "weeks": 607,
+   "latest_exposure": 0.9496521117272738,
+   "signal_mode": "PRE_CLOSE_PLAN",
+   "sig_date": "2026-10-15",
+   "rebalance_date": "2026-10-16",
+   "projections": {},
+   "unknown_live_actions": [],
+   "pending_count": 0,
+   "sources": 19,
+   "below90": [
+    "2015-08-21",
+    "2015-08-28"
+   ],
+   "over95": []
+  }
+ },
+ "official_daily_sources": [
+  {
+   "source": "TWSE",
+   "ok": true,
+   "date": "2026-10-16",
+   "count": 1369
+  },
+  {
+   "source": "TPEx",
+   "ok": true,
+   "date": "2026-10-16",
+   "count": 988
+  }
+ ],
+ "next_friday_dry_run": {
+  "rebalance_date": "2026-10-23",
+  "signal_date": "2026-10-22",
+  "completed_through": "2026-10-16",
+  "synthetic_test_only": true,
+  "remainder_date": "2026-10-27"
+ },
  "replay": {
+  "same_daily_nav_as_v441": true,
+  "same_fills_as_v441": true,
+  "simulation_core_unchanged": true,
   "cagr": 0.41989376370881426,
   "mdd": -0.34203519181228276,
-  "pending": [],
-  "same_daily_nav_as_v432": true,
+  "weeks": 607,
   "failures": [],
-  "warnings": [
-   "limit_dn",
-   "exposure_band"
-  ]
+  "pending": []
  },
  "capital_previews": {
   "100000": {
@@ -368,6 +438,6 @@
  "unknown_stock_deliveries": 0,
  "date_evidence": "22 exchange announcements; 1 actual delivery confirmed by issuer annual report, observed only on delivery day; no fabricated advance announcement.",
  "limitations": "Simulation; actual brokerage fills, fractional rights payout and personal dividend tax are not fully reproduced. Future unverified delivery dates remain locked.",
- "html_sha256": "6b34c66a5549b9407757148c1191089d8797afb0cb2274be83cce4e80131c8e6",
+ "html_sha256": "e98529a9e3fbdb59b0478dc8cca43ba1587e133d0d981d302866eebf8db2d817",
  "telegram_chunks": 1
 }

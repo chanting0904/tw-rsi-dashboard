@@ -13,6 +13,8 @@ def write_report(ctx, result, destination, root):
     from v4_engine.pipeline import commit_sha
     from tg_push_v4 import build_message
     destination = Path(destination)
+    if destination.resolve() == (Path(root) / 'output').resolve():
+        raise ValueError('研究報表不得覆蓋正式output')
     destination.mkdir(parents=True, exist_ok=True)
     write_json(destination / 'perf.json', perf_document(result, ctx.config))
     cutoff = ctx.close.index[-20] if len(ctx.close) >= 20 else ctx.close.index[0]
@@ -52,9 +54,11 @@ def main(argv=None):
     from v4_engine.market import load_market
     from v4_engine.simulation import run
     root = Path(__file__).resolve().parent
+    destination = Path(args.output_dir) if args.output_dir else root / 'research_output'
+    if destination.resolve() == (root / 'output').resolve():
+        raise ValueError('研究報表不得覆蓋正式output')
     ctx = load_market(StrategyConfig(start_capital=args.capital), root, data_root=os.environ.get('V4_DATA_ROOT'))
     result = run(ctx)
-    destination = Path(args.output_dir) if args.output_dir else root / 'research_output'
     write_report(ctx, result, destination, root)
     print('Research reports:', destination)
     return 0
