@@ -106,6 +106,7 @@ def perf_document(result, config, anchor=None):
                           'stock_sale_tax': config.sell_fee-config.buy_fee, 'etf_sale_tax': .001,
                           'order_policy': 'one_minimum_per_code_side_rebalance'},
             'completed_through': nav.index[-1].strftime('%Y-%m-%d'),
+            'execution_policy': result.get('execution_policy', 'legacy_v4'),
             'nav_frequency': 'daily', 'delisted_valuation': config.delisted_valuation,
             'fixed_anchor': anchor,
             'nav': [[day.strftime('%Y-%m-%d'), round(float(value), 0)] for day, value in series.items()],

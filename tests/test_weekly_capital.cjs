@@ -71,3 +71,42 @@ test('inflated model carry weight cannot cause a sold one-share position to be b
  const p=weeklyCapitalPlan(f);check(p);assert.equal(p.rows.find(r=>r.code==='1101').change,-1);
  const next=weeklyCapitalPlan({...f,previous:f.current,current:{...f.current,rebalance_date:'2026-10-23'},capital:p.nav,snapshot:p.snapshot});check(next);assert.equal(next.rows.find(r=>r.code==='1101').target,0);assert.equal(next.fees,0);
 });
+
+const {spawnSync}=require('node:child_process');
+test('server bridge and browser use the same guarded quantities',()=>{
+ const previous={rebalance_date:'2026-10-08',actions:[{stock_code:'1101',post_shares:100}]};
+ const current={rebalance_date:'2026-10-16',actions:[{stock_code:'1101',stock_name:'虛構',channel:'A',action:'HOLD',allocation_eligible:true,current_shares:100,target_weight:.9,planner_target_weight:.8,strategy_target_weight:.15}]};
+ const args={previous,current,previousCapital:100000,capital:100000,quotes:{1101:{price:100,tradable:true}},snapshot:{schema:1,rebalance_date:previous.rebalance_date,capital:100000,holdings:[{code:'1101',shares:100}]}};
+ const local=weeklyCapitalPlan(args);
+ const r=spawnSync(process.execPath,[require('node:path').resolve(__dirname,'../v4_engine/guarded_bridge.cjs')],{input:JSON.stringify(args)+'\n',encoding:'utf8'});
+ assert.equal(r.status,0,r.stderr);const remote=JSON.parse(r.stdout);assert.equal(remote.ok,true);assert.deepEqual(remote.plan,JSON.parse(JSON.stringify(local)));
+ assert.ok(local.rows[0].target<=150);
+});
+test('locked receivables cannot fund purchases',()=>{
+ const previous={rebalance_date:'2026-10-08',actions:[]},current={rebalance_date:'2026-10-16',actions:[{stock_code:'1101',stock_name:'虛構',channel:'A',action:'BUY',allocation_eligible:true,current_shares:0,target_weight:.95,strategy_target_weight:.95}]};
+ const p=weeklyCapitalPlan({previous,current,previousCapital:100000,capital:100000,reservedAssets:80000,quotes:{1101:{price:100,tradable:true}}});
+ assert.ok(p.cash>=0);assert.ok(p.invested+p.fees<=20000);assert.equal(p.reservedAssets,80000);
+});
+test('a limit-up blocks buying without blocking a sale',()=>{
+ const previous={rebalance_date:'2026-10-08',actions:[{stock_code:'1101',post_shares:1000}]},current={rebalance_date:'2026-10-16',actions:[{stock_code:'1101',stock_name:'虛構',channel:'A',action:'HOLD',allocation_eligible:true,current_shares:1000,target_weight:.9,strategy_target_weight:.2}]};
+ const p=weeklyCapitalPlan({previous,current,previousCapital:100000,capital:100000,quotes:{1101:{price:100,tradable:true,buyable:false,sellable:true}},snapshot:{schema:1,rebalance_date:previous.rebalance_date,capital:100000,holdings:[{code:'1101',shares:1000}]}});
+ assert.equal(p.rows[0].target,200);assert.equal(p.rows[0].side,'SELL');
+});
+test('a limit-down prevents sale and fails closed when the cap cannot be reached',()=>{
+ const previous={rebalance_date:'2026-10-08',actions:[{stock_code:'1101',post_shares:1000}]},current={rebalance_date:'2026-10-16',actions:[{stock_code:'1101',stock_name:'虛構',channel:'A',action:'SELL',allocation_eligible:false,current_shares:1000,target_weight:0,strategy_target_weight:0}]};
+ const p=weeklyCapitalPlan({previous,current,previousCapital:100000,capital:100000,quotes:{1101:{price:100,tradable:true,buyable:true,sellable:false}},snapshot:{schema:1,rebalance_date:previous.rebalance_date,capital:100000,holdings:[{code:'1101',shares:1000}]}});
+ assert.equal(p.rows[0].target,1000);assert.equal(p.withinBudget,false);
+});
+
+test('delivered stock rights remain owned after all original shares were sold',()=>{
+ const previous={rebalance_date:'2026-10-08',actions:[],pending_assets:[{code:'1101',shares:5,ex_date:'2026-09-01',tradable_date:'2026-10-12'}]};
+ const current={rebalance_date:'2026-10-16',actions:[{stock_code:'1101',stock_name:'虛構',channel:'A',action:'SELL',allocation_eligible:false,current_shares:5,target_weight:0,strategy_target_weight:0}],pending_assets:[]};
+ const p=weeklyCapitalPlan({previous,current,previousCapital:100000,capital:100000,quotes:{1101:{price:100,tradable:true}},snapshot:{schema:1,rebalance_date:previous.rebalance_date,capital:100000,holdings:[],pendingHoldings:[{code:'1101',shares:5,ex_date:'2026-09-01',tradable_date:'2026-10-12'}]}});
+ assert.equal(p.rows[0].current,5);assert.equal(p.rows[0].change,-5);
+});
+test('retained shares receive delivered rights exactly once',()=>{
+ const f=fixture();f.previous.actions[0].post_shares=100;f.current.actions[0].current_shares=105;
+ f.previous.pending_assets=[{code:'1101',shares:5,ex_date:'2026-09-01',tradable_date:'2026-10-12'}];f.current.pending_assets=[];
+ f.snapshot={schema:1,rebalance_date:f.previous.rebalance_date,capital:100000,holdings:[{code:'1101',shares:100},{code:'1102',shares:474}],pendingHoldings:[{code:'1101',shares:5,ex_date:'2026-09-01',tradable_date:'2026-10-12'}]};
+ assert.equal(weeklyCapitalPlan(f).rows.find(r=>r.code==='1101').current,105);
+});

@@ -4,7 +4,7 @@ from .execution import execute_week
 from .performance import summarize_simulation
 
 
-def run(ctx, weekday=5, mode='close', coefs=(1.5, 1.0, .5), start=None, end=None, record=True):
+def run_reference(ctx, weekday=5, mode='close', coefs=(1.5, 1.0, .5), start=None, end=None, record=True, executor=None):
     if mode not in ('close', 'open'):
         raise ValueError('Unsupported execution mode')
     from .live_actions import prepare_live_actions
@@ -47,7 +47,7 @@ def run(ctx, weekday=5, mode='close', coefs=(1.5, 1.0, .5), start=None, end=None
         ctx.share_entitlements = pending
         ctx.receivable_total = ledger.value+sum(asset['book_value'] for asset in pending)
         if day in rebalance_days and day in ctx.targetA.index:
-            cash, fills, plan = execute_week(ctx, positions, cash, day, mode, coefs, limit_up, limit_dn, record)
+            cash, fills, plan = (executor or execute_week)(ctx, positions, cash, day, mode, coefs, limit_up, limit_dn, record)
             trades.extend(fills)
             if plan is not None:
                 plans.append(plan)
@@ -64,4 +64,14 @@ def run(ctx, weekday=5, mode='close', coefs=(1.5, 1.0, .5), start=None, end=None
     result['corporate_action_audit'] = ledger.audit
     result['receivables'] = ledger.receivables
     result['pending_assets'] = ctx.share_entitlements
+    return result
+
+
+def run(ctx, weekday=5, mode='close', coefs=(1.5, 1.0, .5), start=None, end=None, record=True):
+    """Use the same guarded share planner as Web/TG, with actual market blocks."""
+    from .guarded_execution import GuardedExecution
+    reference = run_reference(ctx, weekday, mode, coefs, start, end, True)
+    with GuardedExecution(ctx, reference) as executor:
+        result = run_reference(ctx, weekday, mode, coefs, start, end, record, executor)
+    result['execution_policy'] = 'guarded_weekly_capital_v1'
     return result

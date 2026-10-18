@@ -1,7 +1,7 @@
 {
  "date": "2026-10-08",
  "strategy_version": "V4",
- "release_version": "V4.5.4",
+ "release_version": "V4.6.0",
  "parameters": {
   "threshold": 1,
   "buy_fee": 0.000399,
@@ -16,9 +16,10 @@
   "a_retention_rank": 20,
   "b_max_names": 4
  },
- "cagr": 0.4243382889098053,
- "mdd": -0.3420351918122827,
- "final_nav": 6396274.151357729,
+ "cagr": 0.4558864138688048,
+ "mdd": -0.3471446654728846,
+ "final_nav": 8275244.834533853,
  "stock_grant_policy": "locked_until_verified_delivery",
- "historical_delivery_dates_complete": true
+ "historical_delivery_dates_complete": true,
+ "execution_policy": "guarded_weekly_capital_v1"
 }
