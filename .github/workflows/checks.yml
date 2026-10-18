@@ -26,3 +26,5 @@ jobs:
       - run: node --test tests/test_order_planner.cjs
 
       - run: node --test tests/test_browser_resilience.cjs
+
+      - run: node --test tests/test_weekly_capital.cjs tests/test_weekly_capital_ui.cjs
