@@ -1,6 +1,6 @@
 {
  "strategy_version": "V4",
- "release_version": "V4.5.1",
+ "release_version": "V4.5.2",
  "share_delivery_check": {
   "as_of": "2026-10-16",
   "status": "PASS",
@@ -58,7 +58,7 @@
  "rebalance_date": "2026-08-28",
  "sig_date": "2026-08-27",
  "generated_at": "2026-10-18T10:34:17+08:00",
- "commit_sha": "9f322ac7",
+ "commit_sha": "637448e7",
  "tsm_on": true,
  "wa_eff": 0.6,
  "wb_eff": 0.4,

@@ -12,6 +12,7 @@ from publish_gate import load_holidays, last_trading_day_of_week, fingerprint
 from v4_engine.config import StrategyConfig
 from version import RELEASE_VERSION
 from v4_engine.jsonio import validation_matches
+from v4_engine.recommendations import hidden_zero_asset_codes, public_warnings
 HERE = os.path.dirname(os.path.abspath(__file__))
 os.chdir(HERE)
 
@@ -80,7 +81,10 @@ if os.path.exists("output/prices.json"):
 
 # ---------- 3. 組 DATA（結構：Web 只顯示，不重算）----------
 holdings_a, holdings_b, sells, restricted_holdings = [], [], [], []
+_hidden_zero_assets = hidden_zero_asset_codes(SIG)
 for a in SIG.get("actions", []):
+    if str(a["stock_code"]) in _hidden_zero_assets:
+        continue
     if a["action"] == "SELL":
         sells.append({"code": a["stock_code"], "name": a["stock_name"], "pool": a["channel"],
                       "reason": a["reason"], "shares": a["sell_shares"],
@@ -119,6 +123,8 @@ for a in SIG.get("actions", []):
         holdings_b.append(item)
 
 for asset in SIG.get('restricted_assets', []):
+    if str(asset['code']) in _hidden_zero_assets:
+        continue
     if any(row['code']==asset['code'] for row in restricted_holdings):
         continue
     restricted_holdings.append({'code':asset['code'],'name':asset.get('name',asset['code']),
@@ -174,7 +180,7 @@ DATA = {
     "buy_total": SIG.get("buy_total", 0), "sell_total": SIG.get("sell_total", 0),
     "cash": SIG.get("cash", 0), "buffer": SIG.get("buffer", 0),
     "portfolio_value": SIG.get("portfolio_value", 0),
-    "warnings": SIG.get("warnings", []) + [f"{a['stock_code']} 沒有最新行情，沿用訊號基準價格" for a in SIG.get("actions", []) if a["action"] != "SELL" and a.get('allocation_eligible', True) and a["stock_code"] not in prices],
+    "warnings": public_warnings(SIG) + [f"{a['stock_code']} 沒有最新行情，沿用訊號基準價格" for a in SIG.get("actions", []) if a["action"] != "SELL" and a.get('allocation_eligible', True) and a["stock_code"] not in prices],
     "holdings_a": holdings_a, "holdings_b": holdings_b, "sells": sells,
     "restricted_holdings": restricted_holdings,
     "history": history,
