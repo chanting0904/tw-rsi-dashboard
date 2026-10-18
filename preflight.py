@@ -20,6 +20,10 @@ def main():
     result = subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v"], cwd=ROOT)
     if result.returncode:
         raise SystemExit(result.returncode)
+    javascript = sorted((ROOT / 'tests').glob('*.cjs'))
+    result = subprocess.run(['node', '--test', *map(str,javascript)], cwd=ROOT)
+    if result.returncode:
+        raise SystemExit(result.returncode)
     print("PREFLIGHT PASS：語法、日期、發布檢查與訊息測試通過；未連網、未發送、未更改持倉。")
 
 

@@ -1,0 +1,20 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
+const source=fs.readFileSync(path.join(__dirname,'../update_data.py'),'utf8').replaceAll('\r\n','\n');
+function functionSource(name){const start=source.indexOf('function '+name+'('),end=source.indexOf('\n}\n',start);assert.ok(start>=0&&end>start);return source.slice(start,end+2);}
+function elements(){const values={};return {values,$:id=>(values[id]??={textContent:''})};}
+test('missing chart library preserves performance text and does not abort later UI setup',()=>{
+ const e=elements(),scope={...e,DATA:{perf:{cagr:.4,mdd:-.3,final_nav:100,start_capital:100,nav:[['2026-10-16',100]],completed_through:'2026-10-16'}},P:String,M:String,F:String};
+ vm.runInNewContext(functionSource('renderCharts')+';renderCharts();',scope);assert.equal(e.values['p-cagr'].textContent,'0.4');assert.match(e.values['chart-nav'].textContent,/股數試算仍可使用/);
+});
+test('chart rendering exceptions are isolated from the rest of the page',()=>{
+ const e=elements(),scope={...e,DATA:{perf:{}},P:String,M:String,F:String,echarts:{init(){throw Error('injected renderer failure');}}};
+ assert.doesNotThrow(()=>vm.runInNewContext(functionSource('renderCharts')+';renderCharts();',scope));assert.match(e.values['chart-dd'].textContent,/圖表暫時/);
+});
+test('blocked storage reads writes and resets keep the current calculation usable',()=>{
+ const e=elements(),blocked=()=>{throw Error('storage denied');};const scope={...e,localStorage:{getItem:blocked,setItem:blocked,removeItem:blocked}};
+ vm.runInNewContext(functionSource('capitalStorage')+";capitalStorage('getItem');capitalStorage('setItem','150000');capitalStorage('removeItem');",scope);assert.match(e.values['cap-storage-note'].textContent,/本次試算仍有效/);
+});
+test('available storage still saves and resets capital',()=>{
+ let value=null;const scope={...elements(),localStorage:{getItem:()=>value,setItem:(k,v)=>value=v,removeItem:()=>value=null}};
+ vm.runInNewContext(functionSource('capitalStorage')+";capitalStorage('setItem','150000');",scope);assert.equal(value,'150000');vm.runInNewContext("capitalStorage('removeItem');",scope);assert.equal(value,null);
+});

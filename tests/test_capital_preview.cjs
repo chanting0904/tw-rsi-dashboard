@@ -52,3 +52,8 @@ test('95 percent ceiling includes fees and survives rounded target weights', () 
     }
   }
 });
+
+test('oversized capital or unsafe quantities fail fast without a rounding loop',()=>{
+ assert.throws(()=>previewAllocation([{code:'2330',target_weight:.95,price:.01}],1e100));
+ assert.throws(()=>previewAllocation([{code:'2330',target_weight:.95,price:1e-10}],1e12));
+});

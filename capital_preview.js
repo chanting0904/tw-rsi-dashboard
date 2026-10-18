@@ -1,6 +1,6 @@
 /* Mirror of v4_engine/allocation.py; minimum commission is per stock order. */
 function previewAllocation(targets,capital,buyFee=.000399,minimumCommission=1) {
-  if (!Number.isFinite(capital)||capital<=0||!Number.isFinite(buyFee)||buyFee<0||buyFee>=1||!Number.isFinite(minimumCommission)||minimumCommission<0) throw new Error('Invalid capital or commission');
+  if (!Number.isFinite(capital)||capital<=0||capital>1e12||!Number.isFinite(buyFee)||buyFee<0||buyFee>=1||!Number.isFinite(minimumCommission)||minimumCommission<0) throw new Error('Invalid capital or commission');
   targets=[...targets].sort((a,b)=>String(a.code)<String(b.code)?-1:String(a.code)>String(b.code)?1:0);
   const total=targets.reduce((s,r)=>s+Number(r.target_weight??0),0);
   if (!Number.isFinite(total)||total>1+1e-9) throw new Error('Target weights exceed capital');
@@ -17,11 +17,11 @@ function previewAllocation(targets,capital,buyFee=.000399,minimumCommission=1) {
   const active=rows.filter(r=>r.weight>0&&r.excluded===null),pools=[...new Set(active.map(r=>r.pool))].sort(),poolWeights={},activeWeights={};
   for (const p of pools) {poolWeights[p]=rows.filter(r=>r.pool===p&&r.excluded!=='restricted').reduce((s,r)=>s+r.weight,0);activeWeights[p]=active.filter(r=>r.pool===p).reduce((s,r)=>s+r.weight,0);}
   const sumWeight=pools.reduce((s,p)=>s+poolWeights[p],0),budget=active.length?Math.max(0,.95*(capital-active.length*minimumCommission)/(1+.95*buyFee)):0,ideals={};
-  for (const r of active) {ideals[r.code]=budget*poolWeights[r.pool]/sumWeight*r.weight/activeWeights[r.pool];quantities[r.code]=Math.floor(ideals[r.code]/r.price);}
+  for (const r of active) {ideals[r.code]=budget*poolWeights[r.pool]/sumWeight*r.weight/activeWeights[r.pool];quantities[r.code]=Math.floor(ideals[r.code]/r.price);if(!Number.isSafeInteger(quantities[r.code]))throw new Error('Quantity exceeds safe integer range');}
   const fee=amount=>amount>0?Math.max(minimumCommission,amount*buyFee):0;
   function totals() {const invested=active.reduce((s,r)=>s+quantities[r.code]*r.price,0),fees=active.reduce((s,r)=>s+fee(quantities[r.code]*r.price),0);return {invested,fees,nav:capital-fees};}
   let {invested,fees,nav}=totals();
-  function maxAdd(r) {const previous=quantities[r.code]*r.price;let low=0,high=Math.max(0,Math.floor((capital-invested-fees)/r.price));while(low<high){const qty=Math.floor((low+high+1)/2),extra=fee(previous+qty*r.price)-fee(previous);if(invested+qty*r.price+fees+extra<=capital+1e-9&&invested+qty*r.price<=.95*(nav-extra)+1e-9)low=qty;else high=qty-1;}return low;}
+  function maxAdd(r) {const previous=quantities[r.code]*r.price;let low=0,high=Math.max(0,Math.floor((capital-invested-fees)/r.price));if(!Number.isSafeInteger(high))throw new Error('Quantity exceeds safe integer range');while(low<high){const qty=Math.floor((low+high+1)/2),extra=fee(previous+qty*r.price)-fee(previous);if(invested+qty*r.price+fees+extra<=capital+1e-9&&invested+qty*r.price<=.95*(nav-extra)+1e-9)low=qty;else high=qty-1;}return low;}
   if(active.length&&invested/nav<.90) {
     for(let i=0;i<active.length*3+3;i++) {
       if(invested/nav>=.925)break;

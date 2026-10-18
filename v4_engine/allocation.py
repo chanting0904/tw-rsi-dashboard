@@ -11,7 +11,7 @@ def ordered_sum(values):
 
 
 def preview_allocation(targets, capital, buy_fee=.000399, minimum_commission=1.):
-    if not math.isfinite(capital) or capital <= 0:
+    if not math.isfinite(capital) or capital <= 0 or capital > 1e12:
         raise ValueError('Invalid capital')
     order_cost(0., 'BUY', buy_fee, minimum_commission)
     targets = sorted(targets, key=lambda r:str(r['code']))
@@ -40,7 +40,9 @@ def preview_allocation(targets, capital, buy_fee=.000399, minimum_commission=1.)
     sum_weight=ordered_sum(pool_weights.values())
     budget=max(0.,.95*(capital-len(active)*minimum_commission)/(1+.95*buy_fee)) if active else 0.
     ideals={r['code']:budget*pool_weights[r['pool']]/sum_weight*r['weight']/active_weights[r['pool']] for r in active}
-    for r in active:quantities[r['code']]=math.floor(ideals[r['code']]/r['price'])
+    for r in active:
+        quantities[r['code']]=math.floor(ideals[r['code']]/r['price'])
+        if quantities[r['code']]>2**53-1:raise ValueError('Quantity exceeds safe integer range')
     def fee(amount):return order_cost(amount,'BUY',buy_fee,minimum_commission)['fee']
     def totals():
         invested=ordered_sum(quantities[r['code']]*r['price'] for r in active)
@@ -51,6 +53,7 @@ def preview_allocation(targets, capital, buy_fee=.000399, minimum_commission=1.)
         code,price=row['code'],row['price']
         previous=quantities[code]*price
         low,high=0,max(0,math.floor((capital-invested-fees)/price))
+        if high>2**53-1:raise ValueError('Quantity exceeds safe integer range')
         while low<high:
             qty=(low+high+1)//2
             extra=fee(previous+qty*price)-fee(previous)

@@ -93,14 +93,18 @@ class PublishTests(unittest.TestCase):
                 "target_weight": .925, "current_weight": .925, "current_shares": 925,
                 "post_shares": 925, "target_shares": 925, "buy_shares": 0, "sell_shares": 0}]}
 
-    def evaluate(self, signal, perf=None, baseline=None):
+    def evaluate(self, signal, perf=None, baseline=None, validated_signal=None, validated_perf=None):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / 'security_status.json').write_text(json.dumps(self.status()),encoding='utf-8')
             (root / "latest_signals.json").write_text(json.dumps(signal), encoding="utf-8")
-            (root / "validation_log.json").write_text(json.dumps({"strategy_version": "V4", "release_version": RELEASE_VERSION, "verdict": "PASS", "rebalance_date": signal["rebalance_date"]}), encoding="utf-8")
+
             performance = dict(perf or {"cagr": .3869, "mdd": -.3564, "completed_through": "2026-10-02"})
             performance.setdefault('release_version', RELEASE_VERSION)
+            from v4_engine.jsonio import document_digest
+            validation={'strategy_version':'V4','release_version':RELEASE_VERSION,'verdict':'PASS','rebalance_date':signal['rebalance_date'],
+                'signal_digest':document_digest(validated_signal or signal),'performance_digest':document_digest(validated_perf or performance)}
+            (root/'validation_log.json').write_text(json.dumps(validation),encoding='utf-8')
             (root / "perf.json").write_text(json.dumps(performance), encoding="utf-8")
             if baseline:
                 (root / "baseline.json").write_text(json.dumps(baseline), encoding="utf-8")

@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 from .canonical import canonical_for
 from .config import V4_COEFFICIENTS
-from .jsonio import write_json
+from .jsonio import write_json, document_digest
 from .performance import perf_document
 from .simulation import run
 from .validation import validate_plans
@@ -72,8 +72,8 @@ def publish(ctx, output_dir, root, *, end=None, report_only=False):
                   'fixed_anchor': {'pass': anchor_ok, 'values': anchor}, 'warning_checks': warnings,
                   'checks': {key: {**value, 'detail': value['detail'][-5:] if key == 'exposure_upper_bound' else value['detail'][:5]} for key, value in checks.items()},
                   'verdict': 'PASS' if valid else 'FAIL'}
-    write_json(output_dir / 'validation_log.json', validation)
     if not valid:
+        write_json(output_dir / 'validation_log.json', validation)
         raise ValueError(f'validation FAIL: {failures}; fixed_anchor={anchor_ok}')
     write_json(output_dir / 'security_status.json', status)
     from .share_delivery import save_delivery_snapshot
@@ -83,6 +83,9 @@ def publish(ctx, output_dir, root, *, end=None, report_only=False):
         write_json(output_dir / 'history' / (plan['date'].strftime('%Y-%m-%d') + '.json'), canonical_for(ctx, plan, trades, sha))
     document = perf_document(result, ctx.config, anchor)
     signal = canonical_for(ctx, latest, trades, sha)
+    validation['signal_digest']=document_digest(signal)
+    validation['performance_digest']=document_digest(document)
+    write_json(output_dir / 'validation_log.json', validation)
     write_json(output_dir / 'corporate_actions.json', live_result.get('corporate_action_audit', []))
     write_json(output_dir / 'perf.json', document)
     write_json(output_dir / 'latest_signals.json', signal)
