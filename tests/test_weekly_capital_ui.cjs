@@ -23,3 +23,5 @@ test('old plan is blocked on the next rebalance day',()=>assert.equal(weeklyCapi
 test('current retry state blocks previous plan reuse',()=>assert.equal(weeklyCapitalReady(confirmed,'2026-10-22',{state:'retrying',rebalance_date:'2026-10-23'}),false));
 test('a plan older than one weekly cycle cannot be reused',()=>assert.equal(weeklyCapitalReady(confirmed,'2026-10-27',readyStatus),false));
 test('unvalidated close is never usable for a remainder order',()=>assert.equal(weeklyCapitalReady({...confirmed,sig_validated:false},'2026-10-19',readyStatus),false));
+
+test('positive pending rights are shown separately so the capital total reconciles',()=>{const f=fixture();f.result.reservedAssets=118;f.$('cap-previous').value=f.$('cap').value='100000';f.click();assert.match(f.$('weekly-capital-summary').textContent,/待領權益 118/);});

@@ -1,6 +1,6 @@
 {
  "strategy_version": "V4",
- "release_version": "V4.6.0",
+ "release_version": "V4.6.1",
  "share_delivery_check": {
   "as_of": "2026-10-16",
   "status": "PASS",
@@ -111,8 +111,8 @@
  "calculation_date": "2026-08-21",
  "rebalance_date": "2026-08-21",
  "sig_date": "2026-08-20",
- "generated_at": "2026-10-18T17:14:14+08:00",
- "commit_sha": "5439b8d3",
+ "generated_at": "2026-10-18T17:22:03+08:00",
+ "commit_sha": "44a600e1",
  "tsm_on": false,
  "wa_eff": 1.0,
  "wb_eff": 0.0,
@@ -713,7 +713,6 @@
   }
  ],
  "warnings": [
-  "有 1 檔新目標股漲停無法買進，其配置已分給其他可買標的",
   "有 1 檔持股因停牌、跌停、缺報價或待入帳限制無法全部賣出，仍暫留模擬紀錄：3089",
   "待領配股共 1 筆，1 筆日期待確認；目前不用另外下單，原有股票仍照策略操作。"
  ]

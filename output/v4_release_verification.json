@@ -1,7 +1,7 @@
 {
- "release_version": "V4.6.0",
- "code_commit": "5439b8d3ab05e156ff1e67ecc638a223a8b3b599",
- "canonical_hash": "7d1510840ebef4c8",
+ "release_version": "V4.6.1",
+ "code_commit": "44a600e15cadc366f3f0d1eaa6236e23aa275118",
+ "canonical_hash": "2f7c4b7d74b300a3",
  "policy": "guarded_weekly_capital_v1",
  "full_history_weeks": 607,
  "full_history_days": 2872,
@@ -11,8 +11,8 @@
   "differences": []
  },
  "tests": {
-  "python": 176,
-  "javascript": 85
+  "python": 177,
+  "javascript": 86
  },
  "full_validation": {
   "checks": {
@@ -2689,7 +2689,7 @@
   "ok": true,
   "reason": "PASS",
   "rebalance_date": "2026-10-16",
-  "canonical_hash": "7d1510840ebef4c8",
+  "canonical_hash": "2f7c4b7d74b300a3",
   "expected_rebalance_date": "2026-10-16",
   "forced": false,
   "regression_baseline": "已固化"

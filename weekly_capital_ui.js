@@ -22,7 +22,7 @@
         const rows=[...plan.rows].filter(r=>r.current||r.target).sort((a,b)=>({SELL:0,BUY:1,HOLD:2}[a.side]-{SELL:0,BUY:1,HOLD:2}[b.side])||a.code.localeCompare(b.code));
         for(const r of rows){const tr=body.insertRow();for(const text of [r.code+' '+r.name,labels[r.side],r.side==='HOLD'?'—':Math.abs(r.change)+' 股',r.current+' → '+r.target+' 股',r.reason])tr.insertCell().textContent=text;}
         const buy=rows.filter(r=>r.side==='BUY').length,sell=rows.filter(r=>r.side==='SELL').length,hold=rows.filter(r=>r.side==='HOLD').length;
-        $('weekly-capital-summary').textContent='買進／加碼 '+buy+' 檔｜賣出／減碼 '+sell+' 檔｜不用動 '+hold+' 檔｜調整後股票 '+money(plan.invested)+'（'+(plan.exposure*100).toFixed(2)+'%）｜預估剩餘 '+money(plan.cash)+'｜本次交易費稅 '+money(plan.fees)+'。'+(!plan.bandReached?' 因整股或交易限制，尚未達90%，差額保留現金。':'');
+        $('weekly-capital-summary').textContent='買進／加碼 '+buy+' 檔｜賣出／減碼 '+sell+' 檔｜不用動 '+hold+' 檔｜調整後股票 '+money(plan.invested)+'（'+(plan.exposure*100).toFixed(2)+'%）｜預估剩餘 '+money(plan.cash)+(plan.reservedAssets>0?'｜待領權益 '+money(plan.reservedAssets):'')+'｜本次交易費稅 '+money(plan.fees)+'。'+(!plan.bandReached?' 因整股或交易限制，尚未達90%，差額保留現金。':'');
         $('weekly-capital-basis').textContent='上週基準 '+plan.previousDate+' → 本週 '+plan.date+'；'+(plan.source==='saved'?'沿用本瀏覽器已儲存的上週試算股數。':'首次或上週資金不同：依上週模型配置、上週股價及輸入資金推算股數。')+' 本週依各檔頁面基準行情估算，實際成交價會改變費用及剩餘資金；這是理論持股，未連接券商庫存。';
         $('weekly-capital-error').textContent='';$('weekly-capital-results').hidden=false;
         saved[plan.date]=plan.snapshot;

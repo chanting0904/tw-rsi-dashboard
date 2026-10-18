@@ -131,7 +131,8 @@ class GuardedExecution:
         self.previous_date=str(day.date());self.previous_capital=capital
         wp=dict(date=day,cash=cash,nav=nav,capital_basis=capital,receivables=reserve,recs=recs,stock_exposure=exposure,
             exposure_in_band=.90<=exposure<=.95,missing_price_targets=ref.get('missing_price_targets',0),
-            blocked_limitup_targets=sum(1 for c,a in actions.items() if a.get('allocation_eligible') and not quotes.get(c,{}).get('buyable') and quotes.get(c,{}).get('tradable')),
+            blocked_limitup_targets=sum(1 for c,a in actions.items() if a.get('allocation_eligible') and not pre.get(c,0) and not quotes.get(c,{}).get('buyable') and quotes.get(c,{}).get('tradable')),
+            reference_blocked_limitup_targets=ref.get('blocked_limitup_targets',0),
             blocked_exit_codes=blocked,exposure_cap_blocked_codes=cap_blocked,unplanned_holdings=[],
             restricted_assets=restricted_assets(ctx,positions,day),pending_assets=getattr(ctx,'share_entitlements',[]) or [],
             wa_eff=ref['wa_eff'],wb_eff=ref['wb_eff'],execution_policy='guarded_weekly_capital_v1')

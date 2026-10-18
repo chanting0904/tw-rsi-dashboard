@@ -150,8 +150,11 @@ def canonical_for(ctx, wp, trades_df, commit_sha):
         warnings.append(f"調倉後持倉 {exposure*100:.1f}% 未落在 90–95% 目標區間；請檢查交易限制或可買目標股數")
     if wp.get("missing_price_targets", 0):
         warnings.append(f"有 {wp['missing_price_targets']} 檔目標股缺少有效價格，已把該通道權重重新分配給可計價標的")
-    if wp.get("blocked_limitup_targets", 0):
-        warnings.append(f"有 {wp['blocked_limitup_targets']} 檔新目標股漲停無法買進，其配置已分給其他可買標的")
+    blocked_new = wp.get('blocked_limitup_targets',0)
+    if wp.get('execution_policy')=='guarded_weekly_capital_v1':
+        blocked_new = wp.get('reference_blocked_limitup_targets',0)+sum(1 for a in acts if a.get('allocation_eligible') and not a.get('buy_allowed',True) and not a['current_shares'])
+    if blocked_new:
+        warnings.append(f"有 {blocked_new} 檔新目標股漲停無法買進，其配置已分給其他可買標的")
     if wp.get("blocked_exit_codes"):
         blocked = sorted(set(wp["blocked_exit_codes"]))
         warnings.append(f"有 {len(blocked)} 檔持股因停牌、跌停、缺報價或待入帳限制無法全部賣出，仍暫留模擬紀錄：{'、'.join(blocked)}")
