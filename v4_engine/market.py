@@ -165,6 +165,13 @@ def load_market(config, root, *, live_rebalance=None, data_root=None, token=None
     context.share_delivery_events = json.loads(delivery_path.read_text(encoding='utf-8')).get('events',[]) if delivery_path.exists() else []
     from .corporate_actions import delivery_registry
     delivery_registry(context.share_delivery_events)
+    from .share_delivery import merge_registered, resolve_deliveries
+    saved_path=Path(root)/'output/share_delivery_events.json'
+    saved=json.loads(saved_path.read_text(encoding='utf-8')).get('events',[]) if saved_path.exists() else []
+    registered=merge_registered(context.share_delivery_events,saved)
+    context.share_delivery_events,context.share_delivery_status=resolve_deliveries(
+        events,registered,SIGNAL_DAY or raw_close.index[-1],start=config.start_date,
+        cache_dir=Path(data_root or root)/'finlab_db/share_delivery_cache')
     from .security_status import refresh_security_status
     # Loading data (including report-only runs) must not replace the status
     # snapshot bound to an already published signal. Publication stages it.

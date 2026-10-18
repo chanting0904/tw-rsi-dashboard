@@ -114,6 +114,8 @@ def update_file(path, px, sig, expected_rebal_date):
                 h["px_date"] = sig
                 h['price_kind'] = 'CLOSE'
     d["price_warnings"] = [f"{c} 沒有本次行情，請查看該檔價格日期" for c in codes_of(d) if c not in px]
+    from v4_engine.order_quotes import refresh_order_quotes
+    d["order_quotes"]=refresh_order_quotes(d.get("order_quotes",{}),px,sig)
     d["px_date"] = sig
     d["expected_rebal_date"] = expected_rebal_date
     d.setdefault("rebal_date", d.get("sig_date"))

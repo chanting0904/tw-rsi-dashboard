@@ -26,6 +26,8 @@ on:
       - 'v4_engine/**'
       - 'v4_canonical.py'
       - 'capital_preview.js'
+      - 'order_planner.js'
+      - 'order_planner_ui.js'
       - 'version.py'
       - 'VERSION_HISTORY.txt'
       - 'v4_baseline.json'

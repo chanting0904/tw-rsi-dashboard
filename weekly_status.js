@@ -39,6 +39,12 @@ function weeklyReadiness(data, today = taipeiDate(), status = data.weekly_status
   const ready = data.rebal_date === expected && data.signal_mode === 'PRE_CLOSE_PLAN'
     && data.price_basis_date === basis && data.sig_date === basis && data.sig_validated === true;
   if (ready) return {state: 'ready', expected, title: '本週計畫已完成', detail: suffix + '最後交易日收盤執行；未成交部分下週首個交易日補單。'};
+  const closeReady = data.rebal_date === expected && today >= expected
+    && data.signal_mode === 'CLOSE_SIMULATION' && data.sig_date === basis
+    && data.price_basis_date === expected && data.sig_validated === true
+    && current && status.state === 'ready' && !!data.canonical_hash
+    && status.canonical_hash === data.canonical_hash;
+  if (closeReady) return {state: 'ready', expected, title: '本週收盤模擬已更新', detail: suffix + '下方為收盤模擬結果；補單股數可用當次持股試算核對。'};
   if (current && status.state === 'ready') {
     return {state: 'waiting', expected, title: '本週計畫已更新，請重新整理', detail: suffix + '目前這個頁面仍是舊版本。'};
   }
