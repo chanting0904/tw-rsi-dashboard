@@ -159,7 +159,7 @@ class ExRightsFlowTests(unittest.TestCase):
         root=Path(__file__).resolve().parents[1]
         with tempfile.TemporaryDirectory() as directory:
             temp=Path(directory);(temp/'output').mkdir()
-            for name in ['update_data.py','capital_preview.js','weekly_status.js','order_planner.js','order_planner_ui.js']:
+            for name in ['update_data.py','capital_preview.js','weekly_status.js','order_planner.js','order_planner_ui.js','weekly_capital.js','weekly_capital_ui.js']:
                 (temp/name).write_bytes((root/name).read_bytes())
             (temp/'output/latest_signals.json').write_text(json.dumps(signal,ensure_ascii=False),encoding='utf-8')
             (temp/'output/prices.json').write_text(json.dumps({'px_date':'2026-01-08','prices':{'2400':100.}}),encoding='utf-8')
@@ -168,7 +168,7 @@ class ExRightsFlowTests(unittest.TestCase):
             self.assertEqual(process.returncode,0,process.stdout+process.stderr)
             rendered=(temp/'index.html').read_text(encoding='utf-8')
             self.assertIn('不需另填現金',rendered)
-            self.assertIn('本金變動的當次會依新本金重算目標股數',rendered)
+            self.assertIn('續抱股原則上不動',rendered)
             self.assertNotIn('id="order-cash"',rendered)
             _,data=read_data(rendered)
             self.assertAlmostEqual(data['holdings_a'][0]['px'],98/1.1,places=2)
