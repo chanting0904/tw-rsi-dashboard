@@ -65,3 +65,9 @@ test('invalid tiny quote with existing shares fails quickly before quantity sear
  const code='const {weeklyCapitalPlan}=require('+JSON.stringify(modulePath)+');const a={stock_code:"1101",post_shares:1,current_shares:1,allocation_eligible:true,action:"HOLD",target_weight:.95,strategy_target_weight:.95};try{weeklyCapitalPlan({previous:{rebalance_date:"2026-10-08",actions:[a]},current:{rebalance_date:"2026-10-16",actions:[a]},previousCapital:100000,capital:1000000000000,quotes:{1101:{price:1e-10,tradable:true}},snapshot:{schema:1,rebalance_date:"2026-10-08",capital:100000,holdings:[{code:"1101",shares:1}]}});process.exit(2);}catch(e){if(!e.message.includes("安全整數"))throw e;}';
  const r=spawnSync(process.execPath,['-e',code],{timeout:3000,encoding:'utf8'});assert.equal(r.error,undefined);assert.equal(r.status,0,r.stderr);
 });
+
+test('inflated model carry weight cannot cause a sold one-share position to be bought back next week',()=>{
+ const f=fixture();f.previous.actions=[action('1101',1,.0003,'HOLD',30),action('1102',947,.947)];f.current.actions=structuredClone(f.previous.actions);f.current.actions[0].target_weight=.00061;f.current.actions[0].post_weight=.00061;f.quotes[1101].price=61;f.snapshot={schema:1,rebalance_date:f.previous.rebalance_date,capital:100000,holdings:[{code:'1101',shares:1},{code:'1102',shares:947}]};
+ const p=weeklyCapitalPlan(f);check(p);assert.equal(p.rows.find(r=>r.code==='1101').change,-1);
+ const next=weeklyCapitalPlan({...f,previous:f.current,current:{...f.current,rebalance_date:'2026-10-23'},capital:p.nav,snapshot:p.snapshot});check(next);assert.equal(next.rows.find(r=>r.code==='1101').target,0);assert.equal(next.fees,0);
+});

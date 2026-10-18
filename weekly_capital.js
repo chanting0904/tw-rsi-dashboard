@@ -37,16 +37,20 @@
       if(!shares&&!eligible)continue;
       const q=quotes[code]||{},price=Number(q.price),tradable=q.tradable===true;
       if(!Number.isFinite(price)||price<=0)throw Error(code+' 缺少有效本週股價，暫不產生下單清單。');
-      const weight=eligible?Number(a.target_weight):0,ideal=capital*weight;
+      const weight=eligible?Number(a.target_weight):0;
       if(!Number.isFinite(weight)||weight<0||weight>1)throw Error('本週模型權重無效。');
+      const normalIdeal=capital*Number(a?.strategy_target_weight??weight);
+      if(!Number.isFinite(normalIdeal)||normalIdeal<0)throw Error('本週策略目標無效。');
+      const thresholdTolerance=Math.max(1e-7,Math.abs(normalIdeal)*Number.EPSILON*8);
+      let ideal=capital*weight;
+      // Do not buy/top up into a position that would immediately require a 100% trim.
+      if(normalIdeal>0&&ideal>2*normalIdeal+thresholdTolerance)ideal=normalIdeal;
       const desired=Math.floor(ideal/price);
       if(!Number.isSafeInteger(desired))throw Error('股數超過安全整數範圍，請確認價格與資金。');
       let target=shares,reason='續抱不動';
       if(!eligible&&tradable){target=0;reason='退出本週名單';}
       else if(eligible&&!shares&&tradable){target=desired;reason='本週新買';}
       else if(eligible&&tradable){
-        const normalIdeal=capital*Number(a.strategy_target_weight??weight);
-        const thresholdTolerance=Math.max(1e-7,Math.abs(normalIdeal)*Number.EPSILON*8);
         if(normalIdeal>0&&shares*price>2*normalIdeal+thresholdTolerance){target=Math.floor(normalIdeal/price);reason='超過100%差距門檻';}
       }
       if(!tradable)reason='交易狀態受限，保留股數';
