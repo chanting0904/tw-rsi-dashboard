@@ -1,6 +1,6 @@
 {
  "strategy_version": "V4",
- "release_version": "V4.6.0",
+ "release_version": "V4.6.1",
  "generated_at": "2026-10-18T17:13:38.602497+08:00",
  "rebalance_date": "2026-10-16",
  "v4_consistency": true,
@@ -17,7 +17,8 @@
     "a_retention_rank": 20,
     "b_max_names": 4
    }
-  }
+  },
+  "release_version": "V4.6.1"
  },
  "warning_checks": [
   "limit_dn"
@@ -147,6 +148,6 @@
   }
  },
  "verdict": "PASS",
- "signal_digest": "822023923c30f9778c77065431116df02785594ca9ad769b75bea4055f53b3c1",
- "performance_digest": "2e700cfe017494cff6d219d60372663890e5630c45cd5a6d4659360f8d66e084"
+ "signal_digest": "c5d623808ae03f17a99c9c0b5a180fdb992dc8d940f7ade9a3dd2f81918175aa",
+ "performance_digest": "109b8f5661397fbb443dfcf2efaa2895b5af5ecb4793f2dddb92dcbee61ee267"
 }
