@@ -296,7 +296,7 @@ HTML = """<!DOCTYPE html>
         <label for="order-mode">委託價格</label><select id="order-mode"><option value="stress">買進＋10%／賣出－10%估算</option><option value="reference">依頁面基準行情</option></select>
         <button id="order-calc">計算買賣差額</button><button id="order-clear" class="ghost">清除當次資料</button>
       </div>
-      <div class="note">目標股數沿用上方總資金試算；下表的委託價可逐檔修改。±10%只是資金壓力試算，<b>不是當日官方漲跌停價，也不保證成交</b>；除權息等情況會改變基準。掛單請以券商顯示的有效價格為準。<br>行情及交易狀態都有各自基準日，委託前請再確認當日狀態。賣出未成交前不當成可用現金；能否使用賣出收入，以券商額度為準。</div>
+      <div class="note">目標股數沿用上方總資金試算；下表的委託價可逐檔修改。±10%只是資金壓力試算，<b>不是當日官方漲跌停價，也不保證成交</b>；除權息等情況會改變基準。掛單請以券商顯示的有效價格為準。<br>行情及交易狀態都有各自基準日，委託前請再確認當日狀態。只依上方輸入的總資金核對整份調倉是否超支，不需另填現金。本金變動的當次會依新本金重算目標股數，續抱股也可能需要加減碼；本金不變時，依策略續抱規則執行。資金檢查以清單全數成交為前提。</div>
       <div id="order-error" class="note" role="alert"></div>
       <div id="order-results" hidden><div id="order-summary" class="note" role="status"></div><div class="order-controls"><button id="order-copy" class="ghost">複製買賣清單</button><span id="order-copy-note" class="note"></span></div><div style="overflow-x:auto"><table id="order-table"></table></div></div>
     </details>
