@@ -120,6 +120,16 @@ def canonical_for(ctx, wp, trades_df, commit_sha):
     sell_total = sum(a["estimated_sell_amount"] for a in acts)
     nb_b = len({a["stock_code"] for a in acts if a["channel"] == "B"})
     warnings = []
+    delivery_status=dict(getattr(ctx,'share_delivery_status',None) or {})
+    if delivery_status:
+        pending_keys={(a['code'],a['ex_date']) for a in wp.get('pending_assets',[])}
+        conflicts=delivery_status.get('conflicts',[])
+        relevant=[a for a in conflicts if (a['code'],a['ex_date']) in pending_keys]
+        delivery_status['unrelated_conflicts']=len(conflicts)-len(relevant)
+        delivery_status['conflicts']=relevant
+        delivery_status['status']='PASS' if all(s['ok'] for s in delivery_status.get('sources',[])) and not relevant else 'PARTIAL'
+    if delivery_status.get('status')=='PARTIAL':
+        warnings.append('配股公告自動核對有來源缺漏或日期衝突，未核實配股保持鎖定；詳見配股核對狀態。')
     base_a_w = 0.60 if sw_tsm.get(wp["date"], False) else 1.0
     base_b_w = 0.40 if sw_tsm.get(wp["date"], False) else 0.0
     exposure = float(wp.get("stock_exposure", 0.0))
@@ -151,6 +161,7 @@ def canonical_for(ctx, wp, trades_df, commit_sha):
         warnings.append('本週部分股票遇除權息，已標示「除權息參考價」；實際成交價格仍以券商為準。')
     return {
         "strategy_version": STRATEGY_VERSION, "release_version": RELEASE_VERSION,
+        "share_delivery_check": {k:delivery_status[k] for k in ['as_of','status','discovered','registered','conflicts'] if k in delivery_status},
         "restricted_assets": wp.get('restricted_assets', []),
         "pending_assets": wp.get('pending_assets', []),
         "security_status_checked_for": (getattr(ctx,'security_status',None) or {}).get('checked_for'),

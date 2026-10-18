@@ -76,6 +76,8 @@ def publish(ctx, output_dir, root, *, end=None, report_only=False):
     if not valid:
         raise ValueError(f'validation FAIL: {failures}; fixed_anchor={anchor_ok}')
     write_json(output_dir / 'security_status.json', status)
+    from .share_delivery import save_delivery_snapshot
+    save_delivery_snapshot(ctx,live_result,output_dir)
     sha = commit_sha(root)
     for plan in historical:
         write_json(output_dir / 'history' / (plan['date'].strftime('%Y-%m-%d') + '.json'), canonical_for(ctx, plan, trades, sha))

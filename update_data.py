@@ -135,8 +135,13 @@ def read_optional(path):
 
 _calendar = read_optional('holidays.json')
 _validation = read_optional('output/validation_log.json')
+from v4_engine.order_quotes import build_order_quotes
+_order_quotes=build_order_quotes(SIG,prices,px_date,read_optional('output/security_status.json'))
 DATA = {
     "canonical_hash": fingerprint(SIG),
+    "order_quotes": _order_quotes,
+    "fee_model": SIG.get("fee_model", {}),
+    "share_delivery_check": SIG.get("share_delivery_check", {}),
     "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
     "expected_rebal_date": week_last.isoformat() if week_last else None,
     "calendar_years": list(_calendar),
@@ -249,6 +254,7 @@ HTML = """<!DOCTYPE html>
   .op-title.buy{background:rgba(255,77,79,.08); color:var(--up);}
   .op-title.reb{background:rgba(245,185,66,.08); color:var(--warn);}
   .op-title.hold{background:rgba(128,140,160,.08); color:#9aa8bf;}
+  .order-input{background:var(--card2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:9px;font:inherit;max-width:100%;} .order-price{width:105px;background:var(--card2);color:var(--txt);border:1px solid var(--line);border-radius:5px;padding:6px;} #order-holdings{width:100%;min-height:130px;margin:10px 0;} .order-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0;}
   @media (max-width:900px){ .cards{grid-template-columns:repeat(2,1fr);} .capbar input{width:100%;} }
 </style>
 </head>
@@ -267,7 +273,7 @@ HTML = """<!DOCTYPE html>
   <div id="switchbox" style="margin-bottom:12px"></div>
 
   <section>
-    <h2>💰 實盤本金（唯一資金基準）</h2>
+    <h2>💰 總資金（持股市值＋現金）</h2>
     <div class="capbar">
       <input type="number" id="cap" min="10000" step="10000" placeholder="請輸入實際本金">
       <button id="cap-apply">套用本金</button>
@@ -276,10 +282,25 @@ HTML = """<!DOCTYPE html>
     </div>
     <div class="note">🔸 以 V4.0.0 模擬配置為基礎，依輸入本金、整股與模型費用計算；整股後權重可能略有調整。<br>
     🔸 輸入後按「套用本金」記住（存你瀏覽器，重新整理不會消失）；「重新設定」回預設 100,000。<br>
-    🔸 本頁只給「目標清單」：每檔該持有多少股（照本金估算）。<b>實際買賣你自己對照手上持股下單</b>，系統不記錄你的持股。</div>
+    🔸 主清單顯示每檔目標股數；需要知道這次買賣差額時，可展開下方試算，輸入當次持股。持股資料只在本頁記憶體，重新整理即清除，不改動策略模擬。</div>
     <div id="selectionnote" class="note"></div>
     <div id="allocationnote" class="note"></div>
     <details id="allocationdetails" class="note"><summary>查看配置差額：哪些股票少了多少</summary><div id="allocationrows" style="overflow-x:auto"></div></details>
+  </section>
+
+  <section>
+    <details id="order-planner"><summary style="cursor:pointer;font-weight:700">🧾 算這次要買賣幾股／檢查委託資金（選用）</summary>
+      <div class="note">每行輸入「股票代號 股數」，例如 2033 100；單位是股，不是張。目前沒有持股請填「空手」。<b>請輸入完整、已可交易的持股；待領配股不要算入。</b>內容不會上傳或寫回模擬持倉。</div>
+      <label for="order-holdings">當次持股</label><textarea id="order-holdings" class="order-input" placeholder="2033 100&#10;6199 33"></textarea>
+      <div class="order-controls">
+        <label for="order-mode">委託價格</label><select id="order-mode"><option value="stress">買進＋10%／賣出－10%估算</option><option value="reference">依頁面基準行情</option></select>
+        <button id="order-calc">計算買賣差額</button><button id="order-clear" class="ghost">清除當次資料</button>
+      </div>
+      <div class="note">目標股數沿用上方總資金試算；下表的委託價可逐檔修改。±10%只是資金壓力試算，<b>不是當日官方漲跌停價，也不保證成交</b>；除權息等情況會改變基準。掛單請以券商顯示的有效價格為準。<br>行情及交易狀態都有各自基準日，委託前請再確認當日狀態。賣出未成交前不當成可用現金；能否使用賣出收入，以券商額度為準。</div>
+      <div id="order-error" class="note" role="alert"></div>
+      <div id="order-results" hidden><div id="order-summary" class="note" role="status"></div><div class="order-controls"><button id="order-copy" class="ghost">複製買賣清單</button><span id="order-copy-note" class="note"></span></div><div style="overflow-x:auto"><table id="order-table"></table></div></div>
+    </details>
+    <div id="delivery-check-note" class="note"></div>
   </section>
 
   <div class="cards" id="cards"></div>
@@ -289,7 +310,7 @@ HTML = """<!DOCTYPE html>
     <div id="ops"></div>
     <div id="restrictednote" class="note"></div>
     <details id="pendingbox" class="note" style="display:none"><summary id="pendingsummary"></summary><div id="pendingnote"></div></details>
-    <div class="note">🔸 先賣出／減碼釋出現金，再買入／加碼。每檔顯示 V4 模擬調倉後建議權重＋照目前本金算出的「目標股數」（目標金額 ÷ 現價，取整股）；<b>實際買賣股數請你自己對照手上持股決定</b>。</div>
+    <div class="note">🔸 先賣出／減碼釋出現金，再買入／加碼。每檔顯示 V4 模擬調倉後建議權重＋照目前本金算出的「目標股數」（目標金額 ÷ 現價，取整股）；<b>可展開上方當次持股試算，換算這次買賣差額</b>。</div>
   </section>
 
   <section>
@@ -308,7 +329,7 @@ HTML = """<!DOCTYPE html>
     <div class="note">🔸 動作說明：BUY=買入｜SELL=賣出｜REBALANCE_BUY=加碼｜REBALANCE_SELL=減碼｜HOLD=不動（買紅賣綠＝台股習慣）。<br>
     🔸 目標金額＝整股股數×顯示價格；目標權重使用扣除模型費用後的資產計算。低於90%時依可買標的補足整股差額，上限95%。<br>
     🔸 <b style="color:var(--warn)">🟡 加碼／減碼（REBALANCE）= 該檔持倉權重偏離目標超過 V4 的一般 100% 差距門檻，或整體倉位需要修復，才需要調</b>。舊持股減少一般加減碼；退出、新股加入、90～95% 倉位修復仍執行。<br>
-    🔸 系統不記錄你的實際持股；「目標股數」是你照本金應該持有的量，實際買賣你自己對照手上持股下單。</div>
+    🔸 系統不記錄你的實際持股；「目標股數」是你照本金應該持有的量，可展開上方當次持股試算，換算這次買賣差額。</div>
   </section>
 
   <section id="histsec" style="display:none">
@@ -349,12 +370,14 @@ HTML = """<!DOCTYPE html>
   </section>
 
   <footer>
-    資料由 V4 引擎（v4_canonical.py）計算，Web / TG / Replay 讀同一份 canonical 結果；本頁只顯示與依本金估算，不重算策略。<br>股利先列應收、發放後才可買股；未知付款日持續列應收。配股採除權日可交易的模型假設，畸零權益暫列應收；不含個人股利稅負。<br>
+    資料由 V4 引擎（v4_canonical.py）計算，Web / TG / Replay 讀同一份 canonical 結果；本頁只顯示與依本金估算，不重算策略。<br>股利先列應收、發放後才可買股；未知付款日持續列應收。配股在除權日取得權益，核實可交易日期後才列可賣股數；畸零權益暫列應收；不含個人股利稅負。<br>
     本頁僅供資訊展示，不構成投資建議。
   </footer>
 </div>
 
 <script>
+__ORDER_PLANNER_JS__
+__ORDER_PLANNER_UI_JS__
 const DATA = __DATA_JSON__;
 __WEEKLY_STATUS_JS__
 __CAPITAL_PREVIEW_JS__
@@ -372,6 +395,7 @@ const ORDER = ["SELL", "REBALANCE_SELL", "BUY", "REBALANCE_BUY", "HOLD"];
 let USER_CAPITAL = parseFloat(localStorage.getItem("v4_user_capital") || "100000") || 100000;
 if (!Number.isFinite(USER_CAPITAL) || USER_CAPITAL < 10000) USER_CAPITAL = 100000;
 let CAPITAL_PREVIEW = null;
+let ORDER_PLANNER_UI = null;
 function updateCapitalPreview() {
   CAPITAL_PREVIEW = previewAllocation(allHolds().map(row => ({code:row.code, target_weight:row.target_weight, price:row.px || row.price, channel:row.channel})), USER_CAPITAL, DATA.buy_fee, DATA.minimum_commission);
 }
@@ -790,6 +814,7 @@ function renderAll() {
   renderOps();
   renderHoldings();
   renderRestrictedHoldings();
+  if (ORDER_PLANNER_UI) ORDER_PLANNER_UI.render();
   if ($("histsel").options.length) $("histsel").dispatchEvent(new Event("change"));
 }
 $("cap").value = USER_CAPITAL;
@@ -798,6 +823,9 @@ renderSellNote();
 renderCharts();
 renderHist();
 initPerfCalc();
+ORDER_PLANNER_UI=initOrderPlanner({data:DATA,money:M,getCapital:()=>USER_CAPITAL,getTargets:()=>allHolds().map(row=>({code:String(row.code),name:row.name,quantity:tgtShares(row)}))});
+const deliveryCheck=DATA.share_delivery_check||{};
+$("delivery-check-note").textContent=deliveryCheck.as_of?'配股公告核對基準 '+deliveryCheck.as_of+'｜'+(deliveryCheck.status==='PASS'?'官方來源核對完成':'部分來源或日期待確認，未核實配股仍鎖定'):'配股公告將於下次策略計算時自動核對；未確認日期仍保持鎖定。';
 </script>
 </body>
 </html>
@@ -809,6 +837,10 @@ with open(os.path.join(HERE, 'weekly_status.js'), encoding='utf-8') as _source:
     HTML = HTML.replace('__WEEKLY_STATUS_JS__', _source.read())
 with open(os.path.join(HERE, 'capital_preview.js'), encoding='utf-8') as _source:
     HTML = HTML.replace('__CAPITAL_PREVIEW_JS__', _source.read())
+
+for _name,_placeholder in [('order_planner.js','__ORDER_PLANNER_JS__'),('order_planner_ui.js','__ORDER_PLANNER_UI_JS__')]:
+    with open(os.path.join(HERE,_name),encoding='utf-8') as _source:
+        HTML=HTML.replace(_placeholder,_source.read())
 
 # 統一僅輸出 index.html（GitHub Pages 唯一入口）；RSI選股器.html 為舊名冗餘檔，不再生成
 for _name in ("index.html",):

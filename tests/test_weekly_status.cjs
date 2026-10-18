@@ -17,3 +17,13 @@ test('retrying is not ready', () => assert.match(weeklyReadiness(data, '2026-10-
 test('Friday holiday plans Thursday', () => assert.equal(weeklyReadiness(data, '2026-10-08').expected, '2026-10-08'));
 test('missing annual calendar never assumes ready', () => assert.equal(weeklyReadiness(data, '2027-01-08').state, 'failed'));
 test('fully closed week has no plan', () => assert.equal(weeklyReadiness({...data, holidays: ['2026-10-12','2026-10-13','2026-10-14','2026-10-15','2026-10-16']}, '2026-10-16').title, '本週休市，沒有調倉計畫'));
+
+test('validated current close simulation is ready with matching published fingerprint',()=>{
+ const close={...data,signal_mode:'CLOSE_SIMULATION',price_basis_date:'2026-10-16',canonical_hash:'abc'};
+ assert.equal(weeklyReadiness(close,'2026-10-18',{rebalance_date:'2026-10-16',state:'ready',canonical_hash:'abc'}).title,'本週收盤模擬已更新');
+});
+test('close simulation cannot pass early, without validation or mismatched fingerprint',()=>{
+ const close={...data,signal_mode:'CLOSE_SIMULATION',price_basis_date:'2026-10-16',canonical_hash:'abc'};
+ const status={rebalance_date:'2026-10-16',state:'ready',canonical_hash:'abc'};
+ for(const [record,date,state] of [[close,'2026-10-15',status],[{...close,sig_validated:false},'2026-10-18',status],[close,'2026-10-18',{...status,canonical_hash:'other'}]])assert.notEqual(weeklyReadiness(record,date,state).state,'ready');
+});

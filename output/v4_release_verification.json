@@ -1,7 +1,7 @@
 {
- "release_version": "V4.3.2",
- "previous_release": "V4.3.1",
- "code_commit": "c5a0eae5171a403f3309b952365a8597c4df2e28",
+ "release_version": "V4.4.0",
+ "previous_release": "V4.3.2",
+ "code_commit": "3fadf4eeaa8798cd2c90117e7924c894c5a6f0cd",
  "authorized_to_deploy": true,
  "current_plan": {
   "rebalance_date": "2026-10-16",
@@ -9,7 +9,7 @@
   "price_basis_date": "2026-10-16",
   "signal_mode": "CLOSE_SIMULATION",
   "stock_exposure": 0.95,
-  "fingerprint": "8e92dd9daa75ce01",
+  "fingerprint": "1b1243eecaace4dd",
   "counts": {
    "BUY": 9,
    "SELL": 7,
@@ -22,14 +22,14 @@
   "ok": true,
   "reason": "PASS",
   "rebalance_date": "2026-10-16",
-  "canonical_hash": "8e92dd9daa75ce01",
+  "canonical_hash": "1b1243eecaace4dd",
   "expected_rebalance_date": "2026-10-16",
   "forced": false,
   "regression_baseline": "已固化"
  },
  "offline_checks": {
-  "python_tests": 128,
-  "javascript_tests": 21,
+  "python_tests": 139,
+  "javascript_tests": 39,
   "preview_cases": 2500
  },
  "cash_and_shares": {
@@ -119,6 +119,230 @@
    "signal_day": "2026-10-15 00:00:00"
   }
  },
+ "delivery_discovery": {
+  "as_of": "2026-10-16",
+  "status": "PARTIAL",
+  "sources": [
+   {
+    "market": "twse",
+    "year": 2015,
+    "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20150101&endDate1=20151231&selectType=&stockNo=&response=json",
+    "ok": true,
+    "cached": false,
+    "records": 0
+   },
+   {
+    "market": "tpex",
+    "year": 2015,
+    "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2015%2F12%2F01&endDate=2015%2F12%2F31&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
+    "ok": true,
+    "cached": false,
+    "records": 0
+   },
+   {
+    "market": "twse",
+    "year": 2016,
+    "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20160101&endDate1=20161231&selectType=&stockNo=&response=json",
+    "ok": true,
+    "cached": false,
+    "records": 120
+   },
+   {
+    "market": "tpex",
+    "year": 2016,
+    "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2016%2F01%2F01&endDate=2016%2F12%2F31&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
+    "ok": true,
+    "cached": false,
+    "records": 92
+   },
+   {
+    "market": "twse",
+    "year": 2017,
+    "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20170101&endDate1=20171231&selectType=&stockNo=&response=json",
+    "ok": true,
+    "cached": false,
+    "records": 112
+   },
+   {
+    "market": "tpex",
+    "year": 2017,
+    "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2017%2F01%2F01&endDate=2017%2F12%2F31&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
+    "ok": true,
+    "cached": false,
+    "records": 90
+   },
+   {
+    "market": "twse",
+    "year": 2018,
+    "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20180101&endDate1=20181231&selectType=&stockNo=&response=json",
+    "ok": true,
+    "cached": false,
+    "records": 106
+   },
+   {
+    "market": "tpex",
+    "year": 2018,
+    "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2018%2F01%2F01&endDate=2018%2F12%2F31&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
+    "ok": true,
+    "cached": false,
+    "records": 90
+   },
+   {
+    "market": "twse",
+    "year": 2019,
+    "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20190101&endDate1=20191231&selectType=&stockNo=&response=json",
+    "ok": true,
+    "cached": false,
+    "records": 96
+   },
+   {
+    "market": "tpex",
+    "year": 2019,
+    "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2019%2F01%2F01&endDate=2019%2F12%2F31&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
+    "ok": true,
+    "cached": false,
+    "records": 85
+   },
+   {
+    "market": "twse",
+    "year": 2020,
+    "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20200101&endDate1=20201231&selectType=&stockNo=&response=json",
+    "ok": true,
+    "cached": false,
+    "records": 78
+   },
+   {
+    "market": "tpex",
+    "year": 2020,
+    "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2020%2F01%2F01&endDate=2020%2F12%2F31&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
+    "ok": true,
+    "cached": false,
+    "records": 72
+   },
+   {
+    "market": "twse",
+    "year": 2021,
+    "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20210101&endDate1=20211231&selectType=&stockNo=&response=json",
+    "ok": true,
+    "cached": false,
+    "records": 85
+   },
+   {
+    "market": "tpex",
+    "year": 2021,
+    "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2021%2F01%2F01&endDate=2021%2F12%2F31&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
+    "ok": true,
+    "cached": false,
+    "records": 90
+   },
+   {
+    "market": "twse",
+    "year": 2022,
+    "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20220101&endDate1=20221231&selectType=&stockNo=&response=json",
+    "ok": true,
+    "cached": false,
+    "records": 86
+   },
+   {
+    "market": "tpex",
+    "year": 2022,
+    "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2022%2F01%2F01&endDate=2022%2F12%2F31&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
+    "ok": true,
+    "cached": false,
+    "records": 112
+   },
+   {
+    "market": "twse",
+    "year": 2023,
+    "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20230101&endDate1=20231231&selectType=&stockNo=&response=json",
+    "ok": true,
+    "cached": false,
+    "records": 99
+   },
+   {
+    "market": "tpex",
+    "year": 2023,
+    "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2023%2F01%2F01&endDate=2023%2F12%2F31&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
+    "ok": true,
+    "cached": false,
+    "records": 133
+   },
+   {
+    "market": "twse",
+    "year": 2024,
+    "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20240101&endDate1=20241231&selectType=&stockNo=&response=json",
+    "ok": true,
+    "cached": false,
+    "records": 91
+   },
+   {
+    "market": "tpex",
+    "year": 2024,
+    "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2024%2F01%2F01&endDate=2024%2F12%2F31&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
+    "ok": true,
+    "cached": false,
+    "records": 116
+   },
+   {
+    "market": "twse",
+    "year": 2025,
+    "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20250101&endDate1=20251231&selectType=&stockNo=&response=json",
+    "ok": true,
+    "cached": false,
+    "records": 91
+   },
+   {
+    "market": "tpex",
+    "year": 2025,
+    "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2025%2F01%2F01&endDate=2025%2F12%2F31&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
+    "ok": true,
+    "cached": false,
+    "records": 114
+   },
+   {
+    "market": "twse",
+    "year": 2026,
+    "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20260101&endDate1=20261016&selectType=&stockNo=&response=json",
+    "ok": true,
+    "cached": false,
+    "records": 68
+   },
+   {
+    "market": "tpex",
+    "year": 2026,
+    "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2026%2F01%2F01&endDate=2026%2F10%2F16&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
+    "ok": true,
+    "cached": false,
+    "records": 86
+   }
+  ],
+  "discovered": 1798,
+  "registered": 1821,
+  "conflicts": [
+   {
+    "code": "8050",
+    "ex_date": "2017-08-29",
+    "reason": "AMBIGUOUS_ANNOUNCEMENTS"
+   },
+   {
+    "code": "4114",
+    "ex_date": "2019-07-11",
+    "reason": "AMBIGUOUS_ANNOUNCEMENTS"
+   }
+  ],
+  "policy": "Only verified dates unlock shares; unavailable or ambiguous dates remain locked."
+ },
+ "replay": {
+  "cagr": 0.41989376370881426,
+  "mdd": -0.34203519181228276,
+  "pending": [],
+  "same_daily_nav_as_v432": true,
+  "failures": [],
+  "warnings": [
+   "limit_dn",
+   "exposure_band"
+  ]
+ },
  "capital_previews": {
   "100000": {
    "cash": 8762.047271150006,
@@ -144,6 +368,6 @@
  "unknown_stock_deliveries": 0,
  "date_evidence": "22 exchange announcements; 1 actual delivery confirmed by issuer annual report, observed only on delivery day; no fabricated advance announcement.",
  "limitations": "Simulation; actual brokerage fills, fractional rights payout and personal dividend tax are not fully reproduced. Future unverified delivery dates remain locked.",
- "html_sha256": "3a54ce0951036b9c4ce8670af6e2c7b95d41aa9577bb7cf139b4d418bd055101",
+ "html_sha256": "96b78c72877c9d19d03a59bd7797971582b57e775ac465ac4ab272b675b7d03f",
  "telegram_chunks": 1
 }
