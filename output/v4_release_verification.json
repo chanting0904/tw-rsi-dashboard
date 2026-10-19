@@ -1,100 +1,10 @@
 {
- "release_version": "V4.6.2",
- "code_commit": "caf30877f22f67167e4120113aa217dde193196a",
- "canonical_hash": "6ec430888140c4e0",
- "policy": "guarded_weekly_capital_v1",
- "full_history_days": 2872,
- "full_history_weeks": 607,
- "cagr": 0.4512,
- "mdd": -0.3471,
- "sortino": 2.11,
+ "release_version": "V4.6.3",
+ "code_commit": "f2058b6df6dc992f0e86af727a5c83dc82b1b7c9",
+ "canonical_hash": "c371085f34f72d26",
  "unchanged_current_orders": true,
  "unchanged_daily_nav": true,
- "candidate_verification": {
-  "candidate_cagr": 0.4511800253061584,
-  "candidate_mdd": -0.34714466547288453,
-  "old_sortino": 2.0270324231889134,
-  "new_sortino": 2.1134610976219665,
-  "daily_rows": 2872,
-  "fills_unchanged": true,
-  "canonical_documents_unchanged": 607,
-  "single_full_replay_seconds": 29.124960000015562,
-  "measurements": [
-   {
-    "label": "old",
-    "seconds": 23.330480400007218,
-    "actions": 12387
-   },
-   {
-    "label": "new",
-    "seconds": 16.438872400001856,
-    "actions": 12387
-   },
-   {
-    "label": "old",
-    "seconds": 26.041323799989186,
-    "actions": 12387
-   },
-   {
-    "label": "new",
-    "seconds": 19.03392640000675,
-    "actions": 12387
-   },
-   {
-    "label": "old",
-    "seconds": 26.54335200000787,
-    "actions": 12387
-   },
-   {
-    "label": "new",
-    "seconds": 18.20486890000757,
-    "actions": 12387
-   },
-   {
-    "label": "old",
-    "seconds": 22.27443650001078,
-    "actions": 12387
-   },
-   {
-    "label": "new",
-    "seconds": 15.744182599999476,
-    "actions": 12387
-   },
-   {
-    "label": "old",
-    "seconds": 22.283117799990578,
-    "actions": 12387
-   },
-   {
-    "label": "new",
-    "seconds": 16.62280379998265,
-    "actions": 12387
-   }
-  ],
-  "medians": {
-   "old": 23.330480400007218,
-   "new": 16.62280379998265
-  },
-  "ranges": {
-   "old": [
-    22.27443650001078,
-    26.54335200000787
-   ],
-   "new": [
-    15.744182599999476,
-    19.03392640000675
-   ]
-  },
-  "profile": "canonical-profile.txt"
- },
- "publication_gate_for_original_rebalance_date": {
-  "ok": true,
-  "reason": "PASS",
-  "rebalance_date": "2026-10-16",
-  "canonical_hash": "6ec430888140c4e0",
-  "expected_rebalance_date": "2026-10-16",
-  "forced": false,
-  "regression_baseline": "已固化"
- },
- "cross_week_release": "verify public page without resending prior-week orders"
+ "cagr": 0.4512,
+ "mdd": -0.3471,
+ "fix": "sync existing same-date ready state only after complete signal/performance validation"
 }
