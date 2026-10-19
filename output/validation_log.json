@@ -1,6 +1,6 @@
 {
  "strategy_version": "V4",
- "release_version": "V4.6.2",
+ "release_version": "V4.6.3",
  "generated_at": "2026-10-18T17:13:38.602497+08:00",
  "rebalance_date": "2026-10-16",
  "v4_consistency": true,
@@ -10,7 +10,7 @@
    "date": "2026-10-08",
    "cagr": 0.4558864138688048,
    "mdd": -0.3471446654728846,
-   "release_version": "V4.6.2",
+   "release_version": "V4.6.3",
    "selection_rules": {
     "a_rank_days": 3,
     "a_entry_rank": 15,
@@ -18,7 +18,7 @@
     "b_max_names": 4
    }
   },
-  "release_version": "V4.6.2"
+  "release_version": "V4.6.3"
  },
  "warning_checks": [
   "limit_dn"
@@ -148,6 +148,6 @@
   }
  },
  "verdict": "PASS",
- "signal_digest": "fca3730d2b85749c40a0abb8b8026cf2e46b0f949c5e5a996b52cd61c639fbb4",
- "performance_digest": "d92352fef1879bf8a338f029b5f5e5eab157a462886bc2d243b7ca64773743c5"
+ "signal_digest": "db2bd75a24fc7ebfd22ed27233f87df1a36a9e620e7d8c5973c5337bb030083c",
+ "performance_digest": "b30fcb40eb2fbf8b860ec2a9715109ca12c829b967888b76e1d3358f90b1b703"
 }

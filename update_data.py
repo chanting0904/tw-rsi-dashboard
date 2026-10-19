@@ -142,6 +142,8 @@ def read_optional(path):
 
 _calendar = read_optional('holidays.json')
 _validation = read_optional('output/validation_log.json')
+from weekly_status import sync_ready_status
+_weekly_status = sync_ready_status(SIG, _validation, perf)
 from v4_engine.order_quotes import build_order_quotes
 _order_quotes=build_order_quotes(SIG,prices,px_date,read_optional('output/security_status.json'))
 _previous_capital_signal = next((h for h in reversed(history) if h.get('rebalance_date','') < SIG.get('rebalance_date','')), None)
@@ -156,7 +158,7 @@ DATA = {
     "expected_rebal_date": week_last.isoformat() if week_last else None,
     "calendar_years": list(_calendar),
     "holidays": sorted({day for days in _calendar.values() for day in days}),
-    "weekly_status": read_optional('output/weekly_status.json'),
+    "weekly_status": _weekly_status,
     "sig_validated": validation_matches(SIG,_validation,perf) and _validation.get('verdict') == 'PASS' and _validation.get('strategy_version') == 'V4' and _validation.get('rebalance_date') == SIG.get('rebalance_date') and _validation.get('release_version') == SIG.get('release_version') == RELEASE_VERSION,
     "signal_mode": SIG.get("signal_mode", "CLOSE_SIMULATION"),
     "price_basis_date": SIG.get("price_basis_date") or SIG.get("rebalance_date"),
