@@ -37,6 +37,31 @@ def write_status(state, *, stage='signal', attempt=1, max_attempts=3,
     return result
 
 
+def sync_ready_status(signal, validation, performance, *, path=None):
+    """Keep an already-ready dated plan bound to its verified release."""
+    from version import RELEASE_VERSION
+    from v4_engine.jsonio import validation_matches
+    destination = Path(path) if path else STATUS_FILE
+    try:
+        status = json.loads(destination.read_text(encoding='utf-8'))
+    except (OSError, ValueError):
+        return {}
+    verified = (status.get('state') == 'ready'
+                and status.get('rebalance_date') == signal.get('rebalance_date')
+                and signal.get('release_version') == RELEASE_VERSION
+                and performance.get('release_version') == RELEASE_VERSION
+                and validation.get('verdict') == 'PASS'
+                and validation_matches(signal, validation, performance))
+    if verified and status.get('canonical_hash') != fingerprint(signal):
+        status = {**status, 'canonical_hash': fingerprint(signal),
+                  'release_version': RELEASE_VERSION,
+                  'updated_at': dt.datetime.now(ZoneInfo('Asia/Taipei')).isoformat()}
+        temporary = destination.with_suffix('.json.tmp')
+        temporary.write_text(json.dumps(status, ensure_ascii=False, indent=2), encoding='utf-8')
+        temporary.replace(destination)
+    return status
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('state', choices=['running', 'retrying', 'ready', 'failed'])
