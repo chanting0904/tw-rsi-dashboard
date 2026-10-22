@@ -1,11 +1,30 @@
 {
- "release_version": "V4.6.4",
- "change": "compact_monthly_returns_ui",
- "signal_date": "2026-10-16",
+ "release_version": "V4.6.5",
+ "change": "recovery_dependencies_before_validation",
+ "signal_date": "2026-10-23",
  "current_orders_unchanged": true,
  "daily_nav_unchanged": true,
  "yearly_and_full_period_performance_unchanged": true,
- "signal_digest": "5cb07e83f07e56a279b002869fe7586045a201f5f05bc14fd8eb2cb49447e313",
- "performance_digest": "d509dee352400adc5d20b66a9a2f9428115605d7de8d3e74e258e6e12f37fc64",
- "template_updated": true
+ "signal_digest": "2b1fb4cb2e859d66fab4788969b43b8641d2ee4441acc218439565ca3b51cf87",
+ "performance_digest": "bc22638be019070355526b22f9604bfdbbbd97a230a8c0703f7927840f7933cf",
+ "dependency_order_fixed": true,
+ "gate": {
+  "ok": true,
+  "reason": "PASS",
+  "rebalance_date": "2026-10-23",
+  "canonical_hash": "1f8fa508e2edc35f",
+  "expected_rebalance_date": "2026-10-23",
+  "forced": false,
+  "regression_baseline": "已固化"
+ },
+ "ready_status": {
+  "state": "ready",
+  "rebalance_date": "2026-10-23",
+  "updated_at": "2026-10-23T07:35:49.096562+08:00",
+  "stage": "verified-recovery",
+  "attempt": 1,
+  "max_attempts": 3,
+  "run_id": "",
+  "canonical_hash": "1f8fa508e2edc35f"
+ }
 }
