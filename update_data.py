@@ -268,6 +268,68 @@ HTML = """<!DOCTYPE html>
   .op-title.hold{background:rgba(128,140,160,.08); color:#9aa8bf;}
   .order-input{background:var(--card2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:9px;font:inherit;max-width:100%;} .order-price{width:105px;background:var(--card2);color:var(--txt);border:1px solid var(--line);border-radius:5px;padding:6px;} #order-holdings{width:100%;min-height:130px;margin:10px 0;} .order-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0;}
   @media (max-width:900px){ .cards{grid-template-columns:repeat(2,1fr);} .capbar input{width:100%;} }
+
+  #monthly-returns-section{background:radial-gradient(ellipse at 0 0,rgba(92,128,186,.10),transparent 60%),linear-gradient(145deg,#1b2538,#141d2d);border:1px solid #34425b;padding:24px 18px 20px;box-shadow:0 18px 40px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.055);border-radius:18px;}
+  #monthly-returns-section h2{font-size:19px;letter-spacing:.6px;margin-bottom:8px;}
+  #monthly-returns-section h2 .tag{background:#142032;border-color:#35455e;padding:5px 10px;}
+  .monthly-scroll{overflow-x:auto;max-width:100%;padding:2px 2px 12px;scrollbar-color:#40536f #141d2d;scrollbar-width:thin;}
+  .monthly-returns{min-width:1100px;border-collapse:separate;border-spacing:7px 10px;table-layout:fixed;text-align:center;font-variant-numeric:tabular-nums;}
+  .monthly-returns td,.monthly-returns th{text-align:center;border-bottom:0;padding:13px 3px;}
+  .monthly-returns thead th{color:#8497b5;font-size:11px;font-weight:500;padding:8px 0;letter-spacing:.5px;}
+  .monthly-returns th:first-child{width:52px;position:sticky;left:0;background:#192437;z-index:2;border-radius:9px;}
+  .monthly-returns tbody th{color:#c4d2e6;font-size:13px;font-weight:700;}
+  .monthly-returns td{height:55px;border:1px solid transparent;border-radius:10px;font-size:12px;}
+  .monthly-returns td.month-tile{--tile-rgb:140,160,190;--tile-strength:.04;color:#c1cce0;background:linear-gradient(155deg,rgba(var(--tile-rgb),var(--tile-strength)),rgba(var(--tile-rgb),.025)),linear-gradient(180deg,#263249,#1a2436);border-color:rgba(var(--tile-rgb),.19);box-shadow:inset 0 1px 0 rgba(255,255,255,.095),inset 0 -2px 0 rgba(0,0,0,.19),0 4px 8px rgba(0,0,0,.20);font-weight:650;transition:transform .16s ease,box-shadow .16s ease;}
+  .monthly-returns td.up{color:#ff8e98;}
+  .monthly-returns td.down{color:#77e3b7;}
+  .monthly-returns tr:hover td.month-tile{background:linear-gradient(155deg,rgba(var(--tile-rgb),var(--tile-strength)),rgba(var(--tile-rgb),.025)),linear-gradient(180deg,#263249,#1a2436);}
+  .monthly-returns td.month-empty,.monthly-returns tr:hover td.month-empty{color:#4e607b;background:rgba(10,17,28,.18);border:1px dashed rgba(104,126,161,.14);box-shadow:none;}
+  .monthly-returns small{display:block;color:#a6b5cb;font-size:9px;font-weight:400;margin-top:4px;}
+  .monthly-returns td.month-current{outline:1px solid #7e9dcc;outline-offset:2px;}
+  .monthly-returns th:last-child{width:115px;}
+  .monthly-returns td.monthly-annual{font-size:14px;font-weight:750;border-color:rgba(var(--tile-rgb),.36);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),inset 0 -2px 0 rgba(0,0,0,.18),0 4px 12px rgba(0,0,0,.25);}
+  @media(hover:hover){.monthly-returns td.month-tile:hover{transform:translateY(-3px);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 8px 16px rgba(0,0,0,.30);}}
+  @media(prefers-reduced-motion:reduce){.monthly-returns td.month-tile{transition:none;}.monthly-returns td.month-tile:hover{transform:none;}}
+  @media(max-width:600px){#monthly-returns-section{padding:18px 10px;}.monthly-returns{border-spacing:6px 9px;}#monthly-returns-section h2{font-size:17px;}}
+
+  /* Compact monthly return cards. */
+  #monthly-returns-section{padding:16px 12px 12px;border-radius:14px;}
+  #monthly-returns-section h2{font-size:16px;margin-bottom:5px;}
+  #monthly-returns-section h2 .tag{padding:3px 8px;font-size:10px;}
+  #monthly-returns-section>.note{font-size:11px;line-height:1.6;}
+  .monthly-scroll{padding:0 0 6px;}
+  .monthly-returns{min-width:820px;border-spacing:4px 5px;}
+  .monthly-returns td,.monthly-returns th{padding:7px 2px;}
+  .monthly-returns td{height:36px;font-size:11px;border-radius:7px;}
+  .monthly-returns thead th{font-size:10px;padding:4px 0;letter-spacing:0;}
+  .monthly-returns th:first-child{width:40px;border-radius:7px;}
+  .monthly-returns tbody th{font-size:11px;}
+  .monthly-returns th:last-child{width:88px;}
+  .monthly-returns td.monthly-annual{font-size:12px;}
+  .monthly-returns small{font-size:8px;margin-top:1px;}
+  .monthly-returns td.month-tile{box-shadow:inset 0 1px 0 rgba(255,255,255,.09),inset 0 -1px 0 rgba(0,0,0,.18),0 2px 4px rgba(0,0,0,.18);}
+  .monthly-returns td.month-current{outline-offset:1px;}
+  @media(max-width:600px){#monthly-returns-section{padding:12px 8px;}.monthly-returns{border-spacing:3px 4px;}#monthly-returns-section h2{font-size:15px;}}
+
+  /* Shared compact depth, matching the monthly return cards. */
+  section{background:radial-gradient(ellipse at 0 0,rgba(92,128,186,.075),transparent 65%),linear-gradient(145deg,#1b2538,#151e2e);border-color:#34425b;border-radius:14px;padding:14px;box-shadow:0 8px 22px rgba(0,0,0,.17),inset 0 1px 0 rgba(255,255,255,.055);}
+  section h2{font-size:15px;margin-bottom:10px;}
+  .cards{gap:9px;margin-bottom:14px;}
+  .card{background:linear-gradient(155deg,#253249,#1a2436);border-color:#36455f;border-radius:10px;padding:12px 14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.075),inset 0 -1px 0 rgba(0,0,0,.18),0 3px 8px rgba(0,0,0,.18);}
+  .card .v{font-size:20px;}.card .k{font-size:11px;}.card .s{line-height:1.5;}
+  .capbar input,.order-input,.order-price,.order-holdings,.order-controls input,.order-controls textarea,select,textarea.order-input,#order-holdings{background:linear-gradient(180deg,#141d2e,#1a263a);border:1px solid #3a4b67;border-radius:7px;box-shadow:inset 0 2px 4px rgba(0,0,0,.22),0 1px 0 rgba(255,255,255,.035);}
+  input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid #8fbaff;outline-offset:2px;}
+  button{background:linear-gradient(180deg,#72b5ff,#438ee0);border:1px solid #7dbaff;border-radius:7px;padding:8px 14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 3px 7px rgba(0,0,0,.2);}
+  button.ghost{background:linear-gradient(160deg,#2a3750,#1c293e);border-color:#3c4d68;color:#bdcbe0;box-shadow:inset 0 1px 0 rgba(255,255,255,.055),0 2px 5px rgba(0,0,0,.15);}
+  .op-title{border-radius:9px 9px 0 0;box-shadow:inset 0 1px 0 rgba(255,255,255,.065);padding:7px 11px;}
+  .op-list{background:linear-gradient(150deg,#202d43,#1b2639);border-radius:0 0 9px 9px;box-shadow:inset 0 -1px 0 rgba(0,0,0,.18),0 3px 8px rgba(0,0,0,.13);padding:9px 11px;}
+  .badge{border-radius:7px;box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 2px 4px rgba(0,0,0,.12);}
+  section h2 .tag{background:linear-gradient(180deg,#243148,#19263a);border-color:#3a4963;border-radius:7px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04);}
+  .warnbox,.freshnessbox{border-radius:10px;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 3px 9px rgba(0,0,0,.13);}
+  section table:not(.monthly-returns) thead{background:rgba(42,57,82,.4);}
+  section table:not(.monthly-returns) th{font-size:12px;}
+  section table:not(.monthly-returns) td{padding-top:9px;padding-bottom:9px;}
+  @media(max-width:600px){body{padding:12px;}section{padding:12px;}.card{padding:10px 11px;}.card .v{font-size:19px;}h1{font-size:19px;}header{gap:8px;}}
 </style>
 </head>
 <body>
@@ -389,6 +451,13 @@ HTML = """<!DOCTYPE html>
       回測基準：初始本金 <span id="p-initial"></span>｜已完成期間 <span id="p-period"></span>｜最終資產 <span id="p-nav"></span>。<br>
       <b style="color:var(--warn)">⚠️ 歷史回測績效，不代表未來收益。</b>
     </div>
+  </section>
+
+  <section id="monthly-returns-section">
+    <h2>每月盈虧 <span class="tag" id="monthly-returns-period"></span></h2>
+    <div class="note" style="margin:0 0 12px">策略回測｜<span class="up">紅色賺錢</span>・<span class="down">綠色虧錢</span>｜手機可左右滑動</div>
+    <div class="monthly-scroll" id="monthly-returns-table" tabindex="0" role="region" aria-label="可左右捲動的月報酬表"></div>
+    <div class="note">每月報酬＝月底總資產 ÷ 上月底總資產 − 1；第一個月以回測起始本金計算。包含持股漲跌、股利權益與交易費用。最新月份只計算到標示日期，未有資料以「—」表示。全年報酬以複利計算，不是把每月相加。此為策略模擬，與個人帳戶損益可能不同。</div>
   </section>
 
   <footer>
@@ -737,6 +806,50 @@ function renderRestrictedHoldings() {
 }
 
 /* ================= 績效圖（回測口徑，不隨本金） ================= */
+function renderMonthlyReturns() {
+  const box=document.getElementById('monthly-returns-table');
+  const perf=DATA.perf||{}, nav=perf.nav||[];
+  if(!nav.length){box.textContent='尚無月報酬資料。';return;}
+  const months=new Map(), years=new Map();
+  let basis=Number(perf.start_capital);
+  if(!(basis>0)){box.textContent='缺少有效期初本金，暫不顯示月報酬。';return;}
+  for(const [date,value] of nav){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!(Number(value)>0)){box.textContent='資產資料不完整，暫不顯示月報酬。';return;}
+    const month=date.slice(0,7),year=date.slice(0,4);
+    if(!months.has(month))months.set(month,{basis,end:Number(value),date});
+    else Object.assign(months.get(month),{end:Number(value),date});
+    if(!years.has(year))years.set(year,{basis,end:Number(value)});
+    else years.get(year).end=Number(value);
+    basis=Number(value);
+  }
+  const last=nav[nav.length-1][0];
+  document.getElementById('monthly-returns-period').textContent=(perf.release_version||'策略')+'｜截至 '+last;
+  const table=document.createElement('table');table.className='monthly-returns';
+  table.setAttribute('aria-label','策略回測每月報酬率百分比');
+  const head=table.createTHead().insertRow();
+  for(const name of ['年份',...Array.from({length:12},(_,i)=>(i+1)+'月'),'全年／今年累計']){
+    const th=document.createElement('th');th.scope='col';th.textContent=name;head.appendChild(th);
+  }
+  const body=table.createTBody();
+  function paint(cell,ret){
+    const value=ret*100,rounded=Number(value.toFixed(2));
+    cell.textContent=(rounded>0?'+':'')+rounded.toFixed(2)+'%';
+    cell.classList.add('month-tile');
+    if(rounded){cell.classList.add(rounded>0?'up':'down');cell.style.setProperty('--tile-rgb',rounded>0?'255,99,112':'65,211,159');cell.style.setProperty('--tile-strength',(.09+Math.min(Math.abs(value)/20,1)*.19).toFixed(3));}
+  }
+  for(const [year,annual] of [...years].reverse()){
+    const row=body.insertRow(),label=document.createElement('th');label.scope='row';label.textContent=year;row.appendChild(label);
+    for(let n=1;n<=12;n++){
+      const key=year+'-'+String(n).padStart(2,'0'),m=months.get(key),cell=row.insertCell();
+      if(!m){cell.textContent='—';cell.title='尚無資料';cell.classList.add('month-empty');continue;}
+      paint(cell,m.end/m.basis-1);cell.title=key+'｜截止 '+m.date;
+      if(key===last.slice(0,7)){cell.classList.add('month-current');const mark=document.createElement('small');mark.textContent='截至 '+last.slice(5);cell.appendChild(mark);}
+    }
+    const cell=row.insertCell();paint(cell,annual.end/annual.basis-1);cell.classList.add('monthly-annual');
+  }
+  box.replaceChildren(table);
+}
+
 function renderCharts() {
   $("p-cagr").textContent = P(DATA.perf.cagr, 2);
   $("p-mdd").textContent = P(DATA.perf.mdd, 2);
@@ -866,6 +979,7 @@ function renderAll() {
 $("cap").value = "";
 renderAll();
 renderSellNote();
+renderMonthlyReturns();
 renderCharts();
 renderHist();
 initPerfCalc();
