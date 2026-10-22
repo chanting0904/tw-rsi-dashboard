@@ -1,8 +1,8 @@
 {
  "strategy_version": "V4",
  "release_version": "V4.6.4",
- "generated_at": "2026-10-18T17:13:38.602497+08:00",
- "rebalance_date": "2026-10-16",
+ "generated_at": "2026-10-23T06:29:52.584589+08:00",
+ "rebalance_date": "2026-10-23",
  "v4_consistency": true,
  "fixed_anchor": {
   "pass": true,
@@ -17,8 +17,7 @@
     "a_retention_rank": 20,
     "b_max_names": 4
    }
-  },
-  "release_version": "V4.6.4"
+  }
  },
  "warning_checks": [
   "limit_dn"
@@ -49,10 +48,6 @@
    "fail": 0,
    "detail": [
     [
-     "2026-06-05",
-     7.4
-    ],
-    [
      "2026-06-12",
      8.6
     ],
@@ -67,6 +62,10 @@
     [
      "2026-07-03",
      5.4
+    ],
+    [
+     "2026-07-09",
+     3.4
     ]
    ]
   },
@@ -91,7 +90,7 @@
    "detail": []
   },
   "limit_dn": {
-   "pass": 1,
+   "pass": 0,
    "fail": 5,
    "detail": [
     [
@@ -148,6 +147,6 @@
   }
  },
  "verdict": "PASS",
- "signal_digest": "5cb07e83f07e56a279b002869fe7586045a201f5f05bc14fd8eb2cb49447e313",
+ "signal_digest": "f4c171441940aabd464db4a48167552b44f1de7692d6ece24e59ad3a44a6e51e",
  "performance_digest": "d509dee352400adc5d20b66a9a2f9428115605d7de8d3e74e258e6e12f37fc64"
 }

@@ -2,10 +2,10 @@
  "strategy_version": "V4",
  "release_version": "V4.6.4",
  "share_delivery_check": {
-  "as_of": "2026-10-16",
+  "as_of": "2026-10-22",
   "status": "PASS",
-  "discovered": 1798,
-  "registered": 1821,
+  "discovered": 1803,
+  "registered": 1826,
   "conflicts": []
  },
  "restricted_assets": [
@@ -73,8 +73,8 @@
    "tradable_date": "2026-10-15"
   }
  ],
- "security_status_checked_for": "2026-10-16",
- "security_status_hash": "7b231a5eb7f463a2700092a123249d6b9708bc87757ab15a3dfb05ebc7a6e665",
+ "security_status_checked_for": "2026-10-23",
+ "security_status_hash": "cfdc2f44121dd871251fa1bbe4fe0557fa8834644339a06ce6a36cd1ba9d2f8d",
  "execution_policy": "guarded_weekly_capital_v1",
  "selection_rules": {
   "a_rank_days": 3,
@@ -99,8 +99,8 @@
  "calculation_date": "2026-10-16",
  "rebalance_date": "2026-10-16",
  "sig_date": "2026-10-15",
- "generated_at": "2026-10-18T17:22:03+08:00",
- "commit_sha": "f2058b6d",
+ "generated_at": "2026-10-23T06:29:53+08:00",
+ "commit_sha": "c6a65de1",
  "tsm_on": true,
  "wa_eff": 0.6,
  "wb_eff": 0.4,
