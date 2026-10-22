@@ -1,9 +1,10 @@
 {
-  "state": "failed",
+  "state": "ready",
   "rebalance_date": "2026-10-23",
-  "updated_at": "2026-10-23T07:23:36.168050+08:00",
-  "stage": "pipeline",
+  "updated_at": "2026-10-23T07:35:49.096562+08:00",
+  "stage": "verified-recovery",
   "attempt": 1,
   "max_attempts": 3,
-  "run_id": "39871444945"
+  "run_id": "",
+  "canonical_hash": "1f8fa508e2edc35f"
 }

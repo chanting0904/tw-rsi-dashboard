@@ -60,6 +60,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      # Recovery imports the same pandas/numpy modules as the main pipeline.
+      - name: 安裝依賴
+        run: pip install -q -r requirements.txt
       - name: 07:00 檢查本週訊號、公開網站及通知是否完成
         id: recovery
         if: github.event_name == 'schedule' && github.event.schedule == '0 23 * * 0-4'
@@ -71,9 +74,6 @@ jobs:
           path: finlab_db
           key: finlab-db-v4-${{ github.run_id }}
           restore-keys: finlab-db-v4-
-      - name: 安裝依賴
-        if: steps.recovery.outputs.mode != 'skip'
-        run: pip install -q -r requirements.txt
       - name: 更新收盤股價（官方源→FinLab→yfinance；每日 06:00 補昨日收盤）
         if: >
           (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
