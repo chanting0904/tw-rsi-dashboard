@@ -1,10 +1,11 @@
 {
- "release_version": "V4.6.3",
- "code_commit": "f2058b6df6dc992f0e86af727a5c83dc82b1b7c9",
- "canonical_hash": "c371085f34f72d26",
- "unchanged_current_orders": true,
- "unchanged_daily_nav": true,
- "cagr": 0.4512,
- "mdd": -0.3471,
- "fix": "sync existing same-date ready state only after complete signal/performance validation"
+ "release_version": "V4.6.4",
+ "change": "compact_monthly_returns_ui",
+ "signal_date": "2026-10-16",
+ "current_orders_unchanged": true,
+ "daily_nav_unchanged": true,
+ "yearly_and_full_period_performance_unchanged": true,
+ "signal_digest": "5cb07e83f07e56a279b002869fe7586045a201f5f05bc14fd8eb2cb49447e313",
+ "performance_digest": "d509dee352400adc5d20b66a9a2f9428115605d7de8d3e74e258e6e12f37fc64",
+ "template_updated": true
 }
