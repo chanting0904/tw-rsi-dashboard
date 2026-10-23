@@ -26,18 +26,20 @@ def main():
     is_last_td = today == last_trading_day_of_week(today, HOLS)
     if FORCE or is_last_td:
         print(f"[full] {today} 為本週最後交易日，執行完整選股")
-        # [V4] GitHub Actions 唯一來源：先由正式引擎產生 canonical（選股邏輯/參數不變）。
-        #      validation 失敗 → v4_canonical 自身 exit(1)，這裡接住並中止、不發布。
+        # [V5] GitHub Actions 唯一來源：先由正式引擎產生 canonical（選股邏輯/參數不變）。
+        #      validation 失敗 → v5_canonical 自身 exit(1)，這裡接住並中止、不發布。
         from publish_gate import evaluate
-        with tempfile.TemporaryDirectory(prefix="v4-stage-", dir=ROOT) as temp:
+        with tempfile.TemporaryDirectory(prefix="v5-stage-", dir=ROOT) as temp:
             staged = Path(temp) / "output"
             staged.mkdir()
             for name in ("baseline.json", "regression_history.json"):
                 source = Path(ROOT) / "output" / name
                 if source.exists():
                     shutil.copy2(source, staged / name)
-            env = dict(os.environ, V4_OUTPUT_DIR=str(staged))
-            r0 = subprocess.run([sys.executable, os.path.join(ROOT, "v4_canonical.py"),
+            if (Path(ROOT)/'output/history').exists():
+                shutil.copytree(Path(ROOT)/'output/history',staged/'history',dirs_exist_ok=True)
+            env = dict(os.environ, V5_OUTPUT_DIR=str(staged))
+            r0 = subprocess.run([sys.executable, os.path.join(ROOT, "v5_canonical.py"),
                                  "--live-rebalance", today.isoformat()], env=env)
             if r0.returncode != 0:
                 sys.exit(3)

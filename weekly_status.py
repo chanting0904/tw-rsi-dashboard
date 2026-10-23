@@ -40,7 +40,7 @@ def write_status(state, *, stage='signal', attempt=1, max_attempts=3,
 def sync_ready_status(signal, validation, performance, *, path=None):
     """Keep an already-ready dated plan bound to its verified release."""
     from version import RELEASE_VERSION
-    from v4_engine.jsonio import validation_matches
+    from v5_engine.jsonio import validation_matches
     destination = Path(path) if path else STATUS_FILE
     try:
         status = json.loads(destination.read_text(encoding='utf-8'))

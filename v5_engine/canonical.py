@@ -66,7 +66,7 @@ def prev_trading_day(ctx, d):
 def canonical_for(ctx, wp, trades_df, commit_sha):
     cfg = ctx.config
     EXPOSURE_MIN, EXPOSURE_MAX = cfg.exposure_min, cfg.exposure_max
-    sw_tsm, LIVE_DAY, SIGNAL_DAY = ctx.sw_tsm, ctx.live_day, ctx.signal_day
+    LIVE_DAY, SIGNAL_DAY = ctx.live_day, ctx.signal_day
     name_map = ctx.name_map or {}
     def nm(code):
         return name_map.get(code, code)
@@ -134,7 +134,6 @@ def canonical_for(ctx, wp, trades_df, commit_sha):
         counts[a["action"]] += 1
     buy_total = sum(a["estimated_buy_amount"] for a in acts)
     sell_total = sum(a["estimated_sell_amount"] for a in acts)
-    nb_b = len({a["stock_code"] for a in acts if a["channel"] == "B"})
     warnings = []
     delivery_status=dict(getattr(ctx,'share_delivery_status',None) or {})
     if delivery_status:
@@ -146,13 +145,11 @@ def canonical_for(ctx, wp, trades_df, commit_sha):
         delivery_status['status']='PASS' if all(s['ok'] for s in delivery_status.get('sources',[])) and not relevant else 'PARTIAL'
     if delivery_status.get('status')=='PARTIAL':
         warnings.append('配股公告自動核對有來源缺漏或日期衝突，未核實配股保持鎖定；詳見配股核對狀態。')
-    base_a_w = 0.60 if sw_tsm.get(wp["date"], False) else 1.0
-    base_b_w = 0.40 if sw_tsm.get(wp["date"], False) else 0.0
     exposure = float(wp.get("stock_exposure", 0.0))
     if not (EXPOSURE_MIN <= exposure <= EXPOSURE_MAX):
         warnings.append(f"調倉後持倉 {exposure*100:.1f}% 未落在 90–95% 目標區間；請檢查交易限制或可買目標股數")
     if wp.get("missing_price_targets", 0):
-        warnings.append(f"有 {wp['missing_price_targets']} 檔目標股缺少有效價格，已把該通道權重重新分配給可計價標的")
+        warnings.append(f"有 {wp['missing_price_targets']} 檔目標股缺少有效價格，已把配置重新分配給可計價標的")
     blocked_new = wp.get('blocked_limitup_targets',0)
     if wp.get('execution_policy')=='guarded_weekly_capital_v1':
         blocked_new = wp.get('reference_blocked_limitup_targets',0)+sum(1 for a in acts if a.get('allocation_eligible') and not a.get('buy_allowed',True) and not a['current_shares'])
@@ -167,10 +164,6 @@ def canonical_for(ctx, wp, trades_df, commit_sha):
     if wp.get("unplanned_holdings"):
         codes = '、'.join(h['code'] for h in wp['unplanned_holdings'])
         warnings.append(f"有未列入本週目標的持股仍留在模擬帳戶：{codes}")
-    if abs(float(wp.get("wa_eff", base_a_w)) - base_a_w) > 1e-9 or abs(float(wp.get("wb_eff", base_b_w)) - base_b_w) > 1e-9:
-        warnings.append(f"通道配置因另一通道沒有可計價標的而調整：A {float(wp.get('wa_eff', base_a_w))*100:.0f}% / B {float(wp.get('wb_eff', base_b_w))*100:.0f}%")
-    if 0 < nb_b < 4:
-        warnings.append(f"B 通道僅 {nb_b} 檔，單檔權重放大至 95%×40%/{nb_b} ≈ {0.95*0.4/nb_b*100:.1f}%，集中度較高")
     if counts["BUY"] + counts["REBALANCE_BUY"] == 0 and counts["SELL"] + counts["REBALANCE_SELL"] == 0:
         warnings.append("本週無買賣動作，僅 HOLD")
     if wp.get('pending_assets'):
@@ -188,8 +181,9 @@ def canonical_for(ctx, wp, trades_df, commit_sha):
         "security_status_checked_for": (getattr(ctx,'security_status',None) or {}).get('checked_for'),
         "security_status_hash": snapshot_hash(ctx.security_status) if getattr(ctx,'security_status',None) else None,
         "execution_policy": wp.get("execution_policy", "legacy_v4"),
+        "selection_mode": "single_ranked_pool",
         "selection_rules": {"a_rank_days": cfg.a_rank_days, "a_entry_rank": cfg.max_hold_a,
-                            "a_retention_rank": cfg.a_retention_rank, "b_max_names": cfg.max_hold_b},
+                            "a_retention_rank": cfg.a_retention_rank},
         "start_capital": cfg.start_capital, "buy_fee": cfg.buy_fee, "sell_fee": cfg.sell_fee,
         "minimum_commission": cfg.minimum_commission,
         "fee_model": {"commission_rate": cfg.buy_fee, "minimum_commission": cfg.minimum_commission,
@@ -203,9 +197,6 @@ def canonical_for(ctx, wp, trades_df, commit_sha):
         "sig_date": prev_trading_day(ctx, wp["date"]).strftime("%Y-%m-%d"),
         "generated_at": datetime.datetime.now(ZoneInfo("Asia/Taipei")).isoformat(timespec="seconds"),
         "commit_sha": commit_sha,
-        "tsm_on": bool(sw_tsm.get(wp["date"], False)),
-        "wa_eff": round(float(wp.get("wa_eff", 0.60 if sw_tsm.get(wp["date"], False) else 1.0)), 3),
-        "wb_eff": round(float(wp.get("wb_eff", 0.40 if sw_tsm.get(wp["date"], False) else 0.0)), 3),
         "receivables": round(float(wp.get("receivables", 0)), 2),
         "cash": round(float(wp["cash"]), 0),
         "buffer": round(float(wp["cash"]) / float(wp["nav"]), 4),

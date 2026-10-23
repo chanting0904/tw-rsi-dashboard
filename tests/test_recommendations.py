@@ -1,8 +1,8 @@
 from types import SimpleNamespace
 import unittest
 import pandas as pd
-from v4_engine.config import StrategyConfig
-from v4_engine.recommendations import recommendation_metadata
+from v5_engine.config import StrategyConfig
+from v5_engine.recommendations import recommendation_metadata
 
 
 class RecommendationTests(unittest.TestCase):

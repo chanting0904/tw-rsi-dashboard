@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-"""Web 資料產生器（V4 canonical 版）
-- 不再自行計算策略：策略唯一來源 = V4 引擎（v4_canonical.py）產出的 output/latest_signals.json
+"""Web 資料產生器（V5 canonical 版）
+- 不再自行計算策略：策略唯一來源 = V5 引擎（v5_canonical.py）產出的 output/latest_signals.json
 - 本檔職責：①更新本地庫（TWSE/TPEx 官方源，零 FinLab 流量）②讀 canonical + prices → 組 DATA
           ③生成 index.html（內嵌 DATA，file:// 與 GitHub Pages 皆可開）
 - daily_update.py 負責每日更新 output/prices.json（持股最新收盤價）
@@ -9,10 +9,10 @@
 import os, sys, json, datetime
 from zoneinfo import ZoneInfo
 from publish_gate import load_holidays, last_trading_day_of_week, fingerprint
-from v4_engine.config import StrategyConfig
-from version import RELEASE_VERSION
-from v4_engine.jsonio import validation_matches
-from v4_engine.recommendations import hidden_zero_asset_codes, public_warnings
+from v5_engine.config import StrategyConfig
+from version import RELEASE_VERSION, STRATEGY_VERSION
+from v5_engine.jsonio import validation_matches
+from v5_engine.recommendations import hidden_zero_asset_codes, public_warnings
 HERE = os.path.dirname(os.path.abspath(__file__))
 os.chdir(HERE)
 
@@ -37,17 +37,17 @@ import pandas as pd
 import numpy as np
 
 # [本地化] 盤後先自動更新本地庫（TWSE/TPEx 官方源優先、零 FinLab 流量）。失敗不阻斷。
-if os.environ.get('V4_SKIP_LOCAL_UPDATE') != '1':
+if os.environ.get('V5_SKIP_LOCAL_UPDATE') != '1':
     try:
         from local_db_updater import main as _local_update
         _local_update()
     except Exception as _e:
         print(f"[本地庫更新] 跳過（{str(_e)[:80]}）")
 
-# ---------- 1. 讀 canonical（V4 唯一策略結果）----------
+# ---------- 1. 讀 canonical（V5 唯一策略結果）----------
 sig_path = "output/latest_signals.json"
 if not os.path.exists(sig_path):
-    print(f"❌ 找不到 {sig_path} — 請先執行 v4_canonical.py 產生策略結果")
+    print(f"❌ 找不到 {sig_path} — 請先執行 v5_canonical.py 產生策略結果")
     sys.exit(1)
 with open(sig_path, encoding="utf-8") as f:
     SIG = json.load(f)
@@ -117,10 +117,7 @@ for a in SIG.get("actions", []):
         if item['post_shares'] > 0:
             restricted_holdings.append(item)
         continue
-    if a["channel"] == "A":
-        holdings_a.append(item)
-    else:
-        holdings_b.append(item)
+    holdings_a.append(item)
 
 for asset in SIG.get('restricted_assets', []):
     if str(asset['code']) in _hidden_zero_assets:
@@ -144,7 +141,7 @@ _calendar = read_optional('holidays.json')
 _validation = read_optional('output/validation_log.json')
 from weekly_status import sync_ready_status
 _weekly_status = sync_ready_status(SIG, _validation, perf)
-from v4_engine.order_quotes import build_order_quotes
+from v5_engine.order_quotes import build_order_quotes
 _order_quotes=build_order_quotes(SIG,prices,px_date,read_optional('output/security_status.json'))
 _previous_capital_signal = next((h for h in reversed(history) if h.get('rebalance_date','') < SIG.get('rebalance_date','')), None)
 DATA = {
@@ -159,12 +156,12 @@ DATA = {
     "calendar_years": list(_calendar),
     "holidays": sorted({day for days in _calendar.values() for day in days}),
     "weekly_status": _weekly_status,
-    "sig_validated": validation_matches(SIG,_validation,perf) and _validation.get('verdict') == 'PASS' and _validation.get('strategy_version') == 'V4' and _validation.get('rebalance_date') == SIG.get('rebalance_date') and _validation.get('release_version') == SIG.get('release_version') == RELEASE_VERSION,
+    "sig_validated": validation_matches(SIG,_validation,perf) and _validation.get('verdict') == 'PASS' and _validation.get('strategy_version') == STRATEGY_VERSION and _validation.get('rebalance_date') == SIG.get('rebalance_date') and _validation.get('release_version') == SIG.get('release_version') == RELEASE_VERSION,
     "signal_mode": SIG.get("signal_mode", "CLOSE_SIMULATION"),
     "price_basis_date": SIG.get("price_basis_date") or SIG.get("rebalance_date"),
-    "strategy_version": SIG.get("strategy_version", "V4"),
+    "strategy_version": SIG.get("strategy_version", STRATEGY_VERSION),
     "release_version": SIG.get("release_version"),
-    "review_only": os.environ.get("V4_REVIEW_MODE") == "1",
+    "review_only": os.environ.get("V5_REVIEW_MODE") == "1",
     "selection_rules": SIG.get("selection_rules", {}),
     "receivables": SIG.get("receivables", 0),
     "buy_fee": SIG.get("buy_fee", StrategyConfig().buy_fee),
@@ -175,14 +172,12 @@ DATA = {
     "sig_generated_at": SIG.get("generated_at"),
     "sig_commit_sha": SIG.get("commit_sha"),
     "px_date": px_date,
-    "tsm_on": SIG.get("tsm_on", True),
-    "wa_eff": SIG.get("wa_eff"), "wb_eff": SIG.get("wb_eff"),
     "counts": {action:sum(row['action'] == action for row in holdings_a + holdings_b) + (len(sells) if action == 'SELL' else 0)
                for action in ['BUY', 'SELL', 'REBALANCE_BUY', 'REBALANCE_SELL', 'HOLD']},
     "buy_total": SIG.get("buy_total", 0), "sell_total": SIG.get("sell_total", 0),
     "cash": SIG.get("cash", 0), "buffer": SIG.get("buffer", 0),
     "portfolio_value": SIG.get("portfolio_value", 0),
-    "warnings": public_warnings(SIG) + [f"{a['stock_code']} 沒有最新行情，沿用訊號基準價格" for a in SIG.get("actions", []) if a["action"] != "SELL" and a.get('allocation_eligible', True) and a["stock_code"] not in prices],
+    "warnings": [warning.replace("該通道權重", "配置權重") for warning in public_warnings(SIG) if not warning.startswith(("通道配置", "B 通道僅"))] + [f"{a['stock_code']} 沒有最新行情，沿用訊號基準價格" for a in SIG.get("actions", []) if a["action"] != "SELL" and a.get('allocation_eligible', True) and a["stock_code"] not in prices],
     "holdings_a": holdings_a, "holdings_b": holdings_b, "sells": sells,
     "restricted_holdings": restricted_holdings,
     "history": history,
@@ -197,7 +192,7 @@ HTML = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>V4.0.0｜天穹紅蓮三重脈衝時空追擊者 V4（動態A·雙通道 60/40）</title>
+<title>V5.0.0｜天穹紅蓮三重脈衝時空追擊者 V5（RSI 單一選股策略）</title>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
 <style>
   :root{
@@ -234,7 +229,6 @@ HTML = """<!DOCTYPE html>
   tr:hover td{background:#1d2840;}
   .num{text-align:right; font-variant-numeric:tabular-nums;}
   .tgt{text-align:right; font-variant-numeric:tabular-nums; color:var(--dim);}
-  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin:0 5px 0 0;vertical-align:-1px;}
   .badge{display:inline-block; padding:2px 10px; border-radius:20px; font-size:12px; font-weight:600; white-space:nowrap;}
   .b-buy{background:rgba(255,77,79,.15); color:var(--up); border:1px solid rgba(255,77,79,.4);}
   .b-hold{background:rgba(128,140,160,.15); color:#9aa8bf; border:1px solid rgba(128,140,160,.35);}
@@ -250,9 +244,6 @@ HTML = """<!DOCTYPE html>
   .weekly-ready{background:rgba(61,220,132,.10); border-color:var(--down); color:var(--down);}
   .weekly-waiting{background:rgba(245,185,66,.10); border-color:var(--warn); color:var(--warn);}
   .status-detail{display:block; font-weight:400; font-size:13px; margin-top:4px;}
-  .switch{display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border-radius:20px; font-size:13px; font-weight:600; margin-bottom:12px;}
-  .sw-on{background:rgba(61,220,132,.12); color:var(--down); border:1px solid rgba(61,220,132,.4);}
-  .sw-off{background:rgba(245,185,66,.1); color:var(--warn); border:1px solid rgba(245,185,66,.4);}
   .empty{color:var(--dim); padding:14px 0; font-size:13px;}
   footer{color:var(--dim); font-size:11px; text-align:center; padding:16px 0 8px; line-height:1.8;}
   select{background:var(--card2); border:1px solid var(--line); color:var(--txt); padding:8px 12px; border-radius:8px; font-size:14px;}
@@ -335,16 +326,15 @@ HTML = """<!DOCTYPE html>
 <body>
 <div class="wrap">
   <header>
-    <h1>🌩️ 天穹紅蓮三重脈衝時空追擊者<small>V4.0.0 模擬 Dashboard｜動態A·雙通道 60/40</small></h1>
+    <h1>🌩️ 天穹紅蓮三重脈衝時空追擊者<small>V5.0.0 模擬 Dashboard｜RSI 單一選股策略</small></h1>
     <div class="meta">
-      策略版本：<b>V4.0.0</b>｜最近調倉日：<b id="m-rebal"></b><br>
+      策略版本：<b>V5.0.0</b>｜最近調倉日：<b id="m-rebal"></b><br>
       股價更新：<b id="m-px"></b>（每日收盤）
     </div>
   </header>
 
   <div id="warnbox" class="warnbox" style="display:none"></div>
   <div id="freshnessbox" class="freshnessbox" role="status" aria-live="polite"><b id="weekly-title">正在確認本週狀態</b><span id="weekly-detail" class="status-detail"></span></div>
-  <div id="switchbox" style="margin-bottom:12px"></div>
 
   <section>
     <h2>💰 總資金（持股市值＋現金）</h2>
@@ -392,15 +382,15 @@ HTML = """<!DOCTYPE html>
     <div id="ops"></div>
     <div id="restrictednote" class="note"></div>
     <details id="pendingbox" class="note" style="display:none"><summary id="pendingsummary"></summary><div id="pendingnote"></div></details>
-    <div class="note">🔸 先賣出／減碼釋出現金，再買入／加碼。每檔顯示 V4 模擬調倉後建議權重＋照目前本金算出的「目標股數」（目標金額 ÷ 現價，取整股）；<b>可展開上方當次持股試算，換算這次買賣差額</b>。</div>
+    <div class="note">🔸 先賣出／減碼釋出現金，再買入／加碼。每檔顯示 V5 模擬調倉後建議權重＋照目前本金算出的「目標股數」（目標金額 ÷ 現價，取整股）；<b>可展開上方當次持股試算，換算這次買賣差額</b>。</div>
   </section>
 
   <section>
-    <h2>💼 持股與買賣明細 <span class="tag">V4 策略係數（入場排名分檔，整股權重依本金調整）</span></h2>
+    <h2>💼 持股與買賣明細 <span class="tag">V5 策略係數（入場排名分檔，整股權重依本金調整）</span></h2>
     <div style="overflow-x:auto">
     <table id="holdtbl">
       <thead><tr>
-        <th>動作</th><th>代號</th><th>名稱</th><th>通道</th><th>Rank</th>
+        <th>動作</th><th>代號</th><th>名稱</th><th>Rank</th>
         <th>目標權重</th><th>目前權重</th><th>差</th>
         <th>目標金額</th><th>目標股數</th><th>現價</th>
       </tr></thead>
@@ -410,7 +400,7 @@ HTML = """<!DOCTYPE html>
     <div id="sellnote" class="note"></div>
     <div class="note">🔸 動作說明：BUY=買入｜SELL=賣出｜REBALANCE_BUY=加碼｜REBALANCE_SELL=減碼｜HOLD=不動（買紅賣綠＝台股習慣）。<br>
     🔸 目標金額＝整股股數×顯示價格；目標權重使用扣除模型費用後的資產計算。低於90%時依可買標的補足整股差額，上限95%。<br>
-    🔸 <b style="color:var(--warn)">🟡 加碼／減碼（REBALANCE）= 該檔持倉權重偏離目標超過 V4 的一般 100% 差距門檻，或整體倉位需要修復，才需要調</b>。舊持股減少一般加減碼；退出、新股加入、90～95% 倉位修復仍執行。<br>
+    🔸 <b style="color:var(--warn)">🟡 加碼／減碼（REBALANCE）= 該檔持倉權重偏離目標超過 V5 的一般 100% 差距門檻，或整體倉位需要修復，才需要調</b>。舊持股減少一般加減碼；退出、新股加入、90～95% 倉位修復仍執行。<br>
     🔸 系統不記錄你的實際持股；「目標股數」是你照本金應該持有的量，可展開上方當次持股試算，換算這次買賣差額。</div>
   </section>
 
@@ -426,7 +416,7 @@ HTML = """<!DOCTYPE html>
   </details>
 
   <section>
-    <h2>📊 V4 歷史績效互動計算器 <span class="tag">策略 V4｜全期 CAGR <span id="p-cagr" class="up"></span>｜全期 MDD <span id="p-mdd" class="down"></span></span></h2>
+    <h2>📊 V5 歷史績效互動計算器 <span class="tag">策略 V5｜全期 CAGR <span id="p-cagr" class="up"></span>｜全期 MDD <span id="p-mdd" class="down"></span></span></h2>
     <div class="capbar">
       <input type="number" id="pc-cap" min="10000" step="10000" placeholder="投入本金（例：1000000）">
       <span style="color:var(--dim); font-size:13px;">起始</span>
@@ -447,9 +437,9 @@ HTML = """<!DOCTYPE html>
     <div id="chart-nav" class="chart"></div>
     <div id="chart-dd" class="chart small"></div>
     <div class="note">
-      計算方式：直接讀 V4 歷史 NAV，取「起始年年初 NAV」與「結束年年末 NAV」端點相除，不重新跑回測。<span id="pc-range"></span><br>
+      計算方式：直接讀 V5 歷史 NAV，取「起始年年初 NAV」與「結束年年末 NAV」端點相除，不重新跑回測。<span id="pc-range"></span><br>
       回測基準：初始本金 <span id="p-initial"></span>｜已完成期間 <span id="p-period"></span>｜最終資產 <span id="p-nav"></span>。<br>
-      <b style="color:var(--warn)">⚠️ 歷史回測績效，不代表未來收益。</b>
+      <b style="color:var(--warn)">⚠️ 純 V5 歷史回測，不代表未來收益。V5 上線時接續既有 V4 模擬持倉，與2015年起的純 V5 回測分開。</b>
     </div>
   </section>
 
@@ -461,7 +451,7 @@ HTML = """<!DOCTYPE html>
   </section>
 
   <footer>
-    資料由 V4 引擎（v4_canonical.py）計算，Web / TG / Replay 讀同一份 canonical 結果；本頁只顯示與依本金估算，不重算策略。<br>股利先列應收、發放後才可買股；未知付款日持續列應收。配股在除權日取得權益，核實可交易日期後才列可賣股數；畸零權益暫列應收；不含個人股利稅負。<br>
+    資料由 V5 引擎（v5_canonical.py）計算，Web / TG / Replay 讀同一份 canonical 結果；本頁只顯示與依本金估算，不重算策略。<br>股利先列應收、發放後才可買股；未知付款日持續列應收。配股在除權日取得權益，核實可交易日期後才列可賣股數；畸零權益暫列應收；不含個人股利稅負。<br>
     本頁僅供資訊展示，不構成投資建議。
   </footer>
 </div>
@@ -517,7 +507,7 @@ function previewWeight(h) { return h.action === 'SELL' ? 0 : (CAPITAL_PREVIEW?.w
 function tgtAmount(h) { return h.action === "SELL" ? 0 : tgtShares(h) * (h.px || h.price || 0); }
 function is25(h) { return (h.action === "REBALANCE_BUY" || h.action === "REBALANCE_SELL") && !(h.reason || "").startsWith("PORTFOLIO_BAND_"); }
 
-/* ================= 排序（V4 權重不變，僅排列） ================= */
+/* ================= 排序（V5 權重不變，僅排列） ================= */
 function cmp(a, b) { return a < b ? -1 : (a > b ? 1 : 0); }
 function sortList(rows, k1, d1, k2, d2) {
   return rows.slice().sort((x, y) => {
@@ -541,10 +531,10 @@ const SORTER = {
   "HOLD":           (r) => sortList(r, "target_weight", -1, "rank", 1),
 };
 
-/* ================= meta / 警告 / 開關 ================= */
+/* ================= meta / 警告 ================= */
 $("m-rebal").textContent = DATA.rebal_date ? DATA.rebal_date + "（訊號基準 " + DATA.sig_date + "）｜版本 " + (DATA.sig_commit_sha || "—") + (DATA.signal_mode === "PRE_CLOSE_PLAN" ? "｜收盤調倉計畫，股數按基準日價格試算" : "｜收盤模擬結果") : "—";
 const selectionRules = DATA.selection_rules || {};
-$("selectionnote").textContent = selectionRules.a_rank_days ? 'A通道：最近' + selectionRules.a_rank_days + '個已收盤交易日的平均RSI排名；舊A持股符合資格且排名前' + selectionRules.a_retention_rank + '可保留，最多' + selectionRules.a_entry_rank + '檔。B通道維持原規則。' : '';
+$("selectionnote").textContent = selectionRules.a_rank_days ? '選股規則：最近' + selectionRules.a_rank_days + '個已收盤交易日的平均RSI排名；續抱股票符合資格且排名前' + selectionRules.a_retention_rank + '可保留，最多' + selectionRules.a_entry_rank + '檔。' : '';
 $("m-px").textContent = DATA.px_date || "—";
 
 if (DATA.review_only) {
@@ -592,11 +582,6 @@ async function refreshWeeklyStatus() {
 refreshWeeklyStatus();
 setInterval(refreshWeeklyStatus, 60000);
 
-const sw = $("switchbox");
-sw.innerHTML = DATA.tsm_on
-  ? '<span class="switch sw-on"><span class="dot" style="background:var(--down)"></span>大盤多頭 ON｜A ' + P(DATA.wa_eff,0) + ' / B ' + P(DATA.wb_eff,0) + '</span>'
-  : '<span class="switch sw-off"><span class="dot" style="background:var(--warn)"></span>大盤轉弱 OFF｜A 吃 ' + P(DATA.wa_eff,0) + '</span>';
-
 /* ================= 本金輸入 ================= */
 function persistCap() {
   const v = parseFloat($("cap").value);
@@ -620,9 +605,7 @@ $("cap-reset").addEventListener("click", () => {
 
 /* ================= 資料彙整 ================= */
 function allHolds() {
-  const a = (DATA.holdings_a||[]).map(x => Object.assign({}, x, {channel:"A"}));
-  const b = (DATA.holdings_b||[]).map(x => Object.assign({}, x, {channel:"B"}));
-  return a.concat(b);
+  return DATA.holdings_a || [];
 }
 function groupByAction(rows) {
   const g = {BUY:[], SELL:[], REBALANCE_BUY:[], REBALANCE_SELL:[], HOLD:[]};
@@ -687,7 +670,7 @@ function renderAllocationDetails(preview) {
   const names = new Map(allHolds().map(row => [String(row.code), row.name]));
   for (const row of preview.details.filter(row => row.shortfall > .005)) {
     const tr = body.insertRow();
-    const reason = {missing_price:'缺少可用價格', restricted:'不可交易，移出試算', under_one_share:'不足一股，額度分配其他可買標的', exposure_limit:'保留現金以維持95%倉位上限', cash_limit:'可用資金需預留費用', rounding:'股數取整', rounding_repair:'補足整股差額，維持90～95%配置', redistributed:'承接同通道其他無法配置的額度'}[row.reason] || '—';
+    const reason = {missing_price:'缺少可用價格', restricted:'不可交易，移出試算', under_one_share:'不足一股，額度分配其他可買標的', exposure_limit:'保留現金以維持95%倉位上限', cash_limit:'可用資金需預留費用', rounding:'股數取整', rounding_repair:'補足整股差額，維持90～95%配置', redistributed:'承接其他無法配置的額度'}[row.reason] || '—';
     for (const value of [row.code + ' ' + (names.get(row.code) || ''), M(row.target_amount), F(row.quantity, 0), M(row.invested), M(row.shortfall), reason]) {
       tr.insertCell().textContent = value;
     }
@@ -763,7 +746,7 @@ function renderHoldings() {
     .concat(SORTER["BUY"](g.BUY||[]))
     .concat(SORTER["REBALANCE_BUY"](g.REBALANCE_BUY||[]))
     .concat(SORTER["HOLD"](g.HOLD||[]));
-  if (!ordered.length) { tbody.innerHTML = '<tr><td colspan="11" class="empty">本週無持股</td></tr>'; return; }
+  if (!ordered.length) { tbody.innerHTML = '<tr><td colspan="10" class="empty">本週無持股</td></tr>'; return; }
   tbody.innerHTML = ordered.map(h => {
     const tgtVal = tgtAmount(h);
     const tgtSh = tgtShares(h);
@@ -773,7 +756,7 @@ function renderHoldings() {
     return '<tr>' +
       '<td><span class="badge ' + ACT_CLS[h.action] + '">' + actBadge + '</span></td>' +
       '<td>' + h.code + '</td><td>' + h.name + (h.recommendation_note ? '<div class="note">⚠️ ' + h.recommendation_note + '</div>' : '') + '</td>' +
-      '<td>' + h.channel + '</td><td>' + (h.rank || "—") + '</td>' +
+      '<td>' + (h.rank || "—") + '</td>' +
       '<td class="num">' + P(previewWeight(h), 2) + '</td>' +
       '<td class="num">' + P(h.current_weight, 2) + '</td>' +
       '<td class="num tgt">' + P(previewWeight(h) - (h.current_weight || 0), 2) + '</td>' +
@@ -814,7 +797,7 @@ function renderMonthlyReturns() {
   let basis=Number(perf.start_capital);
   if(!(basis>0)){box.textContent='缺少有效期初本金，暫不顯示月報酬。';return;}
   for(const [date,value] of nav){
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!(Number(value)>0)){box.textContent='資產資料不完整，暫不顯示月報酬。';return;}
+    if(!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date)||!(Number(value)>0)){box.textContent='資產資料不完整，暫不顯示月報酬。';return;}
     const month=date.slice(0,7),year=date.slice(0,4);
     if(!months.has(month))months.set(month,{basis,end:Number(value),date});
     else Object.assign(months.get(month),{end:Number(value),date});
@@ -890,7 +873,7 @@ function renderHist() {
   const sel = $("histsel");
   DATA.history.forEach((h, i) => {
     const opt = document.createElement("option");
-    opt.value = i; opt.textContent = h.rebalance_date;
+    opt.value = i; opt.textContent = h.rebalance_date + '｜' + (h.release_version || h.strategy_version || '歷史版本');
     sel.appendChild(opt);
   });
   sel.addEventListener("change", () => {
@@ -912,7 +895,7 @@ function renderHist() {
           a.stock_name + '｜整股試算權重 ' + P(historyPreview.weights[a.stock_code] || 0,2) + '｜目標股數 ' + F(historyPreview.quantities[a.stock_code] || 0,0) + ' 股</span></div>';
       }).join("");
     $("histview").innerHTML = '<div class="note">調倉日：' + h.rebalance_date + '｜訊號基準：' + h.sig_date + '｜' +
-      'BUY ' + (h.counts.BUY||0) + ' / SELL ' + (h.counts.SELL||0) + ' / REBAL ' + ((h.counts.REBALANCE_BUY||0)+(h.counts.REBALANCE_SELL||0)) + ' / HOLD ' + (h.counts.HOLD||0) + '</div>' +
+      '版本：' + (h.release_version || h.strategy_version || '歷史版本') + '｜BUY ' + (h.counts.BUY||0) + ' / SELL ' + (h.counts.SELL||0) + ' / REBAL ' + ((h.counts.REBALANCE_BUY||0)+(h.counts.REBALANCE_SELL||0)) + ' / HOLD ' + (h.counts.HOLD||0) + '</div>' +
       (rows || '<div class="empty">該週無明細</div>') +
       ((h.actions || []).some(a => a.action !== 'SELL' && a.allocation_eligible === false) ? '<div class="note">另有歷史受限資產，未列入可下單明細。</div>' : '');
   });
@@ -920,7 +903,7 @@ function renderHist() {
   sel.dispatchEvent(new Event("change"));
 }
 
-/* ================= V4 歷史績效互動計算器（只讀 DATA.perf NAV，不重跑回測） ================= */
+/* ================= V5 歷史績效互動計算器（只讀 DATA.perf NAV，不重跑回測） ================= */
 function initPerfCalc() {
   const YEARS = [...new Set(((DATA.perf && DATA.perf.nav) || []).map(row => Number(row[0].slice(0,4))))].sort();
   const y0 = $("pc-y0"), y1 = $("pc-y1");
@@ -992,7 +975,7 @@ $("delivery-check-note").textContent=deliveryCheck.as_of?'配股公告核對基�
 </html>
 """
 
-HTML = HTML.replace("V4.0.0", RELEASE_VERSION)
+HTML = HTML.replace("V5.0.0", RELEASE_VERSION)
 HTML = HTML.replace("__DATA_JSON__", DATA_JSON)
 with open(os.path.join(HERE, 'weekly_status.js'), encoding='utf-8') as _source:
     HTML = HTML.replace('__WEEKLY_STATUS_JS__', _source.read())

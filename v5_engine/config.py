@@ -16,13 +16,9 @@ class StrategyConfig:
     exposure_max: float = .95
     exposure_aim: float = .925
     max_hold_a: int = 15
-    max_hold_b: int = 4
     a_rank_days: int = 3
     a_retention_rank: int = 20
-    weight_a: float = .60
-    weight_b: float = .40
     cap_threshold: float = 6e5
-    dynamic_a: bool = True
     delisted_valuation: str = 'zero'
 
     def __post_init__(self):
@@ -41,4 +37,4 @@ class StrategyConfig:
             raise ValueError('Unknown delisted asset valuation policy')
 
 
-V4_COEFFICIENTS = (1.5, 1.0, .5)
+V5_COEFFICIENTS = (1.5, 1.0, .5)

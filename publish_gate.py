@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-"""V4 發布閘門（管線安全層；不計算策略、不修改 v4_canonical.py）。
+"""V5 發布閘門（管線安全層；不計算策略、不修改 v5_canonical.py）。
 
-在「產生網頁 (update_data.py)」與「發送 TG (tg_push_v4.py)」之前執行，
+在「產生網頁 (update_data.py)」與「發送 TG (tg_push_v5.py)」之前執行，
 確保只會發布「本週最新、validation PASS、結構正確」的同一份 canonical：
 
-  1) output/validation_log.json：verdict == PASS、strategy_version == V4、
+  1) output/validation_log.json：verdict == PASS、strategy_version == V5、
      且 validation 的 rebalance_date 與 canonical 一致。
   2) 新鮮度（非 FORCE）：canonical.rebalance_date 必須等於「本週最後交易日」。
      → 引擎沒重跑（canonical 還是上週）時直接擋下，絕不發舊訊號。
@@ -38,7 +38,7 @@ HOL_FILE = os.path.join(HERE, "holidays.json")
 TW = ZoneInfo("Asia/Taipei")
 
 VALID_ACTIONS = {"BUY", "SELL", "REBALANCE_BUY", "REBALANCE_SELL", "HOLD"}
-WEIGHT_SUM_CAP = 0.953   # 與 v4_canonical 容差一致：>0.953 才視為超額
+WEIGHT_SUM_CAP = 0.953   # 與 v5_canonical 容差一致：>0.953 才視為超額
 
 
 def load_holidays():
@@ -168,7 +168,7 @@ def evaluate(force=False, today=None, output_dir=None, notify=True):
     val = None
 
     if not os.path.exists(sig_file):
-        reasons.append("output/latest_signals.json 不存在（V4 引擎尚未產生結果）")
+        reasons.append("output/latest_signals.json 不存在（V5 引擎尚未產生結果）")
     else:
         try:
             with open(sig_file, encoding="utf-8") as source:
@@ -191,7 +191,7 @@ def evaluate(force=False, today=None, output_dir=None, notify=True):
         reasons.append("validation 必須是 JSON 物件")
         val = None
     if sig is not None:
-        from v4_engine.security_status import snapshot_hash, can_trade
+        from v5_engine.security_status import snapshot_hash, can_trade
         security = _load_json(os.path.join(output_dir,'security_status.json'))
         if (not security or security.get('checked_for') != sig.get('rebalance_date')
                 or sig.get('security_status_checked_for') != sig.get('rebalance_date')
@@ -208,13 +208,13 @@ def evaluate(force=False, today=None, output_dir=None, notify=True):
             if val.get("verdict") != "PASS":
                 reasons.append(f"validation verdict={val.get('verdict')}（非 PASS）")
             if val.get("strategy_version") != STRATEGY_VERSION:
-                reasons.append("validation strategy_version 非 V4")
+                reasons.append("validation strategy_version 非 V5")
             vr = val.get("rebalance_date")
             sr = sig.get("rebalance_date")
             if not vr or not sr or vr != sr:
                 reasons.append(f"validation rebalance_date={vr} 與 canonical={sr} 不一致")
         if sig.get("strategy_version") != STRATEGY_VERSION:
-            reasons.append(f"canonical strategy_version={sig.get('strategy_version')} 非 V4")
+            reasons.append(f"canonical strategy_version={sig.get('strategy_version')} 非 V5")
 
         if sig.get('release_version') != RELEASE_VERSION or (val or {}).get('release_version') != RELEASE_VERSION:
             reasons.append('訊號／驗證程式版本與目前版本不一致')
@@ -285,7 +285,7 @@ def evaluate(force=False, today=None, output_dir=None, notify=True):
         perf = _load_json(os.path.join(output_dir, "perf.json"))
         if not perf:
             reasons.append("缺少有效的歷史績效資料")
-        from v4_engine.jsonio import validation_matches
+        from v5_engine.jsonio import validation_matches
         if not validation_matches(sig,val,perf):
             reasons.append('驗證檔未綁定本次完整訊號與績效，停止發布')
         if sig.get("signal_mode") == "PRE_CLOSE_PLAN" and (not perf.get("completed_through") or perf["completed_through"] >= rd):
@@ -356,7 +356,7 @@ def evaluate(force=False, today=None, output_dir=None, notify=True):
     }
     if not ok and notify:
         _tg_alert(
-            "❌ <b>V4 調倉資料未通過發布檢查</b>\n"
+            "❌ <b>V5 調倉資料未通過發布檢查</b>\n"
             + result["reason"]
             + "\n\n本次<b>不更新網頁、不發送一般調倉訊號</b>，請人工確認後再以 full 補跑。")
     elif ok:

@@ -1,4 +1,4 @@
-/* Mirror of v4_engine/allocation.py; minimum commission is per stock order. */
+/* Mirror of v5_engine/allocation.py; minimum commission is per stock order. */
 function previewAllocation(targets,capital,buyFee=.000399,minimumCommission=1) {
   if (!Number.isFinite(capital)||capital<=0||capital>1e12||!Number.isFinite(buyFee)||buyFee<0||buyFee>=1||!Number.isFinite(minimumCommission)||minimumCommission<0) throw new Error('Invalid capital or commission');
   targets=[...targets].sort((a,b)=>String(a.code)<String(b.code)?-1:String(a.code)>String(b.code)?1:0);

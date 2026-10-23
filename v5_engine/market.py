@@ -1,4 +1,4 @@
-"""Load authenticated market data and compute V4 indicators once."""
+"""Load authenticated market data and compute V5 indicators once."""
 import json
 import os
 from pathlib import Path
@@ -55,7 +55,7 @@ def load_market(config, root, *, live_rebalance=None, data_root=None, token=None
     except Exception:
         pass
     keep = [c for c in keep if c not in excl_innov]
-    print(f"[v7h] 排除創新板 {len(excl_innov)} 檔，選股池 {len(keep)} 檔")
+    print(f"[V5] 排除創新板 {len(excl_innov)} 檔，選股池 {len(keep)} 檔")
 
     close = close[keep]; open_ = open_[[c for c in keep if c in open_.columns]]
     high = high[[c for c in keep if c in high.columns]]; low = low[[c for c in keep if c in low.columns]]
@@ -73,7 +73,7 @@ def load_market(config, root, *, live_rebalance=None, data_root=None, token=None
     cap_dl = cap_q.deadline()
     cap_daily = cap_dl.reindex(close.index).ffill().shift(1)
     cap_ok = (cap_daily >= config.cap_threshold).fillna(True)
-    print(f"[v7h] 歷史股本序列就緒：{cap_daily.shape[1]} 檔 x {len(cap_daily)} 交易日 | 門檻 {config.cap_threshold/1e5:.0f} 億")
+    print(f"[V5] 歷史股本序列就緒：{cap_daily.shape[1]} 檔 x {len(cap_daily)} 交易日 | 門檻 {config.cap_threshold/1e5:.0f} 億")
 
     # Total-return signals prevent ex-dividend/split gaps from becoming exits.
     raw_close, raw_open, raw_high, raw_low = close, open_, high, low
@@ -113,18 +113,8 @@ def load_market(config, root, *, live_rebalance=None, data_root=None, token=None
     sellA = (close.shift(1) < ma60.shift(1)) | buyA.shift(80).fillna(False)
     targetA = buyA.hold_until(sellA)
 
-    tvw = tv20.rank(axis=1, ascending=False)
-    big = tvw.shift(1) <= 15
-    buyB = big & (close.shift(1) > ma60.shift(1)) & (r120.shift(1) > 60) & (r20s < 88) & roe_ok
-    sellB = (close.shift(1) < ma60.shift(1)) | buyB.shift(80).fillna(False)
-    targetB = buyB.hold_until(sellB)
-
-    sw_tsm = {}
-    if "2330" in close.columns:
-        _ma20 = close["2330"].rolling(20).mean()
-        _ma60 = close["2330"].rolling(60).mean()
-        _t = (_ma20.shift(1) >= _ma60.shift(1)) & (close["2330"].shift(1) >= _ma60.shift(1))
-        sw_tsm = {d: bool(v) for d, v in _t.items()}
+    # Retain inert context fields for cached data compatibility only.
+    targetB, sw_tsm = None, {}
 
     days_all = close.index
     weeks = close.resample("W-FRI").last().index
@@ -157,11 +147,11 @@ def load_market(config, root, *, live_rebalance=None, data_root=None, token=None
                          ma60, cap_ok, sw_tsm, days, days_all, weeks, LIVE_DAY, SIGNAL_DAY, name_map)
     context.tv20_previous = tv20.shift(1)
     # r20s already ends at the previous actual session. Ranking alone uses
-    # its trailing mean; entry/exit eligibility and B's RSI remain unchanged.
+    # its trailing mean; entry/exit eligibility remains unchanged.
     context.a_rank_scores = r20s.rolling(config.a_rank_days, min_periods=config.a_rank_days).mean()
     context.adjusted_close = adjusted
     context.corporate_events = events
-    delivery_path = Path(root)/'v4_engine/share_delivery_events.json'
+    delivery_path = Path(root)/'v5_engine/share_delivery_events.json'
     context.share_delivery_events = json.loads(delivery_path.read_text(encoding='utf-8')).get('events',[]) if delivery_path.exists() else []
     from .corporate_actions import delivery_registry
     delivery_registry(context.share_delivery_events)

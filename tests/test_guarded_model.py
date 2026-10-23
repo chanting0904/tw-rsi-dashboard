@@ -1,7 +1,7 @@
 import unittest
 from test_accounting import sample_context
-from v4_engine.simulation import run
-from v4_engine.canonical import canonical_for
+from v5_engine.simulation import run
+from v5_engine.canonical import canonical_for
 
 class GuardedModelTests(unittest.TestCase):
     def test_retained_stock_does_not_create_new_buy_limit_warning(self):

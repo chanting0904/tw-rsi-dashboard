@@ -78,7 +78,7 @@ test('server bridge and browser use the same guarded quantities',()=>{
  const current={rebalance_date:'2026-10-16',actions:[{stock_code:'1101',stock_name:'虛構',channel:'A',action:'HOLD',allocation_eligible:true,current_shares:100,target_weight:.9,planner_target_weight:.8,strategy_target_weight:.15}]};
  const args={previous,current,previousCapital:100000,capital:100000,quotes:{1101:{price:100,tradable:true}},snapshot:{schema:1,rebalance_date:previous.rebalance_date,capital:100000,holdings:[{code:'1101',shares:100}]}};
  const local=weeklyCapitalPlan(args);
- const r=spawnSync(process.execPath,[require('node:path').resolve(__dirname,'../v4_engine/guarded_bridge.cjs')],{input:JSON.stringify(args)+'\n',encoding:'utf8'});
+ const r=spawnSync(process.execPath,[require('node:path').resolve(__dirname,'../v5_engine/guarded_bridge.cjs')],{input:JSON.stringify(args)+'\n',encoding:'utf8'});
  assert.equal(r.status,0,r.stderr);const remote=JSON.parse(r.stdout);assert.equal(remote.ok,true);assert.deepEqual(remote.plan,JSON.parse(JSON.stringify(local)));
  assert.ok(local.rows[0].target<=150);
 });

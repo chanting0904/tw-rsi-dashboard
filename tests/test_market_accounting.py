@@ -7,12 +7,12 @@ import unittest
 from unittest.mock import patch
 
 import pandas as pd
-from v4_engine.config import StrategyConfig
-from v4_engine.fees import order_cost,OrderFees
-from v4_engine.corporate_actions import CorporateLedger,delivery_registry
-from v4_engine.security_status import status_at,can_trade,table_rows,refresh_security_status,date_string,snapshot_hash,build_snapshot,SOURCES
-from v4_engine.valuation import prepare_valuation
-from v4_engine.execution import execute_week
+from v5_engine.config import StrategyConfig
+from v5_engine.fees import order_cost,OrderFees
+from v5_engine.corporate_actions import CorporateLedger,delivery_registry
+from v5_engine.security_status import status_at,can_trade,table_rows,refresh_security_status,date_string,snapshot_hash,build_snapshot,SOURCES
+from v5_engine.valuation import prepare_valuation
+from v5_engine.execution import execute_week
 from test_accounting import sample_context
 import test_pipeline
 
@@ -164,7 +164,7 @@ class OfficialStatusTests(unittest.TestCase):
 
     def test_read_only_load_does_not_replace_published_snapshot(self):
         snapshot=self.sample().security_status
-        with patch('v4_engine.security_status.build_snapshot',return_value=snapshot),patch('v4_engine.jsonio.write_json') as write:
+        with patch('v5_engine.security_status.build_snapshot',return_value=snapshot),patch('v5_engine.jsonio.write_json') as write:
             result=refresh_security_status(None,'2026-10-16','2026-10-15',getter=lambda url:[])
             self.assertEqual(result,snapshot)
             write.assert_not_called()

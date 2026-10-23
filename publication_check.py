@@ -42,8 +42,8 @@ def verify_public_index(*, root=ROOT, attempts=12, pause=10, write_receipt=True)
     last_error = None
     for attempt in range(attempts):
         try:
-            request = urllib.request.Request(PUBLIC_URL + "?v4_verify=" + str(time.time_ns()),
-                headers={"Cache-Control": "no-cache", "User-Agent": "V4-publication-check"})
+            request = urllib.request.Request(PUBLIC_URL + "?v5_verify=" + str(time.time_ns()),
+                headers={"Cache-Control": "no-cache", "User-Agent": "V5-publication-check"})
             with urllib.request.urlopen(request, timeout=30) as response:
                 body = response.read()
             data = embedded_data(body.decode("utf-8"))
