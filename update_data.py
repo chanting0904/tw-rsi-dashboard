@@ -321,6 +321,7 @@ HTML = """<!DOCTYPE html>
   section table:not(.monthly-returns) th{font-size:12px;}
   section table:not(.monthly-returns) td{padding-top:9px;padding-bottom:9px;}
   @media(max-width:600px){body{padding:12px;}section{padding:12px;}.card{padding:10px 11px;}.card .v{font-size:19px;}h1{font-size:19px;}header{gap:8px;}}
+__DASHBOARD_CSS__
 </style>
 </head>
 <body>
@@ -332,11 +333,16 @@ HTML = """<!DOCTYPE html>
       股價更新：<b id="m-px"></b>（每日收盤）
     </div>
   </header>
+<div class="version-panel"><div><div class="version-title">本週調倉 <span class="version-chip" id="preview-version"></span></div><div class="version-sub"><span class="ready-label" id="preview-ready-label">本週計畫已完成</span> · 核對版本與股數</div></div><div class="version-date">調倉日 <strong id="preview-rebalance"></strong><br>資料基準 <strong id="preview-basis"></strong></div></div>
+<div class="version-update" id="preview-update-notice" hidden role="alert"><strong id="preview-update-title"></strong><p id="preview-update-text"></p><button id="preview-update-dismiss" type="button">收起提醒</button></div>
+
 
   <div id="warnbox" class="warnbox" style="display:none"></div>
   <div id="freshnessbox" class="freshnessbox" role="status" aria-live="polite"><b id="weekly-title">正在確認本週狀態</b><span id="weekly-detail" class="status-detail"></span></div>
 
-  <section>
+
+<section class="result-overview"><h2>本次調倉摘要 <small>依你輸入的兩週總資金計算</small></h2><div class="result-metrics"><div class="result-metric buy"><label>買進／加碼</label><strong id="preview-buy-count">—</strong></div><div class="result-metric sell"><label>賣出／減碼</label><strong id="preview-sell-count">—</strong></div><div class="result-metric"><label>調整後股票倉位</label><strong id="preview-exposure">—</strong></div><div class="result-metric cash"><label>預估剩餘資金</label><strong id="preview-cash">—</strong></div></div><p id="preview-result-note" class="result-note">輸入兩週總資金後，查看這次需要買賣的股數。</p></section>
+<section class="capital-panel">
     <h2>💰 總資金（持股市值＋現金）</h2>
     <div class="capbar">
       <label for="cap-previous">上週總資金</label><input type="number" id="cap-previous" min="10000" max="1000000000000" step="1" placeholder="手動輸入上週總資金">
@@ -344,17 +350,12 @@ HTML = """<!DOCTYPE html>
       <button id="cap-apply">計算本週買賣</button>
       <button id="cap-reset" class="ghost">重新設定</button>
     </div>
-    <div class="note">兩週金額都由你手動輸入，均指「股票市值＋現金」，不是累計投入。續抱股原則上不動；退出、新買、100%差距門檻及90～95%倉位修復才調整。不需輸入交割款。回測已採用相同防買回調倉規則；績效以固定初始資金複利計算，不包含你個人的加減資金。<br>下方「買賣清單」才是兩週資金試算結果；展開的模型資料是參考，不是個人下單清單。</div>
+    <details class="capital-explanation"><summary>資金怎麼填？調倉規則說明</summary><div class="note">兩週金額都由你手動輸入，均指「股票市值＋現金」，不是累計投入。續抱股原則上不動；退出、新買、100%差距門檻及90～95%倉位修復才調整。不需輸入交割款。回測已採用相同防買回調倉規則；績效以固定初始資金複利計算，不包含你個人的加減資金。<br>下方「買賣清單」才是兩週資金試算結果；展開的模型資料是參考，不是個人下單清單。</div></details>
     <div id="cap-storage-note" class="note" role="status"></div>
 
   </section>
 
-  <section>
-    <h2>📋 買賣清單（依你輸入的兩週總資金）</h2>
-    <div id="weekly-capital-error" class="note" role="status">請輸入兩週總資金，再按「計算本週買賣」。</div>
-    <div id="weekly-capital-results" hidden><div id="weekly-capital-summary" class="note"></div><div id="weekly-capital-basis" class="note"></div><button id="weekly-capital-copy" class="ghost">複製買賣清單</button><span id="weekly-capital-copy-note" class="note"></span><div style="overflow-x:auto"><table id="weekly-capital-table"></table></div></div>
-    <button id="weekly-capital-clear" class="ghost">清除理論股數紀錄</button>
-  </section>
+  <section class="orders-panel"><div class="orders-heading"><h2>本週買賣清單</h2><span>粗體數字＝這次下單的股數</span></div><div id="weekly-capital-error" class="note" role="status">請輸入兩週總資金，再按「計算本週買賣」。</div><div id="weekly-capital-results" hidden><div id="weekly-capital-summary" class="note"></div><div id="weekly-capital-basis" class="note basis-note"></div><div class="orders-actions"><button id="weekly-capital-copy" class="ghost">複製買賣清單</button><span id="weekly-capital-copy-note" class="note"></span></div><div id="weekly-capital-table"></div></div><button id="weekly-capital-clear" class="ghost clear-records">清除理論股數紀錄</button></section>
   <section>
     <details id="order-planner"><summary style="cursor:pointer;font-weight:700">🧾 算這次要買賣幾股／檢查委託資金（選用）</summary>
       <div class="note">每行輸入「股票代號 股數」，例如 2033 100；單位是股，不是張。目前沒有持股請填「空手」。<b>請輸入完整、已可交易的持股；待領配股不要算入。</b>內容不會上傳或寫回模擬持倉。</div>
@@ -445,7 +446,7 @@ HTML = """<!DOCTYPE html>
 
   <section id="monthly-returns-section">
     <h2>每月盈虧 <span class="tag" id="monthly-returns-period"></span></h2>
-    <div class="note" style="margin:0 0 12px">策略回測｜<span class="up">紅色賺錢</span>・<span class="down">綠色虧錢</span>｜手機可左右滑動</div>
+    <div class="note" style="margin:0 0 12px">策略回測 · 點月份看最賺／最虧股票｜<span class="up">紅色賺錢</span>・<span class="down">綠色虧錢</span>｜手機可左右滑動</div>
     <div class="monthly-scroll" id="monthly-returns-table" tabindex="0" role="region" aria-label="可左右捲動的月報酬表"></div>
     <div class="note">每月報酬＝月底總資產 ÷ 上月底總資產 − 1；第一個月以回測起始本金計算。包含持股漲跌、股利權益與交易費用。最新月份只計算到標示日期，未有資料以「—」表示。全年報酬以複利計算，不是把每月相加。此為策略模擬，與個人帳戶損益可能不同。</div>
   </section>
@@ -557,7 +558,7 @@ function renderFreshnessStatus() {
   if(WEEKLY_CAPITAL_UI)WEEKLY_CAPITAL_UI.validateFreshness();
   const box = $("freshnessbox");
   box.className = 'freshnessbox weekly-' + result.state;
-  $("weekly-title").textContent = result.title;
+  $("weekly-title").textContent = result.title; if(document.getElementById("preview-ready-label"))document.getElementById("preview-ready-label").textContent=result.title;
   $("weekly-detail").textContent = result.detail;
   $("ops-title").textContent = result.state === 'ready' ? '📋 本週我要做什麼' : '📋 最近一期模擬清單（本週尚未確認）';
   if ($('cards').childElementCount) {
@@ -576,6 +577,7 @@ async function refreshWeeklyStatus() {
     if (status && typeof status === 'object') {
       publicWeeklyStatus = status;
       renderFreshnessStatus();
+      if(window.renderRevisionStatus)window.renderRevisionStatus(status);
     }
   } catch (_) { /* Keep the offline calendar/date check when the server is unavailable. */ }
 }
@@ -827,6 +829,12 @@ function renderMonthlyReturns() {
       if(!m){cell.textContent='—';cell.title='尚無資料';cell.classList.add('month-empty');continue;}
       paint(cell,m.end/m.basis-1);cell.title=key+'｜截止 '+m.date;
       if(key===last.slice(0,7)){cell.classList.add('month-current');const mark=document.createElement('small');mark.textContent='截至 '+last.slice(5);cell.appendChild(mark);}
+      if(DATA.perf?.monthly_contributions?.months?.[key]){
+      const trigger=document.createElement('button');trigger.type='button';trigger.className='month-details-trigger';
+      trigger.setAttribute('aria-label',year+'年'+n+'月，報酬'+Number(((m.end/m.basis-1)*100).toFixed(2)).toFixed(2)+'%，查看最賺錢與最虧錢股票');
+      while(cell.firstChild)trigger.appendChild(cell.firstChild);cell.appendChild(trigger);
+      trigger.addEventListener('click',()=>openMonthlyDetails(key));
+      }
     }
     const cell=row.insertCell();paint(cell,annual.end/annual.basis-1);cell.classList.add('monthly-annual');
   }
@@ -971,7 +979,9 @@ WEEKLY_CAPITAL_UI=initWeeklyCapital({data:DATA,money:M,isReady:()=>weeklyCapital
 const deliveryCheck=DATA.share_delivery_check||{};
 $("delivery-check-note").textContent=deliveryCheck.as_of?'配股公告核對基準 '+deliveryCheck.as_of+'｜'+(deliveryCheck.status==='PASS'?'官方來源核對完成':'部分來源或日期待確認，未核實配股仍鎖定'):'配股公告將於下次策略計算時自動核對；未確認日期仍保持鎖定。';
 </script>
-</body>
+<script>__DASHBOARD_UI_JS__</script>
+<dialog id="month-detail-dialog" class="month-dialog" aria-labelledby="month-detail-title"><div class="month-dialog-head"><div><div class="month-eyebrow">每月盈虧 · 個股貢獻</div><h2 id="month-detail-title"></h2><p id="month-detail-period"></p></div><button type="button" id="month-detail-close" aria-label="關閉月份明細">×</button></div><div class="month-stock-pair"><article class="month-stock winner"><div class="month-stock-label">最賺錢</div><div class="month-stock-code" id="month-winner-code"></div><h3 id="month-winner-name"></h3><div class="month-stock-points" id="month-winner-points"></div><p id="month-winner-contribution"></p></article><article class="month-stock loser"><div class="month-stock-label">最虧錢</div><div class="month-stock-code" id="month-loser-code"></div><h3 id="month-loser-name"></h3><div class="month-stock-points" id="month-loser-points"></div><p id="month-loser-contribution"></p></article></div><div class="month-dialog-foot"><p>顯示報酬貢獻百分點，不隨上方個人本金改變。</p><p>按對策略當月報酬的貢獻排名，包含未賣出持股漲跌、股利與費稅；不是股票本身的月漲跌幅。</p></div></dialog>
+<script>__MONTHLY_DETAILS_JS__</script></body>
 </html>
 """
 
@@ -982,7 +992,7 @@ with open(os.path.join(HERE, 'weekly_status.js'), encoding='utf-8') as _source:
 with open(os.path.join(HERE, 'capital_preview.js'), encoding='utf-8') as _source:
     HTML = HTML.replace('__CAPITAL_PREVIEW_JS__', _source.read())
 
-for _name,_placeholder in [('weekly_capital.js','__WEEKLY_CAPITAL_JS__'),('weekly_capital_ui.js','__WEEKLY_CAPITAL_UI_JS__'),('order_planner.js','__ORDER_PLANNER_JS__'),('order_planner_ui.js','__ORDER_PLANNER_UI_JS__')]:
+for _name,_placeholder in [('dashboard_ui.css','__DASHBOARD_CSS__'),('dashboard_ui.js','__DASHBOARD_UI_JS__'),('monthly_details.js','__MONTHLY_DETAILS_JS__'),('weekly_capital.js','__WEEKLY_CAPITAL_JS__'),('weekly_capital_ui.js','__WEEKLY_CAPITAL_UI_JS__'),('order_planner.js','__ORDER_PLANNER_JS__'),('order_planner_ui.js','__ORDER_PLANNER_UI_JS__')]:
     with open(os.path.join(HERE,_name),encoding='utf-8') as _source:
         HTML=HTML.replace(_placeholder,_source.read())
 
