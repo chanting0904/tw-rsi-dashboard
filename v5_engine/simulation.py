@@ -93,9 +93,9 @@ def run(ctx, weekday=5, mode='close', coefs=(1.5, 1.0, .5), start=None, end=None
 
 def run_seeded(ctx,seed,weekday=5,mode='close',coefs=(1.5,1.,.5),end=None):
     from .guarded_execution import GuardedExecution
-    reference=run_reference(ctx,weekday,mode,coefs,end=end,seed=seed)
+    reference=run_reference(ctx,weekday,mode,coefs,end=end)
     with GuardedExecution(ctx,reference,seed=seed) as executor:
         result=run_reference(ctx,weekday,mode,coefs,end=end,executor=executor,seed=seed)
     result['execution_policy']='guarded_weekly_capital_v1'
-    result['live_model_origin']=dict(from_strategy=seed['from_strategy'],seed_date=seed['date'],effective_date=seed['effective_date'],previous_signal_digest=seed['previous_signal_digest'])
+    result['live_model_origin']=dict(from_strategy=seed['from_strategy'],seed_date=seed['date'],effective_date=seed['effective_date'],previous_signal_digest=seed['previous_signal_digest'],reference_policy='full_history_v5')
     return result
