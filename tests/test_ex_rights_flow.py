@@ -8,17 +8,17 @@ import tempfile
 import unittest
 import pandas as pd
 
-from v4_engine.corporate_actions import CorporateLedger,build_events
-from v4_engine.config import StrategyConfig
-from v4_engine.context import MarketContext
-from v4_engine.live_actions import prepare_live_actions
-from v4_engine.simulation import run
-from v4_engine.canonical import canonical_for
-from v4_engine.execution import execute_week
-from v4_engine.selection import select_universe
-from v4_engine.validation import validate_plans
+from v5_engine.corporate_actions import CorporateLedger,build_events
+from v5_engine.config import StrategyConfig
+from v5_engine.context import MarketContext
+from v5_engine.live_actions import prepare_live_actions
+from v5_engine.simulation import run
+from v5_engine.canonical import canonical_for
+from v5_engine.execution import execute_week
+from v5_engine.selection import select_universe
+from v5_engine.validation import validate_plans
 from unittest.mock import patch
-from tg_push_v4 import build_message
+from tg_push_v5 import build_message
 from daily_update import update_file,read_data
 from test_accounting import sample_context
 
@@ -163,7 +163,7 @@ class ExRightsFlowTests(unittest.TestCase):
                 (temp/name).write_bytes((root/name).read_bytes())
             (temp/'output/latest_signals.json').write_text(json.dumps(signal,ensure_ascii=False),encoding='utf-8')
             (temp/'output/prices.json').write_text(json.dumps({'px_date':'2026-01-08','prices':{'2400':100.}}),encoding='utf-8')
-            env=dict(os.environ,V4_SKIP_LOCAL_UPDATE='1',V4_REVIEW_MODE='1',PYTHONPATH=str(root))
+            env=dict(os.environ,V5_SKIP_LOCAL_UPDATE='1',V5_REVIEW_MODE='1',PYTHONPATH=str(root))
             process=subprocess.run([sys.executable,'-X','utf8',str(temp/'update_data.py')],env=env,capture_output=True,text=True,encoding='utf-8')
             self.assertEqual(process.returncode,0,process.stdout+process.stderr)
             rendered=(temp/'index.html').read_text(encoding='utf-8')
@@ -176,10 +176,10 @@ class ExRightsFlowTests(unittest.TestCase):
             self.assertEqual(data['pending_assets'][0]['shares'],signal['pending_assets'][0]['shares'])
 
     def test_staged_pipeline_keeps_prior_close_cutoff_and_projects_ex_rights(self):
-        from v4_engine.pipeline import publish
-        from v4_engine.security_status import snapshot_hash
+        from v5_engine.pipeline import publish
+        from v5_engine.security_status import snapshot_hash
         ctx=live_context()
-        with tempfile.TemporaryDirectory() as directory,patch('v4_engine.pipeline.fixed_anchor',return_value=({'date':'2026-01-02'},True)):
+        with tempfile.TemporaryDirectory() as directory,patch('v5_engine.pipeline.fixed_anchor',return_value=({'date':'2026-01-02'},True)):
             result=publish(ctx,directory,Path(__file__).resolve().parents[1])
             signal=result['signal']
             self.assertEqual(signal['signal_mode'],'PRE_CLOSE_PLAN')

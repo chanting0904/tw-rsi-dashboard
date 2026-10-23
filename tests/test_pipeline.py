@@ -11,7 +11,7 @@ import pandas as pd
 import publish_gate as gate
 from live_plan import prepare_prices, completed_week_days
 from market_dates import quote_date
-from tg_push_v4 import build_message, message_chunks
+from tg_push_v5 import build_message, message_chunks
 from s5_live import recalc_weekly as recalc
 from local_db_updater import merge_amt
 import pages_publish
@@ -83,8 +83,8 @@ class PublishTests(unittest.TestCase):
         return {'checked_for':'2026-10-08','listed':{'2330':{'name':'A&B','exchange':'TWSE'}},'events':[]}
 
     def signal(self):
-        return {"security_status_checked_for":"2026-10-08", "security_status_hash": __import__('v4_engine.security_status',fromlist=['snapshot_hash']).snapshot_hash(self.status()),
-                "strategy_version": "V4", "release_version": RELEASE_VERSION, "rebalance_date": "2026-10-08", "sig_date": "2026-10-07",
+        return {"security_status_checked_for":"2026-10-08", "security_status_hash": __import__('v5_engine.security_status',fromlist=['snapshot_hash']).snapshot_hash(self.status()),
+                "strategy_version": "V5", "release_version": RELEASE_VERSION, "rebalance_date": "2026-10-08", "sig_date": "2026-10-07",
                 "price_basis_date": "2026-10-07", "signal_mode": "PRE_CLOSE_PLAN",
                 "generated_at": "2026-10-08T06:00:00+08:00", "commit_sha": "test1234",
                 "cash": 7500, "portfolio_value": 100000, "buffer": .075, "stock_exposure": .925,
@@ -101,8 +101,8 @@ class PublishTests(unittest.TestCase):
 
             performance = dict(perf or {"cagr": .3869, "mdd": -.3564, "completed_through": "2026-10-02"})
             performance.setdefault('release_version', RELEASE_VERSION)
-            from v4_engine.jsonio import document_digest
-            validation={'strategy_version':'V4','release_version':RELEASE_VERSION,'verdict':'PASS','rebalance_date':signal['rebalance_date'],
+            from v5_engine.jsonio import document_digest
+            validation={'strategy_version':'V5','release_version':RELEASE_VERSION,'verdict':'PASS','rebalance_date':signal['rebalance_date'],
                 'signal_digest':document_digest(validated_signal or signal),'performance_digest':document_digest(validated_perf or performance)}
             (root/'validation_log.json').write_text(json.dumps(validation),encoding='utf-8')
             (root / "perf.json").write_text(json.dumps(performance), encoding="utf-8")

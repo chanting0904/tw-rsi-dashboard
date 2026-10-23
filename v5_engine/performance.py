@@ -30,7 +30,7 @@ def trade_cycles(trades, close, buy_fee, sell_fee):
                 continue
             if qty <= 0:
                 continue
-            if row['side'] == 'BUY':
+            if row['side'] in ('BUY','SEED'):
                 recorded_fee = row.get('fee')
                 cost = qty*price + (float(recorded_fee) if pd.notna(recorded_fee) else qty*price*buy_fee)
                 if shares == 0:
@@ -99,6 +99,7 @@ def perf_document(result, config, anchor=None):
             'sortino': round(float(result['sortino']), 2), 'calmar': round(float(result['calmar']), 2),
             'pf': float(result['pf']), 'winrate': round(float(result['winrate']), 1),
             'trades': int(result['trades']), 'turnover': round(float(result['turnover']), 2),
+            'selection_mode':'single_ranked_pool','performance_basis':'hypothetical_single_strategy_since_start',
             'start_capital': config.start_capital, 'strategy_version': STRATEGY_VERSION, 'release_version': RELEASE_VERSION,
             'buy_fee': config.buy_fee, 'sell_fee': config.sell_fee,
             'minimum_commission': config.minimum_commission,

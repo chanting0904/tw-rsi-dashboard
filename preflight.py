@@ -10,9 +10,9 @@ ROOT = Path(__file__).resolve().parent
 
 
 def main():
-    for source in sorted(ROOT.glob("*.py")) + sorted((ROOT / "s5_live").glob("*.py")) + sorted((ROOT / "v4_engine").glob("*.py")):
+    for source in sorted(ROOT.glob("*.py")) + sorted((ROOT / "s5_live").glob("*.py")) + sorted((ROOT / "v5_engine").glob("*.py")):
         py_compile.compile(str(source), doraise=True)
-    from tg_push_v4 import build_message, message_chunks
+    from tg_push_v5 import build_message, message_chunks
     signal = json.loads((ROOT / "output/latest_signals.json").read_text(encoding="utf-8"))
     chunks = list(message_chunks(build_message(signal)))
     if not chunks:

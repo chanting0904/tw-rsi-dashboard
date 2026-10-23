@@ -2,12 +2,12 @@
 """每日盤後更新網頁收盤價。資料源優先序：
 TWSE+TPEx 官方免費源（台灣/本機最穩）-> FinLab（國外 runner 兜底，token）-> yfinance（最後）。
 所有源皆失敗 -> exit(1) 讓 workflow 紅叉，絕不假成功。
-本版（V4 canonical）：另寫 output/prices.json 供 Web 顯示每日最新價（持股買賣不變）。"""
+本版（V5 canonical）：另寫 output/prices.json 供 Web 顯示每日最新價（持股買賣不變）。"""
 import os, re, sys, json, ssl, urllib.request, math
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from publish_gate import load_holidays, last_trading_day_of_week, prev_trading_day_str, is_trading
-from v4_engine.jsonio import write_json
+from v5_engine.jsonio import write_json
 from market_dates import quote_date
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -113,7 +113,7 @@ def update_file(path, px, sig, expected_rebal_date):
                 h["px_date"] = sig
                 h['price_kind'] = 'CLOSE'
     d["price_warnings"] = [f"{c} 沒有本次行情，請查看該檔價格日期" for c in codes_of(d) if c not in px]
-    from v4_engine.order_quotes import refresh_order_quotes
+    from v5_engine.order_quotes import refresh_order_quotes
     d["order_quotes"]=refresh_order_quotes(d.get("order_quotes",{}),px,sig)
     d["px_date"] = sig
     d["expected_rebal_date"] = expected_rebal_date

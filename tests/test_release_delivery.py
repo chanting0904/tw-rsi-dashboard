@@ -1,6 +1,6 @@
 import datetime
 import unittest
-from tg_push_v4 import delivery_due
+from tg_push_v5 import delivery_due
 
 
 class ReleaseDeliveryTests(unittest.TestCase):

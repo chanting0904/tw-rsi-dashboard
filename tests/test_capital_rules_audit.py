@@ -1,6 +1,6 @@
 import unittest
 
-from v4_engine.allocation import preview_allocation
+from v5_engine.allocation import preview_allocation
 
 
 class CapitalRulesAuditTests(unittest.TestCase):

@@ -1,6 +1,6 @@
 """Execute the browser's guarded planner against a separate real cash/share ledger.
 
-The legacy V4 path supplies dated selection/reference weights only. It never
+The legacy V5 path supplies dated selection/reference weights only. It never
 supplies the executed account's quantities or NAV. One JS policy computes the
 actual final quantities in backtests and the browser, preventing policy drift.
 """
@@ -18,11 +18,11 @@ from .valuation import restricted_assets
 
 
 class GuardedExecution:
-    def __init__(self, ctx, reference):
+    def __init__(self, ctx, reference, seed=None):
         self.reference = {p['date']:p for p in reference['weekly_plans']}
         self.trades = reference['trades_df']
-        self.previous_date = None
-        self.previous_capital = ctx.config.start_capital
+        self.previous_date = seed['date'] if seed is not None else None
+        self.previous_capital = seed['capital_basis'] if seed is not None else ctx.config.start_capital
         self.ctx = ctx
         self.process = None
 
@@ -40,7 +40,7 @@ class GuardedExecution:
 
     def __call__(self, ctx, positions, cash, day, mode, coefs, limit_up, limit_dn, record=True):
         ref = self.reference.get(day)
-        if ref is None:raise ValueError('Missing dated V4 reference allocation')
+        if ref is None:raise ValueError('Missing dated V5 reference allocation')
         signal = canonical_for(ctx,ref,self.trades,'reference-weights-only')
         actions = {a['stock_code']:a for a in signal['actions']}
         px = ctx.open_.loc[day] if mode=='open' else ctx.close.loc[day]
@@ -89,6 +89,7 @@ class GuardedExecution:
         # Net orders charge one minimum per stock/side, just as the browser does.
         for r in plan['rows']:
             change=int(r['change']);code=r['code'];price=float(r['price'])
+            if r['eligible'] and code in positions:positions[code]['pool']=r['channel']
             if not change:continue
             side='BUY' if change>0 else 'SELL';quantity=abs(change)
             cost=fees.charge(code,side,quantity*price)

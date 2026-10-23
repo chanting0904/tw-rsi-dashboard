@@ -19,6 +19,8 @@ def execute_week(ctx, positions, cash, day, mode, coefs, limit_up, limit_dn, rec
         return _c1 if rank <= 5 else (_c2 if rank <= 10 else _c3)
     px = open_.loc[wk] if mode == 'open' else close.loc[wk]
     want, want_rank, want_set, a_w, b_w = select_universe(ctx, pos, wk)
+    for code in want['A']:
+        if code in pos:pos[code]['pool']='A'
     trades, weekly_plans = [], []
     def available(code):
         return max(0, pos[code]["shares"]-pos[code].get("locked_shares",0))

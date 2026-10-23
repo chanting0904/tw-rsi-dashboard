@@ -1,0 +1,79 @@
+{
+  "release_version": "V5.0.0",
+  "end_date": "2026-10-16",
+  "annual": [
+    {
+      "year": 2015,
+      "end_date": "2015-12-31",
+      "V5": 0.790001953059095,
+      "TAIEX_total_return": -0.06538275248691394
+    },
+    {
+      "year": 2016,
+      "end_date": "2016-12-30",
+      "V5": 0.5814094073670222,
+      "TAIEX_total_return": 0.1558977133163466
+    },
+    {
+      "year": 2017,
+      "end_date": "2017-12-29",
+      "V5": 0.4246726795431037,
+      "TAIEX_total_return": 0.19523381283175012
+    },
+    {
+      "year": 2018,
+      "end_date": "2018-12-28",
+      "V5": 0.10342431196915335,
+      "TAIEX_total_return": -0.048270472586682045
+    },
+    {
+      "year": 2019,
+      "end_date": "2019-12-31",
+      "V5": 0.521995465579737,
+      "TAIEX_total_return": 0.2891927477232197
+    },
+    {
+      "year": 2020,
+      "end_date": "2020-12-31",
+      "V5": 0.8967311572619872,
+      "TAIEX_total_return": 0.2712154097551731
+    },
+    {
+      "year": 2021,
+      "end_date": "2021-12-30",
+      "V5": 0.48350040950191864,
+      "TAIEX_total_return": 0.27063086997246266
+    },
+    {
+      "year": 2022,
+      "end_date": "2022-12-30",
+      "V5": 0.025364350188795015,
+      "TAIEX_total_return": -0.18677243391875753
+    },
+    {
+      "year": 2023,
+      "end_date": "2023-12-29",
+      "V5": 0.8206490141318539,
+      "TAIEX_total_return": 0.31482741724738683
+    },
+    {
+      "year": 2024,
+      "end_date": "2024-12-31",
+      "V5": 0.40502965386658585,
+      "TAIEX_total_return": 0.3173304659275591
+    },
+    {
+      "year": 2025,
+      "end_date": "2025-12-31",
+      "V5": 0.1632043419507998,
+      "TAIEX_total_return": 0.29473080588402745
+    },
+    {
+      "year": 2026,
+      "end_date": "2026-10-16",
+      "V5": 0.6087705337718474,
+      "TAIEX_total_return": 0.6529430258073698
+    }
+  ],
+  "basis": "TAIEX total-return index before investor commissions, taxes, tracking error; not an investable portfolio. Strategies include configured costs. 2015 begins January5;2026 incomplete through October16. All annual endpoints identical; no forward fills."
+}

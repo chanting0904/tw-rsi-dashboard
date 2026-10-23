@@ -1,0 +1,21 @@
+{
+  "date": "2026-10-16",
+  "cagr": 0.47008609848412597,
+  "mdd": -0.3140062075362031,
+  "parameters": {
+    "threshold": 1,
+    "buy_fee": 0.000399,
+    "sell_fee": 0.003399,
+    "minimum_commission": 1,
+    "delisted_valuation": "zero",
+    "nav_frequency": "daily"
+  },
+  "selection_rules": {
+    "selection_mode": "single_ranked_pool",
+    "a_rank_days": 3,
+    "a_entry_rank": 15,
+    "a_retention_rank": 20
+  },
+  "execution_policy": "guarded_weekly_capital_v1",
+  "release_version": "V5.0.0"
+}

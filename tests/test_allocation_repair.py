@@ -2,12 +2,12 @@ from dataclasses import replace
 import unittest
 import pandas as pd
 from test_accounting import sample_context
-from v4_engine.execution import execute_week
-from v4_engine.allocation import preview_allocation
-from v4_engine.sizing import proportional_quantities
-from v4_engine.valuation import prepare_valuation
-from v4_engine.simulation import run
-from v4_engine.performance import perf_document, summarize_simulation
+from v5_engine.execution import execute_week
+from v5_engine.allocation import preview_allocation
+from v5_engine.sizing import proportional_quantities
+from v5_engine.valuation import prepare_valuation
+from v5_engine.simulation import run
+from v5_engine.performance import perf_document, summarize_simulation
 
 
 class AllocationRepairTests(unittest.TestCase):
@@ -32,9 +32,9 @@ class AllocationRepairTests(unittest.TestCase):
         ctx.close.loc[:,:]=100.
         ctx.open_=ctx.close.copy();ctx.adjusted_close=ctx.close.copy();ctx.valuation_close=ctx.close.copy()
         day=ctx.days[2]
-        positions={str(2400+i):{'shares':160,'avg':100.,'pool':'A','wc':1.5,'entry_d':ctx.days[0]} for i in range(5)}
+        positions={str(2400+i):{'shares':170,'avg':100.,'pool':'A','wc':1.5,'entry_d':ctx.days[0]} for i in range(5)}
         flags=ctx.close<0
-        cash,fills,plan=execute_week(ctx,positions,20000.,day,'close',(1.5,1.,.5),flags,flags)
+        cash,fills,plan=execute_week(ctx,positions,15000.,day,'close',(1.5,1.,.5),flags,flags)
         self.assertTrue(any(t['reason']=='PORTFOLIO_BAND_FUNDING' for t in fills))
         for row in plan['recs']:
             if row['code'] not in {str(2400+i) for i in range(5)}:
@@ -43,7 +43,7 @@ class AllocationRepairTests(unittest.TestCase):
         self.assertLessEqual(plan['stock_exposure'],.95+1e-10)
         spent=sum((t['amount']+t['fee']) for t in fills if t['side']=='BUY')
         received=sum((t['amount']-t['fee']) for t in fills if t['side']=='SELL')
-        self.assertAlmostEqual(cash,20000.+received-spent)
+        self.assertAlmostEqual(cash,15000.+received-spent)
 
     def test_restricted_and_unaffordable_allocations_are_redistributed(self):
         rows=[{'code':'cheap','price':100.,'target_weight':.80},

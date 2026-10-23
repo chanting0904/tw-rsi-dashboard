@@ -4,8 +4,8 @@ import unittest
 
 import pandas as pd
 
-from v4_engine.config import StrategyConfig
-from v4_engine.selection import select_universe
+from v5_engine.config import StrategyConfig
+from v5_engine.selection import select_universe
 
 
 def context():
@@ -57,24 +57,25 @@ class SelectionTests(unittest.TestCase):
         ctx.r20s.loc[day+pd.Timedelta(days=3)] = 999
         self.assertEqual(select_universe(ctx, {}, day)[0], original)
 
-    def test_B_ranking_overlap_and_budget_remain_original(self):
+    def test_legacy_B_candidates_cannot_split_the_single_strategy_budget(self):
         ctx, day, codes = context()
         ctx.targetB.loc[day, codes[:2]+codes[20:22]] = True
         ctx.tv20_previous.loc[day, codes[20]] = 1e9
         want, ranks, _, aw, bw = select_universe(ctx, {codes[0]:{'pool':'B','shares':1}}, day)
-        self.assertIn(codes[0], want['B'])
-        self.assertNotIn(codes[0], want['A'])
-        self.assertIn(codes[1], want['A'])
-        self.assertNotIn(codes[1], want['B'])
-        self.assertNotIn(codes[20], ranks)
-        self.assertEqual((aw, bw), (.6, .4))
-
-    def test_market_off_allocates_to_A(self):
-        ctx, day, _ = context()
-        ctx.sw_tsm[day] = False
-        want, _, _, aw, bw = select_universe(ctx, {}, day)
         self.assertEqual(want['B'], [])
+        self.assertEqual(want['A'], codes[:15])
+        self.assertNotIn(codes[20], ranks)
         self.assertEqual((aw, bw), (1., 0.))
+
+    def test_legacy_market_switch_cannot_change_selection_or_allocation(self):
+        ctx, day, _ = context()
+        expected = select_universe(ctx, {}, day)
+        for switch in (False, True):
+            ctx.sw_tsm[day] = switch
+            want, ranks, selected, aw, bw = select_universe(ctx, {}, day)
+            self.assertEqual((want, ranks, selected, aw, bw), expected)
+            self.assertEqual(want['B'], [])
+            self.assertEqual((aw, bw), (1., 0.))
 
     def test_legacy_config_explicitly_restores_single_day_top15(self):
         ctx, day, codes = context()

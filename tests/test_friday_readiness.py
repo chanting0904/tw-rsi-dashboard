@@ -14,10 +14,10 @@ import test_pipeline as fixtures
 import publish_gate as gate
 from live_plan import prepare_prices
 from publication_check import embedded_data
-from v4_engine.jsonio import document_digest,validation_matches
-from v4_engine.config import StrategyConfig
-from v4_engine.context import MarketContext
-from v4_engine.pipeline import publish
+from v5_engine.jsonio import document_digest,validation_matches
+from v5_engine.config import StrategyConfig
+from v5_engine.context import MarketContext
+from v5_engine.pipeline import publish
 from version import RELEASE_VERSION
 import recovery_check
 
@@ -58,19 +58,19 @@ class BindingTests(unittest.TestCase):
         self.assertFalse(helper.evaluate(helper.signal(),perf=changed,validated_perf=prior)['ok'])
     def test_digest_matches_json_roundtrip_and_covers_all_fields(self):
         doc={'cash':1.,'actions':[{'post_shares':2}],'date':dt.date(2026,10,23)}
-        from v4_engine.jsonio import clean_json
+        from v5_engine.jsonio import clean_json
         self.assertEqual(document_digest(doc),document_digest(json.loads(json.dumps(clean_json(doc)))))
         approved={'signal_digest':document_digest(doc)}
         self.assertTrue(validation_matches(doc,approved));self.assertFalse(validation_matches(dict(doc,cash=2.),approved));self.assertFalse(validation_matches(doc,{}))
     def test_rendered_web_never_marks_mismatched_validation_as_valid(self):
         signal=json.loads((ROOT/'output/latest_signals.json').read_text(encoding='utf-8'));signal['release_version']=RELEASE_VERSION
         perf=json.loads((ROOT/'output/perf.json').read_text(encoding='utf-8'));perf['release_version']=RELEASE_VERSION
-        validation={'strategy_version':'V4','release_version':RELEASE_VERSION,'rebalance_date':signal['rebalance_date'],'verdict':'PASS','signal_digest':document_digest(signal),'performance_digest':document_digest(perf)}
+        validation={'strategy_version':'V5','release_version':RELEASE_VERSION,'rebalance_date':signal['rebalance_date'],'verdict':'PASS','signal_digest':document_digest(signal),'performance_digest':document_digest(perf)}
         with tempfile.TemporaryDirectory() as d:
             tmp=Path(d);(tmp/'output').mkdir()
             for name in ['update_data.py','capital_preview.js','weekly_status.js','order_planner.js','order_planner_ui.js','weekly_capital.js','weekly_capital_ui.js','holidays.json']:(tmp/name).write_bytes((ROOT/name).read_bytes())
             for name,doc in [('latest_signals',signal),('perf',perf),('validation_log',validation)]: (tmp/'output'/(name+'.json')).write_text(json.dumps(doc,ensure_ascii=False),encoding='utf-8')
-            env=dict(os.environ,V4_SKIP_LOCAL_UPDATE='1',PYTHONPATH=str(ROOT))
+            env=dict(os.environ,V5_SKIP_LOCAL_UPDATE='1',PYTHONPATH=str(ROOT))
             def render():
                 r=subprocess.run([sys.executable,'-X','utf8',str(tmp/'update_data.py')],env=env,capture_output=True,text=True,encoding='utf-8')
                 self.assertEqual(r.returncode,0,r.stderr);return embedded_data((tmp/'index.html').read_text(encoding='utf-8'))
@@ -89,13 +89,29 @@ class NextFridayPipelineTests(unittest.TestCase):
         ctx=MarketContext(cfg,close,open_,high,low,target,target_b,close*0+75,close*0+1e6,close*.9,close*0+True,{d:True for d in days},weeks,days,weeks,day,basis,{c:c for c in close.columns})
         ctx.adjusted_close=close.copy();ctx.corporate_events={};ctx.share_delivery_events=[]
         ctx.security_status={'checked_for':'2026-10-23','quote_day':'2026-10-22','listed':{c:{} for c in close.columns},'events':[]}
-        with tempfile.TemporaryDirectory() as d,patch('v4_engine.pipeline.fixed_anchor',return_value=({'date':'2026-10-16','cagr':0.,'mdd':0.},True)):
-            output=publish(ctx,d,ROOT);signal=output['signal'];perf=output['perf'];validation=output['validation']
+        previous={'strategy_version':'V4','release_version':'V4.6.5','rebalance_date':'2026-10-16',
+                  'cash':10000.,'portfolio_value':100000.,'capital_basis':100000.,'pending_assets':[],
+                  'actions':[{'stock_code':'2400','stock_name':'2400','channel':'A','rank':1,
+                              'action':'HOLD','allocation_eligible':True,'post_shares':900,
+                              'current_shares':900,'target_shares':900,'post_weight':.9,
+                              'target_weight':.9,'strategy_target_weight':.95,'price':100.}]}
+        seed={'schema':1,'strategy_version':'V5','from_strategy':'V4','date':'2026-10-16',
+              'effective_date':'2026-10-23','nav':100000.,'cash':10000.,'capital_basis':100000.,
+              'positions':{'2400':{'shares':900,'avg':100.,'pool':'A','wc':1.5,'entry_d':'2026-10-16'}},
+              'receivables':[],'pending':[],'previous_signal':previous,
+              'previous_signal_digest':document_digest(previous)}
+        with tempfile.TemporaryDirectory() as d,patch('v5_engine.pipeline.fixed_anchor',return_value=({'date':'2026-10-16','cagr':0.,'mdd':0.},True)):
+            fixture_root=Path(d);(fixture_root/'live_model_seed.json').write_text(json.dumps(seed),encoding='utf-8')
+            output_dir=fixture_root/'output'
+            output=publish(ctx,output_dir,fixture_root);signal=output['signal'];perf=output['perf'];validation=output['validation']
+            self.assertEqual(signal['live_model_origin']['seed_date'],'2026-10-16')
+            self.assertEqual(next(a for a in signal['actions'] if a['stock_code']=='2400')['sell_shares'],900)
+            self.assertEqual(json.loads((output_dir/'history/2026-10-16.json').read_text(encoding='utf-8')),previous)
             self.assertEqual(signal['signal_mode'],'PRE_CLOSE_PLAN');self.assertEqual(signal['sig_date'],'2026-10-22');self.assertEqual(signal['price_basis_date'],'2026-10-22');self.assertEqual(signal['rebalance_date'],'2026-10-23')
             self.assertEqual(perf['completed_through'],'2026-10-16');self.assertTrue(validation_matches(signal,validation,perf))
-            self.assertTrue(gate.evaluate(today=dt.date(2026,10,23),output_dir=d,notify=False)['ok'])
+            self.assertTrue(gate.evaluate(today=dt.date(2026,10,23),output_dir=output_dir,notify=False)['ok'])
             self.assertGreaterEqual(signal['cash'],0);self.assertLessEqual(signal['stock_exposure'],.95)
-            self.assertFalse(gate.evaluate(today=dt.date(2026,10,30),output_dir=d,notify=False)['ok'])
+            self.assertFalse(gate.evaluate(today=dt.date(2026,10,30),output_dir=output_dir,notify=False)['ok'])
 
 class RecoveryTests(unittest.TestCase):
     def mode(self,gate_ok=True,status_ready=True,delivered=True,public_ok=True,today=dt.date(2026,10,23)):
@@ -121,21 +137,21 @@ class RemainderCalendarTests(unittest.TestCase):
 
 class ResearchIsolationTests(unittest.TestCase):
     def test_report_only_default_destination_is_not_public_output(self):
-        import v4_canonical
-        with patch('v4_engine.market.load_market',return_value=object()),patch('v4_engine.pipeline.publish') as publish_mock,patch.dict(os.environ,{'V4_OUTPUT_DIR':''}):
-            self.assertEqual(v4_canonical.main(['--report-only','--capital','150000']),0)
+        import v5_canonical
+        with patch('v5_engine.market.load_market',return_value=object()),patch('v5_engine.pipeline.publish') as publish_mock,patch.dict(os.environ,{'V5_OUTPUT_DIR':''}):
+            self.assertEqual(v5_canonical.main(['--report-only','--capital','150000']),0)
             destination=Path(publish_mock.call_args.args[1]);self.assertEqual(destination.parent.name,'audit_reports');self.assertNotEqual(destination,ROOT/'output')
     def test_report_only_rejects_public_output_before_loading_market(self):
-        import v4_canonical
-        with patch('v4_engine.market.load_market') as load,patch.dict(os.environ,{'V4_OUTPUT_DIR':str(ROOT/'output')}):
-            self.assertEqual(v4_canonical.main(['--report-only']),1);load.assert_not_called()
+        import v5_canonical
+        with patch('v5_engine.market.load_market') as load,patch.dict(os.environ,{'V5_OUTPUT_DIR':str(ROOT/'output')}):
+            self.assertEqual(v5_canonical.main(['--report-only']),1);load.assert_not_called()
     def test_research_writer_cannot_overwrite_public_performance(self):
-        from v4_backtest import write_report
+        from v5_backtest import write_report
         with self.assertRaises(ValueError):write_report(None,None,ROOT/'output',ROOT)
 
 class PreviewRangeTests(unittest.TestCase):
     def test_oversized_capital_and_quantities_fail_instead_of_looping(self):
-        from v4_engine.allocation import preview_allocation
+        from v5_engine.allocation import preview_allocation
         with self.assertRaises(ValueError):preview_allocation([{'code':'2330','target_weight':.95,'price':.01}],1e100)
         with self.assertRaises(ValueError):preview_allocation([{'code':'2330','target_weight':.95,'price':1e-10}],1e12)
 

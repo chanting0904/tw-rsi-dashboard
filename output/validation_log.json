@@ -1,152 +1,103 @@
 {
- "strategy_version": "V4",
- "release_version": "V4.6.5",
- "generated_at": "2026-10-23T06:29:52.584589+08:00",
+ "strategy_version": "V5",
+ "release_version": "V5.0.0",
+ "generated_at": "2026-10-23T08:41:54.738715+08:00",
  "rebalance_date": "2026-10-23",
- "v4_consistency": true,
+ "v5_consistency": true,
  "fixed_anchor": {
   "pass": true,
   "values": {
-   "date": "2026-10-08",
-   "cagr": 0.4558864138688048,
-   "mdd": -0.3471446654728846,
-   "release_version": "V4.6.5",
+   "date": "2026-10-16",
+   "cagr": 0.47008609848412597,
+   "mdd": -0.3140062075362031,
+   "release_version": "V5.0.0",
    "selection_rules": {
+    "selection_mode": "single_ranked_pool",
     "a_rank_days": 3,
     "a_entry_rank": 15,
-    "a_retention_rank": 20,
-    "b_max_names": 4
+    "a_retention_rank": 20
    }
   }
  },
- "warning_checks": [
-  "limit_dn"
- ],
+ "warning_checks": [],
  "checks": {
   "duplicate": {
-   "pass": 20,
+   "pass": 1,
    "fail": 0,
    "detail": []
   },
   "conflict": {
-   "pass": 20,
+   "pass": 1,
    "fail": 0,
    "detail": []
   },
   "target_sum": {
-   "pass": 20,
+   "pass": 1,
    "fail": 0,
    "detail": []
   },
   "cash_no_overdraft": {
-   "pass": 20,
+   "pass": 1,
    "fail": 0,
    "detail": []
   },
   "buffer": {
-   "pass": 20,
+   "pass": 1,
    "fail": 0,
    "detail": [
     [
-     "2026-06-12",
-     8.6
-    ],
-    [
-     "2026-06-18",
-     8.7
-    ],
-    [
-     "2026-06-26",
-     4.5
-    ],
-    [
-     "2026-07-03",
-     5.4
-    ],
-    [
-     "2026-07-09",
-     3.4
+     "2026-10-23",
+     7.4
     ]
    ]
   },
   "exposure_band": {
-   "pass": 20,
+   "pass": 1,
    "fail": 0,
    "detail": []
   },
   "exposure_upper_bound": {
-   "pass": 20,
+   "pass": 1,
    "fail": 0,
    "detail": []
   },
   "share_qty": {
-   "pass": 20,
+   "pass": 1,
    "fail": 0,
    "detail": []
   },
   "limit_up": {
-   "pass": 20,
+   "pass": 1,
    "fail": 0,
    "detail": []
   },
   "limit_dn": {
-   "pass": 0,
-   "fail": 5,
-   "detail": [
-    [
-     "2026-06-12 00:00:00",
-     "8454",
-     934.44,
-     1037.97
-    ],
-    [
-     "2026-07-03 00:00:00",
-     "6226",
-     25.33,
-     28.13
-    ],
-    [
-     "2026-07-17 00:00:00",
-     "1303",
-     548.95,
-     609.64
-    ],
-    [
-     "2026-07-17 00:00:00",
-     "6182",
-     246.41,
-     273.61
-    ],
-    [
-     "2026-07-24 00:00:00",
-     "4939",
-     113.5,
-     125.99
-    ]
-   ]
+   "pass": 1,
+   "fail": 0,
+   "detail": []
   },
   "delisted": {
-   "pass": 20,
+   "pass": 1,
    "fail": 0,
    "detail": []
   },
   "missing_price": {
-   "pass": 20,
+   "pass": 1,
    "fail": 0,
    "detail": []
   },
   "lookahead": {
-   "pass": 20,
+   "pass": 1,
    "fail": 0,
    "detail": []
   },
   "security_status": {
-   "pass": 20,
+   "pass": 1,
    "fail": 0,
    "detail": []
   }
  },
  "verdict": "PASS",
- "signal_digest": "2b1fb4cb2e859d66fab4788969b43b8641d2ee4441acc218439565ca3b51cf87",
- "performance_digest": "bc22638be019070355526b22f9604bfdbbbd97a230a8c0703f7927840f7933cf"
+ "signal_digest": "b30f0d8446cf5c2dd092713c2fb844d49465a97d4a280d441f5986dff340b80f",
+ "performance_digest": "7ebd5ca264cd172d3ed085121213276aeaa6c489012b664211414929da39adfd"
 }

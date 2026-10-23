@@ -14,7 +14,7 @@ from zoneinfo import ZoneInfo
 from publish_gate import evaluate, fingerprint, load_holidays, last_trading_day_of_week
 from publication_check import verify_public_index
 from delivery_state import deliver_parts, save_state, RejectedDelivery
-from v4_engine.recommendations import hidden_zero_asset_codes, public_warnings
+from v5_engine.recommendations import hidden_zero_asset_codes, public_warnings
 
 ROOT = Path(__file__).resolve().parent
 STATE_FILE = ROOT / "state.json"
@@ -29,13 +29,13 @@ LABELS = {"SELL": "🔴 賣出", "REBALANCE_SELL": "🟡 減碼", "BUY": "🟢 �
 def build_message(signal):
     escape = lambda value: html.escape(str(value))
     exposure = signal.get("stock_exposure", 1 - signal.get("buffer", 0))
-    lines = ["<b>🌩️ V4 本週模擬調倉計畫</b>",
+    lines = ["<b>🌩️ V5 本週模擬調倉計畫</b>",
              f"訊號基準：{escape(signal.get('sig_date'))}｜收盤調倉日：{escape(signal.get('rebalance_date'))}",
              f"版本：{escape(signal.get('release_version', RELEASE_VERSION))}｜{escape(signal.get('commit_sha', '—'))}",
              f"模擬配置：股票 {exposure:.1%}｜現金 {signal.get('buffer', 0):.1%}"]
     rules = signal.get('selection_rules', {})
     if rules.get('a_rank_days'):
-        lines.append(f"A通道：{rules['a_rank_days']}日平均RSI排名；舊A持股符合資格且排名前{rules['a_retention_rank']}可保留，最多{rules['a_entry_rank']}檔。")
+        lines.append(f"選股規則：{rules['a_rank_days']}日平均RSI排名；續抱股票符合資格且排名前{rules['a_retention_rank']}可保留，最多{rules['a_entry_rank']}檔。")
     if signal.get('receivables', 0):
         lines.append(f"應收股利／權益：{signal['receivables']:,.0f} 元，尚未列入可用現金。")
     if signal.get("signal_mode") == "PRE_CLOSE_PLAN":
@@ -48,7 +48,7 @@ def build_message(signal):
         lines.append(f"\n<b>{label}（{len(rows)}）</b>")
         for row in sorted(rows, key=lambda a: (a.get("rank") or 99, str(a["stock_code"]))):
             lines.append(f"• <code>{escape(row['stock_code'])}</code> {escape(row['stock_name'])}"
-                         f"（{escape(row['channel'])}）｜模擬目標 {row['target_weight']:.2%}"
+                         f"｜模擬目標 {row['target_weight']:.2%}"
                          f"｜調倉前模擬 {row['current_weight']:.2%}")
             if row.get("reason"):
                 lines.append("  原因：" + escape(row["reason"])[:500])
@@ -73,6 +73,9 @@ def build_message(signal):
         lines.append(f"\n<b>模擬待領配股：{len(signal['pending_assets'])}筆，目前不用另外下單</b>")
         lines.append('原有股票可照策略賣出，應領配股不會取消。配股日期及股數可在網頁展開查看。')
     for warning in public_warnings(signal):
+        if warning.startswith(("通道配置", "B 通道僅")):
+            continue
+        warning = warning.replace("該通道權重", "配置權重")
         lines.append("⚠️ " + escape(warning)[:1000])
     lines.extend(["\n收盤調倉；未成交部分於下週第一個交易日用市價單補調倉。",
                   "網頁與本訊息使用同一份策略結果。請在網頁輸入資金，查看整股後的試算股數與權重；不同本金會有取整差異。",
@@ -153,7 +156,7 @@ def main():
         print("相同訊號已推播，跳過")
         return
     chunks = list(message_chunks(build_message(signal)))
-    chunks = [f"V4 通知 {index}/{len(chunks)}\n" + chunk for index, chunk in enumerate(chunks, 1)]
+    chunks = [f"V5 通知 {index}/{len(chunks)}\n" + chunk for index, chunk in enumerate(chunks, 1)]
     if DRY_RUN:
         for chunk in chunks:
             tg_send(chunk)

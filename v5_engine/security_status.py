@@ -42,7 +42,7 @@ def date_string(value):
 
 
 def fetch_json(url):
-    request = urllib.request.Request(url, headers={'User-Agent': 'V4-security-status', 'Accept': 'application/json',
+    request = urllib.request.Request(url, headers={'User-Agent': 'V5-security-status', 'Accept': 'application/json',
                                                   'Cache-Control': 'no-cache'})
     with urllib.request.urlopen(request, timeout=30) as response:
         result = json.load(response)

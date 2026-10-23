@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """S5 每週下單清單產生器
-從 output/latest_signals.json（V4 canonical）產生當週 A、B 通道下單清單，
-其中 A 通道依 S5 執行，B 通道維持原本下單方式；
+從 output/latest_signals.json（V5 canonical）產生當週單一策略下單清單；
+CSV 欄位保留歷史名稱以供既有成交研究使用；
 並 append 到 20 週累計檔 S5_live_20w.csv 與 portfolio 檔。
 
 用法（週五 14:00 前跑）：
@@ -100,7 +100,7 @@ def main():
             "A_final_fill_rate": "", "A_exposure_drift": "", "A_cash_drag": "",
             "A_execution_slippage": "", "A_weekly_return": "", "A_cumulative_return": "",
             "whole_nav": d["portfolio_value"], "whole_exposure": 1 - d["buffer"],
-            "b_exposure": d.get("wb_eff", 0.4), "total_cash": d["cash"], "note": ""}
+            "b_exposure": d.get("wb_eff", 0.0), "total_cash": d["cash"], "note": ""}
     pdf = pd.DataFrame([port], columns=PORT_COLS)
     pdf.to_csv(PORT_CSV, mode="a", header=not os.path.exists(PORT_CSV),
                index=False, encoding="utf-8-sig")

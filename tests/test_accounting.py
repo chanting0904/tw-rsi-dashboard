@@ -5,15 +5,15 @@ from pathlib import Path
 import tempfile
 import unittest
 import pandas as pd
-from v4_engine.config import StrategyConfig
-from v4_engine.context import MarketContext
-from v4_engine.jsonio import write_json
-from v4_engine.performance import trade_cycles, profit_factor, annual_performance
-from v4_engine.simulation import run
-from v4_engine.allocation import preview_allocation
-from v4_engine.execution import execute_week
-from v4_engine.validation import validate_plans
-from v4_engine.canonical import canonical_for
+from v5_engine.config import StrategyConfig
+from v5_engine.context import MarketContext
+from v5_engine.jsonio import write_json
+from v5_engine.performance import trade_cycles, profit_factor, annual_performance
+from v5_engine.simulation import run
+from v5_engine.allocation import preview_allocation
+from v5_engine.execution import execute_week
+from v5_engine.validation import validate_plans
+from v5_engine.canonical import canonical_for
 
 
 def sample_context(capital=100_000, no_targets=False):
@@ -203,7 +203,7 @@ class AccountingTests(unittest.TestCase):
             preview_allocation([{'code': '2330', 'target_weight': 1.1, 'price': 100}], 1000)
 
     def test_research_reports_use_shared_model_without_public_signal_writes(self):
-        from v4_backtest import write_report
+        from v5_backtest import write_report
         context = sample_context()
         result = run(context)
         with tempfile.TemporaryDirectory() as folder:
@@ -215,10 +215,10 @@ class AccountingTests(unittest.TestCase):
 
     def test_importing_cli_does_not_load_market_or_write(self):
         import importlib
-        import v4_canonical
+        import v5_canonical
         from unittest.mock import patch
-        with patch('v4_engine.market.load_market') as load:
-            importlib.reload(v4_canonical)
+        with patch('v5_engine.market.load_market') as load:
+            importlib.reload(v5_canonical)
             load.assert_not_called()
 
 
