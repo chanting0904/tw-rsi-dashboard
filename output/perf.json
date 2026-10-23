@@ -13,7 +13,7 @@
  "performance_basis": "hypothetical_single_strategy_since_start",
  "start_capital": 100000,
  "strategy_version": "V5",
- "release_version": "V5.0.1",
+ "release_version": "V5.0.2",
  "buy_fee": 0.000399,
  "sell_fee": 0.003399,
  "minimum_commission": 1.0,
@@ -32,13 +32,1995 @@
   "date": "2026-10-16",
   "cagr": 0.47008609848412597,
   "mdd": -0.3140062075362031,
-  "release_version": "V5.0.1",
+  "release_version": "V5.0.2",
   "selection_rules": {
    "selection_mode": "single_ranked_pool",
    "a_rank_days": 3,
    "a_entry_rank": 15,
    "a_retention_rank": 20
   }
+ },
+ "monthly_contributions": {
+  "through": "2026-10-16",
+  "months": {
+   "2015-01": {
+    "through": "2015-01-30",
+    "return_pct": 4.770021154569992,
+    "winner": {
+     "code": "3051",
+     "name": "力特",
+     "contribution": 8.483651705599996
+    },
+    "loser": {
+     "code": "4417",
+     "name": "金洲",
+     "contribution": -1.1960736708000004
+    }
+   },
+   "2015-02": {
+    "through": "2015-02-26",
+    "return_pct": 5.089311495445292,
+    "winner": {
+     "code": "4426",
+     "name": "利勤",
+     "contribution": 2.3249135326663537
+    },
+    "loser": {
+     "code": "2610",
+     "name": "華航",
+     "contribution": -0.33975005571951533
+    }
+   },
+   "2015-03": {
+    "through": "2015-03-31",
+    "return_pct": 8.64541157391141,
+    "winner": {
+     "code": "4426",
+     "name": "利勤",
+     "contribution": 2.42119060813239
+    },
+    "loser": {
+     "code": "3051",
+     "name": "力特",
+     "contribution": -0.5870476484082863
+    }
+   },
+   "2015-04": {
+    "through": "2015-04-30",
+    "return_pct": 11.019040370404042,
+    "winner": {
+     "code": "3685",
+     "name": "元創精密",
+     "contribution": 5.484776730732386
+    },
+    "loser": {
+     "code": "9910",
+     "name": "豐泰",
+     "contribution": -1.1101445007959625
+    }
+   },
+   "2015-05": {
+    "through": "2015-05-29",
+    "return_pct": -0.0003916159128092289,
+    "winner": {
+     "code": "2108",
+     "name": "南帝",
+     "contribution": 1.8552352132960093
+    },
+    "loser": {
+     "code": "3685",
+     "name": "元創精密",
+     "contribution": -3.4036715594228184
+    }
+   },
+   "2015-06": {
+    "through": "2015-06-30",
+    "return_pct": 1.6276644775584437,
+    "winner": {
+     "code": "3152",
+     "name": "璟德",
+     "contribution": 1.8502542491242855
+    },
+    "loser": {
+     "code": "6506",
+     "name": "雙邦",
+     "contribution": -0.694843928751005
+    }
+   },
+   "2015-07": {
+    "through": "2015-07-31",
+    "return_pct": -17.120931543530183,
+    "winner": {
+     "code": "2455",
+     "name": "全新",
+     "contribution": 0.30475884170611284
+    },
+    "loser": {
+     "code": "3029",
+     "name": "零壹",
+     "contribution": -2.69258626305219
+    }
+   },
+   "2015-08": {
+    "through": "2015-08-31",
+    "return_pct": -9.436584610889598,
+    "winner": null,
+    "loser": {
+     "code": "1707",
+     "name": "葡萄王",
+     "contribution": -5.157295866683566
+    }
+   },
+   "2015-09": {
+    "through": "2015-09-30",
+    "return_pct": 56.010138967879364,
+    "winner": {
+     "code": "1541",
+     "name": "錩泰",
+     "contribution": 56.01013896787938
+    },
+    "loser": null
+   },
+   "2015-10": {
+    "through": "2015-10-30",
+    "return_pct": 1.3319440992427989,
+    "winner": {
+     "code": "4935",
+     "name": "茂林-KY",
+     "contribution": 4.755805325039469
+    },
+    "loser": {
+     "code": "8916",
+     "name": "光隆",
+     "contribution": -4.292741332610229
+    }
+   },
+   "2015-11": {
+    "through": "2015-11-30",
+    "return_pct": 10.76446140752292,
+    "winner": {
+     "code": "3324",
+     "name": "雙鴻",
+     "contribution": 3.612327633816682
+    },
+    "loser": {
+     "code": "1541",
+     "name": "錩泰",
+     "contribution": -1.7233623045007338
+    }
+   },
+   "2015-12": {
+    "through": "2015-12-31",
+    "return_pct": 0.9117020614280325,
+    "winner": {
+     "code": "6158",
+     "name": "禾昌",
+     "contribution": 1.4713900109292455
+    },
+    "loser": {
+     "code": "4119",
+     "name": "旭富",
+     "contribution": -1.1162369496188973
+    }
+   },
+   "2016-01": {
+    "through": "2016-01-30",
+    "return_pct": 3.3562266785368555,
+    "winner": {
+     "code": "3293",
+     "name": "鈊象",
+     "contribution": 2.925318332223702
+    },
+    "loser": {
+     "code": "2428",
+     "name": "興勤",
+     "contribution": -0.858383719511659
+    }
+   },
+   "2016-02": {
+    "through": "2016-02-26",
+    "return_pct": 8.744151459364069,
+    "winner": {
+     "code": "3293",
+     "name": "鈊象",
+     "contribution": 6.448470510721712
+    },
+    "loser": {
+     "code": "2345",
+     "name": "智邦",
+     "contribution": -0.3478934175473471
+    }
+   },
+   "2016-03": {
+    "through": "2016-03-31",
+    "return_pct": 1.8507517072162694,
+    "winner": {
+     "code": "6227",
+     "name": "茂綸",
+     "contribution": 2.1769163212501432
+    },
+    "loser": {
+     "code": "6139",
+     "name": "亞翔",
+     "contribution": -0.9308126195047524
+    }
+   },
+   "2016-04": {
+    "through": "2016-04-29",
+    "return_pct": 0.7364540141359122,
+    "winner": {
+     "code": "4534",
+     "name": "慶騰",
+     "contribution": 5.276497528021675
+    },
+    "loser": {
+     "code": "4721",
+     "name": "美琪瑪",
+     "contribution": -0.7625741315965803
+    }
+   },
+   "2016-05": {
+    "through": "2016-05-31",
+    "return_pct": 5.580826001868577,
+    "winner": {
+     "code": "6160",
+     "name": "欣技",
+     "contribution": 1.6586270561054093
+    },
+    "loser": {
+     "code": "4916",
+     "name": "事欣科",
+     "contribution": -1.034427120946199
+    }
+   },
+   "2016-06": {
+    "through": "2016-06-30",
+    "return_pct": 4.744375922143629,
+    "winner": {
+     "code": "4534",
+     "name": "慶騰",
+     "contribution": 2.4103237944603855
+    },
+    "loser": {
+     "code": "6160",
+     "name": "欣技",
+     "contribution": -0.8211099385201907
+    }
+   },
+   "2016-07": {
+    "through": "2016-07-29",
+    "return_pct": 4.645087958778427,
+    "winner": {
+     "code": "1225",
+     "name": "福懋油",
+     "contribution": 1.6712069240186798
+    },
+    "loser": {
+     "code": "6134",
+     "name": "萬旭",
+     "contribution": -1.3302909345155696
+    }
+   },
+   "2016-08": {
+    "through": "2016-08-31",
+    "return_pct": 4.538096982446471,
+    "winner": {
+     "code": "4956",
+     "name": "光鋐",
+     "contribution": 2.0387983195833876
+    },
+    "loser": {
+     "code": "3167",
+     "name": "大量",
+     "contribution": -0.9531829707354034
+    }
+   },
+   "2016-09": {
+    "through": "2016-09-30",
+    "return_pct": 1.6471019831103106,
+    "winner": {
+     "code": "2328",
+     "name": "廣宇",
+     "contribution": 1.731528011872246
+    },
+    "loser": {
+     "code": "4956",
+     "name": "光鋐",
+     "contribution": -0.9379892443600533
+    }
+   },
+   "2016-10": {
+    "through": "2016-10-31",
+    "return_pct": 0.6820650546408347,
+    "winner": {
+     "code": "6220",
+     "name": "岳豐",
+     "contribution": 2.0562586263403055
+    },
+    "loser": {
+     "code": "2328",
+     "name": "廣宇",
+     "contribution": -0.8126324116305339
+    }
+   },
+   "2016-11": {
+    "through": "2016-11-30",
+    "return_pct": 10.224842917828658,
+    "winner": {
+     "code": "6220",
+     "name": "岳豐",
+     "contribution": 4.170349342876976
+    },
+    "loser": {
+     "code": "6161",
+     "name": "捷波",
+     "contribution": -0.673779528466147
+    }
+   },
+   "2016-12": {
+    "through": "2016-12-30",
+    "return_pct": 0.4881972071561824,
+    "winner": {
+     "code": "3406",
+     "name": "玉晶光",
+     "contribution": 1.3004027002319325
+    },
+    "loser": {
+     "code": "4906",
+     "name": "正文",
+     "contribution": -0.6909146718087876
+    }
+   },
+   "2017-01": {
+    "through": "2017-01-24",
+    "return_pct": 0.3727417291295554,
+    "winner": {
+     "code": "1909",
+     "name": "榮成",
+     "contribution": 0.9335040814703379
+    },
+    "loser": {
+     "code": "8059",
+     "name": "凱碩",
+     "contribution": -1.0604209494635042
+    }
+   },
+   "2017-02": {
+    "through": "2017-02-24",
+    "return_pct": 7.720959814291883,
+    "winner": {
+     "code": "8358",
+     "name": "金居",
+     "contribution": 1.9575117077477007
+    },
+    "loser": {
+     "code": "1439",
+     "name": "雋揚",
+     "contribution": -0.6472693009728182
+    }
+   },
+   "2017-03": {
+    "through": "2017-03-31",
+    "return_pct": -2.431696052306098,
+    "winner": {
+     "code": "5014",
+     "name": "建錩",
+     "contribution": 2.1488198433927903
+    },
+    "loser": {
+     "code": "1583",
+     "name": "程泰",
+     "contribution": -1.1180068463407429
+    }
+   },
+   "2017-04": {
+    "through": "2017-04-28",
+    "return_pct": 2.433054320591954,
+    "winner": {
+     "code": "3018",
+     "name": "隆銘綠能",
+     "contribution": 3.608066599727857
+    },
+    "loser": {
+     "code": "5521",
+     "name": "工信",
+     "contribution": -0.6845768086751555
+    }
+   },
+   "2017-05": {
+    "through": "2017-05-31",
+    "return_pct": -1.6855622581264273,
+    "winner": {
+     "code": "2227",
+     "name": "裕日車",
+     "contribution": 2.3996201989586528
+    },
+    "loser": {
+     "code": "3362",
+     "name": "先進光",
+     "contribution": -1.592113094854193
+    }
+   },
+   "2017-06": {
+    "through": "2017-06-30",
+    "return_pct": -4.64085497455261,
+    "winner": {
+     "code": "1597",
+     "name": "直得",
+     "contribution": 0.9414126155187272
+    },
+    "loser": {
+     "code": "5465",
+     "name": "富驊",
+     "contribution": -1.0205188904302493
+    }
+   },
+   "2017-07": {
+    "through": "2017-07-31",
+    "return_pct": 5.618291271649145,
+    "winner": {
+     "code": "8404",
+     "name": "百和興業-KY",
+     "contribution": 1.7637142790616276
+    },
+    "loser": {
+     "code": "1218",
+     "name": "泰山",
+     "contribution": -0.5448306392641988
+    }
+   },
+   "2017-08": {
+    "through": "2017-08-31",
+    "return_pct": 15.761018331294284,
+    "winner": {
+     "code": "9935",
+     "name": "慶豐富",
+     "contribution": 11.26959448460066
+    },
+    "loser": {
+     "code": "6122",
+     "name": "擎邦",
+     "contribution": -0.8635875105088956
+    }
+   },
+   "2017-09": {
+    "through": "2017-09-30",
+    "return_pct": 4.23317664283025,
+    "winner": {
+     "code": "5285",
+     "name": "界霖",
+     "contribution": 2.25718633881327
+    },
+    "loser": {
+     "code": "3593",
+     "name": "力銘",
+     "contribution": -1.3639599972666816
+    }
+   },
+   "2017-10": {
+    "through": "2017-10-31",
+    "return_pct": 3.2803548899815294,
+    "winner": {
+     "code": "5425",
+     "name": "台半",
+     "contribution": 1.6974009273421446
+    },
+    "loser": {
+     "code": "8937",
+     "name": "合騏*",
+     "contribution": -1.5477390067151116
+    }
+   },
+   "2017-11": {
+    "through": "2017-11-30",
+    "return_pct": 5.728927685591723,
+    "winner": {
+     "code": "2405",
+     "name": "輔信",
+     "contribution": 3.7599472671775005
+    },
+    "loser": {
+     "code": "5425",
+     "name": "台半",
+     "contribution": -0.6096377991152803
+    }
+   },
+   "2017-12": {
+    "through": "2017-12-29",
+    "return_pct": 1.0535487248109598,
+    "winner": {
+     "code": "3354",
+     "name": "律勝",
+     "contribution": 1.8738770997089909
+    },
+    "loser": {
+     "code": "2405",
+     "name": "輔信",
+     "contribution": -2.5421323380769403
+    }
+   },
+   "2018-01": {
+    "through": "2018-01-31",
+    "return_pct": -3.8957183391027383,
+    "winner": {
+     "code": "6609",
+     "name": "瀧澤科",
+     "contribution": 1.7606135509081484
+    },
+    "loser": {
+     "code": "3055",
+     "name": "蔚華科",
+     "contribution": -1.3346811887206231
+    }
+   },
+   "2018-02": {
+    "through": "2018-02-27",
+    "return_pct": 0.08649470717871921,
+    "winner": {
+     "code": "2425",
+     "name": "承啟",
+     "contribution": 3.759526193644018
+    },
+    "loser": {
+     "code": "6609",
+     "name": "瀧澤科",
+     "contribution": -2.223270458703558
+    }
+   },
+   "2018-03": {
+    "through": "2018-03-31",
+    "return_pct": 2.75720661818184,
+    "winner": {
+     "code": "2388",
+     "name": "威盛",
+     "contribution": 2.586533088977644
+    },
+    "loser": {
+     "code": "6203",
+     "name": "海韻電",
+     "contribution": -1.0985912720256648
+    }
+   },
+   "2018-04": {
+    "through": "2018-04-30",
+    "return_pct": 0.6260293999531319,
+    "winner": {
+     "code": "6141",
+     "name": "柏承",
+     "contribution": 1.3550566941994624
+    },
+    "loser": {
+     "code": "2388",
+     "name": "威盛",
+     "contribution": -1.9639224320478037
+    }
+   },
+   "2018-05": {
+    "through": "2018-05-31",
+    "return_pct": 16.70971948776674,
+    "winner": {
+     "code": "2492",
+     "name": "華新科",
+     "contribution": 9.893241478678446
+    },
+    "loser": {
+     "code": "1795",
+     "name": "美時",
+     "contribution": -1.1654680597887133
+    }
+   },
+   "2018-06": {
+    "through": "2018-06-29",
+    "return_pct": 4.107633516432929,
+    "winner": {
+     "code": "8163",
+     "name": "達方",
+     "contribution": 2.3588842006736166
+    },
+    "loser": {
+     "code": "4976",
+     "name": "佳凌",
+     "contribution": -0.8361650507790789
+    }
+   },
+   "2018-07": {
+    "through": "2018-07-31",
+    "return_pct": -2.1828194135730006,
+    "winner": {
+     "code": "1409",
+     "name": "新纖",
+     "contribution": 0.9799884499802418
+    },
+    "loser": {
+     "code": "8163",
+     "name": "達方",
+     "contribution": -2.8090179261745813
+    }
+   },
+   "2018-08": {
+    "through": "2018-08-31",
+    "return_pct": 3.906773077676262,
+    "winner": {
+     "code": "2547",
+     "name": "日勝生",
+     "contribution": 1.6565228793550224
+    },
+    "loser": {
+     "code": "1762",
+     "name": "中化生",
+     "contribution": -0.626563384120581
+    }
+   },
+   "2018-09": {
+    "through": "2018-09-28",
+    "return_pct": -1.266033575279668,
+    "winner": {
+     "code": "2442",
+     "name": "新美齊",
+     "contribution": 1.0526330381046678
+    },
+    "loser": {
+     "code": "2368",
+     "name": "金像電",
+     "contribution": -1.0313415008669014
+    }
+   },
+   "2018-10": {
+    "through": "2018-10-31",
+    "return_pct": -15.636730161089819,
+    "winner": {
+     "code": "1477",
+     "name": "聚陽",
+     "contribution": 0.5779584362516844
+    },
+    "loser": {
+     "code": "6452",
+     "name": "康友-KY",
+     "contribution": -4.945050463174767
+    }
+   },
+   "2018-11": {
+    "through": "2018-11-30",
+    "return_pct": 4.932024230941834,
+    "winner": {
+     "code": "1477",
+     "name": "聚陽",
+     "contribution": 2.452740450058891
+    },
+    "loser": {
+     "code": "5903",
+     "name": "全家",
+     "contribution": -1.2458478496245877
+    }
+   },
+   "2018-12": {
+    "through": "2018-12-28",
+    "return_pct": 2.7838944095064377,
+    "winner": {
+     "code": "2597",
+     "name": "潤弘",
+     "contribution": 3.2508036458118577
+    },
+    "loser": {
+     "code": "2704",
+     "name": "國賓",
+     "contribution": -1.3949150026723305
+    }
+   },
+   "2019-01": {
+    "through": "2019-01-30",
+    "return_pct": 4.053057745541233,
+    "winner": {
+     "code": "1515",
+     "name": "力山",
+     "contribution": 2.11597719292397
+    },
+    "loser": {
+     "code": "3455",
+     "name": "由田",
+     "contribution": -0.8930204954221963
+    }
+   },
+   "2019-02": {
+    "through": "2019-02-27",
+    "return_pct": 5.389511286466009,
+    "winner": {
+     "code": "6188",
+     "name": "廣明",
+     "contribution": 1.791578684563832
+    },
+    "loser": {
+     "code": "1515",
+     "name": "力山",
+     "contribution": -0.49559318252898643
+    }
+   },
+   "2019-03": {
+    "through": "2019-03-29",
+    "return_pct": 5.865344904332703,
+    "winner": {
+     "code": "2480",
+     "name": "敦陽科",
+     "contribution": 2.042833633621435
+    },
+    "loser": {
+     "code": "6245",
+     "name": "立端",
+     "contribution": -0.7821045412167935
+    }
+   },
+   "2019-04": {
+    "through": "2019-04-30",
+    "return_pct": -2.1332375680370275,
+    "winner": {
+     "code": "8070",
+     "name": "長華*",
+     "contribution": 1.2069101393950687
+    },
+    "loser": {
+     "code": "5604",
+     "name": "中連",
+     "contribution": -0.9025989196695176
+    }
+   },
+   "2019-05": {
+    "through": "2019-05-31",
+    "return_pct": 1.6050144731818206,
+    "winner": {
+     "code": "1730",
+     "name": "花仙子",
+     "contribution": 1.0418602322966237
+    },
+    "loser": {
+     "code": "5340",
+     "name": "建榮",
+     "contribution": -1.1156790792443767
+    }
+   },
+   "2019-06": {
+    "through": "2019-06-28",
+    "return_pct": -2.0920164374847117,
+    "winner": {
+     "code": "1736",
+     "name": "喬山",
+     "contribution": 0.6684410470252651
+    },
+    "loser": {
+     "code": "2497",
+     "name": "怡利電",
+     "contribution": -0.5270676378392285
+    }
+   },
+   "2019-07": {
+    "through": "2019-07-31",
+    "return_pct": 6.224419709663609,
+    "winner": {
+     "code": "4935",
+     "name": "茂林-KY",
+     "contribution": 2.8514820491371995
+    },
+    "loser": {
+     "code": "6224",
+     "name": "聚鼎",
+     "contribution": -0.5014620427398407
+    }
+   },
+   "2019-08": {
+    "through": "2019-08-30",
+    "return_pct": 6.029987592421948,
+    "winner": {
+     "code": "3479",
+     "name": "安勤",
+     "contribution": 2.438297651180014
+    },
+    "loser": {
+     "code": "1626",
+     "name": "艾美特-KY",
+     "contribution": -0.9420159997428648
+    }
+   },
+   "2019-09": {
+    "through": "2019-09-27",
+    "return_pct": -0.20408007255323657,
+    "winner": {
+     "code": "5340",
+     "name": "建榮",
+     "contribution": 0.7996236082045133
+    },
+    "loser": {
+     "code": "2482",
+     "name": "連宇",
+     "contribution": -0.7475660345881587
+    }
+   },
+   "2019-10": {
+    "through": "2019-10-31",
+    "return_pct": 10.42465485657933,
+    "winner": {
+     "code": "8463",
+     "name": "潤泰材",
+     "contribution": 3.199840321323951
+    },
+    "loser": {
+     "code": "6233",
+     "name": "旺玖",
+     "contribution": -0.9449692500294093
+    }
+   },
+   "2019-11": {
+    "through": "2019-11-29",
+    "return_pct": 1.846394890851566,
+    "winner": {
+     "code": "2704",
+     "name": "國賓",
+     "contribution": 1.2491324405973407
+    },
+    "loser": {
+     "code": "4973",
+     "name": "廣穎電通",
+     "contribution": -0.4552307061049729
+    }
+   },
+   "2019-12": {
+    "through": "2019-12-31",
+    "return_pct": 6.527383322686919,
+    "winner": {
+     "code": "8101",
+     "name": "華冠",
+     "contribution": 2.121926767725919
+    },
+    "loser": {
+     "code": "4737",
+     "name": "華廣",
+     "contribution": -0.5551658174664951
+    }
+   },
+   "2020-01": {
+    "through": "2020-01-31",
+    "return_pct": -4.705178481100614,
+    "winner": {
+     "code": "6531",
+     "name": "愛普*",
+     "contribution": 1.2115216921515837
+    },
+    "loser": {
+     "code": "2492",
+     "name": "華新科",
+     "contribution": -1.0002153927707504
+    }
+   },
+   "2020-02": {
+    "through": "2020-02-27",
+    "return_pct": -3.5722950038718393,
+    "winner": {
+     "code": "3669",
+     "name": "圓展",
+     "contribution": 1.5036345845507293
+    },
+    "loser": {
+     "code": "5269",
+     "name": "祥碩",
+     "contribution": -1.1397858356164055
+    }
+   },
+   "2020-03": {
+    "through": "2020-03-31",
+    "return_pct": -14.363331253023826,
+    "winner": {
+     "code": "5269",
+     "name": "祥碩",
+     "contribution": 2.9910105961564235
+    },
+    "loser": {
+     "code": "3669",
+     "name": "圓展",
+     "contribution": -2.672795887749623
+    }
+   },
+   "2020-04": {
+    "through": "2020-04-30",
+    "return_pct": 43.438601569546954,
+    "winner": {
+     "code": "1325",
+     "name": "恆大",
+     "contribution": 34.38311140901592
+    },
+    "loser": {
+     "code": "2505",
+     "name": "國揚",
+     "contribution": -0.011564564120310462
+    }
+   },
+   "2020-05": {
+    "through": "2020-05-29",
+    "return_pct": 18.39196652596524,
+    "winner": {
+     "code": "1325",
+     "name": "恆大",
+     "contribution": 10.531663162767154
+    },
+    "loser": {
+     "code": "2505",
+     "name": "國揚",
+     "contribution": -4.839185620522188
+    }
+   },
+   "2020-06": {
+    "through": "2020-06-30",
+    "return_pct": 4.077847400816048,
+    "winner": {
+     "code": "2417",
+     "name": "圓剛",
+     "contribution": 2.5904710133269204
+    },
+    "loser": {
+     "code": "1474",
+     "name": "弘裕",
+     "contribution": -1.2913039130415735
+    }
+   },
+   "2020-07": {
+    "through": "2020-07-31",
+    "return_pct": 7.066250003150332,
+    "winner": {
+     "code": "2417",
+     "name": "圓剛",
+     "contribution": 3.2124991845781143
+    },
+    "loser": {
+     "code": "4133",
+     "name": "亞諾法",
+     "contribution": -2.856700989600673
+    }
+   },
+   "2020-08": {
+    "through": "2020-08-31",
+    "return_pct": 17.561222247671736,
+    "winner": {
+     "code": "1598",
+     "name": "岱宇",
+     "contribution": 7.738697915987585
+    },
+    "loser": {
+     "code": "4755",
+     "name": "三福化",
+     "contribution": -1.3121433010925487
+    }
+   },
+   "2020-09": {
+    "through": "2020-09-30",
+    "return_pct": -9.261003302177496,
+    "winner": {
+     "code": "2540",
+     "name": "愛山林",
+     "contribution": 1.1492206052032394
+    },
+    "loser": {
+     "code": "3669",
+     "name": "圓展",
+     "contribution": -2.8376804709442416
+    }
+   },
+   "2020-10": {
+    "through": "2020-10-30",
+    "return_pct": -0.1902857099254751,
+    "winner": {
+     "code": "2302",
+     "name": "麗正",
+     "contribution": 1.634604086156487
+    },
+    "loser": {
+     "code": "2540",
+     "name": "愛山林",
+     "contribution": -1.1391068484519917
+    }
+   },
+   "2020-11": {
+    "through": "2020-11-30",
+    "return_pct": 9.117195820676827,
+    "winner": {
+     "code": "2727",
+     "name": "王品",
+     "contribution": 2.4265175771327376
+    },
+    "loser": {
+     "code": "6227",
+     "name": "茂綸",
+     "contribution": -0.49954280897328035
+    }
+   },
+   "2020-12": {
+    "through": "2020-12-31",
+    "return_pct": 9.635609981240334,
+    "winner": {
+     "code": "4961",
+     "name": "天鈺",
+     "contribution": 6.575157746499616
+    },
+    "loser": {
+     "code": "2462",
+     "name": "良得電",
+     "contribution": -0.9466169708917248
+    }
+   },
+   "2021-01": {
+    "through": "2021-01-29",
+    "return_pct": -6.984533197946208,
+    "winner": {
+     "code": "4961",
+     "name": "天鈺",
+     "contribution": 1.29495787666166
+    },
+    "loser": {
+     "code": "2609",
+     "name": "陽明",
+     "contribution": -1.5746447089673772
+    }
+   },
+   "2021-02": {
+    "through": "2021-02-26",
+    "return_pct": 2.838686416685232,
+    "winner": {
+     "code": "2476",
+     "name": "鉅祥",
+     "contribution": 1.879370021955341
+    },
+    "loser": {
+     "code": "4566",
+     "name": "時碩工業",
+     "contribution": -1.142520944067119
+    }
+   },
+   "2021-03": {
+    "through": "2021-03-31",
+    "return_pct": 4.7181416719726865,
+    "winner": {
+     "code": "5604",
+     "name": "中連",
+     "contribution": 1.6047988912493365
+    },
+    "loser": {
+     "code": "3078",
+     "name": "僑威",
+     "contribution": -0.7129044767695736
+    }
+   },
+   "2021-04": {
+    "through": "2021-04-29",
+    "return_pct": 11.174547072738662,
+    "winner": {
+     "code": "1608",
+     "name": "華榮",
+     "contribution": 1.5919504701883098
+    },
+    "loser": {
+     "code": "2108",
+     "name": "南帝",
+     "contribution": -0.5618453778451994
+    }
+   },
+   "2021-05": {
+    "through": "2021-05-31",
+    "return_pct": -5.753264332733121,
+    "winner": {
+     "code": "4106",
+     "name": "雃博",
+     "contribution": 3.596366309821146
+    },
+    "loser": {
+     "code": "6116",
+     "name": "彩晶",
+     "contribution": -1.9685999982813667
+    }
+   },
+   "2021-06": {
+    "through": "2021-06-30",
+    "return_pct": 29.62323119930861,
+    "winner": {
+     "code": "2615",
+     "name": "萬海",
+     "contribution": 11.317535305936396
+    },
+    "loser": {
+     "code": "4106",
+     "name": "雃博",
+     "contribution": -2.890219118787501
+    }
+   },
+   "2021-07": {
+    "through": "2021-07-30",
+    "return_pct": -2.87830171660699,
+    "winner": {
+     "code": "3141",
+     "name": "晶宏",
+     "contribution": 1.7589247358146813
+    },
+    "loser": {
+     "code": "2615",
+     "name": "萬海",
+     "contribution": -2.3283626530314008
+    }
+   },
+   "2021-08": {
+    "through": "2021-08-31",
+    "return_pct": -5.347675977066446,
+    "winner": {
+     "code": "5438",
+     "name": "東友",
+     "contribution": 2.063156453892795
+    },
+    "loser": {
+     "code": "6104",
+     "name": "創惟",
+     "contribution": -2.435118912064834
+    }
+   },
+   "2021-09": {
+    "through": "2021-09-30",
+    "return_pct": -4.536913317165436,
+    "winner": {
+     "code": "8121",
+     "name": "越峰",
+     "contribution": 2.790623914386851
+    },
+    "loser": {
+     "code": "5438",
+     "name": "東友",
+     "contribution": -2.7494206338122043
+    }
+   },
+   "2021-10": {
+    "through": "2021-10-29",
+    "return_pct": 1.215302782082861,
+    "winner": {
+     "code": "1727",
+     "name": "中華化",
+     "contribution": 2.8095826204252763
+    },
+    "loser": {
+     "code": "4141",
+     "name": "龍燈-KY",
+     "contribution": -1.704125317255115
+    }
+   },
+   "2021-11": {
+    "through": "2021-11-30",
+    "return_pct": 11.164981469074675,
+    "winner": {
+     "code": "6205",
+     "name": "詮欣",
+     "contribution": 2.7614261045041535
+    },
+    "loser": {
+     "code": "3432",
+     "name": "台端",
+     "contribution": -1.072612331481721
+    }
+   },
+   "2021-12": {
+    "through": "2021-12-30",
+    "return_pct": 10.433878102803828,
+    "winner": {
+     "code": "6205",
+     "name": "詮欣",
+     "contribution": 3.620413126049584
+    },
+    "loser": {
+     "code": "3066",
+     "name": "李洲",
+     "contribution": -1.3020539033611647
+    }
+   },
+   "2022-01": {
+    "through": "2022-01-26",
+    "return_pct": -13.010018091684284,
+    "winner": {
+     "code": "3036",
+     "name": "文曄",
+     "contribution": 0.5292788130459408
+    },
+    "loser": {
+     "code": "6205",
+     "name": "詮欣",
+     "contribution": -1.7688267034578677
+    }
+   },
+   "2022-02": {
+    "through": "2022-02-25",
+    "return_pct": -0.0529785822739659,
+    "winner": {
+     "code": "3455",
+     "name": "由田",
+     "contribution": 1.3677839277618542
+    },
+    "loser": {
+     "code": "8210",
+     "name": "勤誠",
+     "contribution": -0.9735688958877762
+    }
+   },
+   "2022-03": {
+    "through": "2022-03-31",
+    "return_pct": 1.6859321818115447,
+    "winner": {
+     "code": "4148",
+     "name": "全宇生技-KY",
+     "contribution": 0.9291043175967147
+    },
+    "loser": {
+     "code": "2613",
+     "name": "中櫃",
+     "contribution": -0.9229881251869201
+    }
+   },
+   "2022-04": {
+    "through": "2022-04-29",
+    "return_pct": -0.683896936613726,
+    "winner": {
+     "code": "1453",
+     "name": "大將",
+     "contribution": 3.6180885573216846
+    },
+    "loser": {
+     "code": "8074",
+     "name": "鉅橡",
+     "contribution": -1.2065289605643807
+    }
+   },
+   "2022-05": {
+    "through": "2022-05-31",
+    "return_pct": -1.2056849617496979,
+    "winner": {
+     "code": "1453",
+     "name": "大將",
+     "contribution": 3.6014387926805633
+    },
+    "loser": {
+     "code": "4736",
+     "name": "泰博",
+     "contribution": -1.6381821409319277
+    }
+   },
+   "2022-06": {
+    "through": "2022-06-30",
+    "return_pct": -2.7703848230013817,
+    "winner": {
+     "code": "9802",
+     "name": "鈺齊-KY",
+     "contribution": 1.0354436422463398
+    },
+    "loser": {
+     "code": "1453",
+     "name": "大將",
+     "contribution": -2.285222601883995
+    }
+   },
+   "2022-07": {
+    "through": "2022-07-29",
+    "return_pct": 8.837784490584877,
+    "winner": {
+     "code": "5353",
+     "name": "台林",
+     "contribution": 2.8805687130792332
+    },
+    "loser": {
+     "code": "6472",
+     "name": "保瑞",
+     "contribution": -0.53238885907889
+    }
+   },
+   "2022-08": {
+    "through": "2022-08-31",
+    "return_pct": 13.080371602934825,
+    "winner": {
+     "code": "6472",
+     "name": "保瑞",
+     "contribution": 5.616842714706325
+    },
+    "loser": {
+     "code": "5353",
+     "name": "台林",
+     "contribution": -1.00959288660499
+    }
+   },
+   "2022-09": {
+    "through": "2022-09-30",
+    "return_pct": -8.727074659165945,
+    "winner": {
+     "code": "8349",
+     "name": "恒耀國際",
+     "contribution": 0.7421803046374907
+    },
+    "loser": {
+     "code": "3022",
+     "name": "威強電",
+     "contribution": -1.691719439206931
+    }
+   },
+   "2022-10": {
+    "through": "2022-10-31",
+    "return_pct": -5.9179228531620165,
+    "winner": {
+     "code": "8933",
+     "name": "愛地雅",
+     "contribution": 0.711184577473896
+    },
+    "loser": {
+     "code": "2483",
+     "name": "百容",
+     "contribution": -1.5444659987738905
+    }
+   },
+   "2022-11": {
+    "through": "2022-11-30",
+    "return_pct": 12.345483219868392,
+    "winner": {
+     "code": "3454",
+     "name": "晶睿",
+     "contribution": 3.1082355490638918
+    },
+    "loser": {
+     "code": "8933",
+     "name": "愛地雅",
+     "contribution": -1.4581254399916825
+    }
+   },
+   "2022-12": {
+    "through": "2022-12-30",
+    "return_pct": 2.3897889122380667,
+    "winner": {
+     "code": "8932",
+     "name": "智通*",
+     "contribution": 1.448418821621544
+    },
+    "loser": {
+     "code": "3013",
+     "name": "晟銘電",
+     "contribution": -1.6388956074282448
+    }
+   },
+   "2023-01": {
+    "through": "2023-01-31",
+    "return_pct": 2.58544193424437,
+    "winner": {
+     "code": "4763",
+     "name": "材料*-KY",
+     "contribution": 2.7488277477992806
+    },
+    "loser": {
+     "code": "1701",
+     "name": "中化",
+     "contribution": -1.5432211549902253
+    }
+   },
+   "2023-02": {
+    "through": "2023-02-24",
+    "return_pct": 6.469685457486252,
+    "winner": {
+     "code": "2482",
+     "name": "連宇",
+     "contribution": 1.2940048851696497
+    },
+    "loser": {
+     "code": "2929",
+     "name": "淘帝-KY",
+     "contribution": -1.6245517705611119
+    }
+   },
+   "2023-03": {
+    "through": "2023-03-31",
+    "return_pct": 4.502743468729142,
+    "winner": {
+     "code": "2453",
+     "name": "凌群",
+     "contribution": 4.326026620068266
+    },
+    "loser": {
+     "code": "3652",
+     "name": "精聯",
+     "contribution": -1.0785438546504855
+    }
+   },
+   "2023-04": {
+    "through": "2023-04-28",
+    "return_pct": 8.494700835135106,
+    "winner": {
+     "code": "3363",
+     "name": "上詮",
+     "contribution": 2.1774826973022807
+    },
+    "loser": {
+     "code": "6248",
+     "name": "沛波",
+     "contribution": -0.7562531838681507
+    }
+   },
+   "2023-05": {
+    "through": "2023-05-31",
+    "return_pct": 3.1141389836571554,
+    "winner": {
+     "code": "5864",
+     "name": "致和證",
+     "contribution": 1.1933795494617754
+    },
+    "loser": {
+     "code": "4121",
+     "name": "優盛",
+     "contribution": -1.2640828630893424
+    }
+   },
+   "2023-06": {
+    "through": "2023-06-30",
+    "return_pct": 12.645783238105857,
+    "winner": {
+     "code": "4533",
+     "name": "協易機",
+     "contribution": 5.238873020819931
+    },
+    "loser": {
+     "code": "2722",
+     "name": "夏都",
+     "contribution": -0.7574063884167935
+    }
+   },
+   "2023-07": {
+    "through": "2023-07-31",
+    "return_pct": 21.437462258588802,
+    "winner": {
+     "code": "4979",
+     "name": "華星光",
+     "contribution": 5.522181932967653
+    },
+    "loser": {
+     "code": "5864",
+     "name": "致和證",
+     "contribution": -0.9927579587404282
+    }
+   },
+   "2023-08": {
+    "through": "2023-08-31",
+    "return_pct": -5.863015063510635,
+    "winner": {
+     "code": "2363",
+     "name": "矽統",
+     "contribution": 2.6797335118028003
+    },
+    "loser": {
+     "code": "3035",
+     "name": "智原",
+     "contribution": -1.4409422871758246
+    }
+   },
+   "2023-09": {
+    "through": "2023-09-28",
+    "return_pct": 7.315569624938045,
+    "winner": {
+     "code": "3715",
+     "name": "定穎投控",
+     "contribution": 3.7892150409793395
+    },
+    "loser": {
+     "code": "6165",
+     "name": "浪凡",
+     "contribution": -0.9562688434402391
+    }
+   },
+   "2023-10": {
+    "through": "2023-10-31",
+    "return_pct": -2.4254281587972715,
+    "winner": {
+     "code": "2543",
+     "name": "皇昌",
+     "contribution": 2.676729144874054
+    },
+    "loser": {
+     "code": "3709",
+     "name": "鑫聯大投控",
+     "contribution": -1.1874222541803745
+    }
+   },
+   "2023-11": {
+    "through": "2023-11-30",
+    "return_pct": 13.626720151036874,
+    "winner": {
+     "code": "2543",
+     "name": "皇昌",
+     "contribution": 8.37604265312533
+    },
+    "loser": {
+     "code": "2363",
+     "name": "矽統",
+     "contribution": -0.5208710762015146
+    }
+   },
+   "2023-12": {
+    "through": "2023-12-29",
+    "return_pct": -6.942298680923519,
+    "winner": {
+     "code": "2211",
+     "name": "長榮鋼",
+     "contribution": 1.43508777501384
+    },
+    "loser": {
+     "code": "2543",
+     "name": "皇昌",
+     "contribution": -2.2609816919179315
+    }
+   },
+   "2024-01": {
+    "through": "2024-01-31",
+    "return_pct": -2.0795666386333234,
+    "winner": {
+     "code": "5244",
+     "name": "弘凱",
+     "contribution": 1.3924691373641953
+    },
+    "loser": {
+     "code": "1733",
+     "name": "五鼎",
+     "contribution": -1.6830372966628266
+    }
+   },
+   "2024-02": {
+    "through": "2024-02-29",
+    "return_pct": 9.560517188863171,
+    "winner": {
+     "code": "2467",
+     "name": "志聖",
+     "contribution": 3.424852686191262
+    },
+    "loser": {
+     "code": "6265",
+     "name": "方土昶",
+     "contribution": -0.5772664766107205
+    }
+   },
+   "2024-03": {
+    "through": "2024-03-29",
+    "return_pct": 0.46207892558993713,
+    "winner": {
+     "code": "4994",
+     "name": "傳奇",
+     "contribution": 1.3384094943665776
+    },
+    "loser": {
+     "code": "3312",
+     "name": "弘憶股",
+     "contribution": -1.3809970275396988
+    }
+   },
+   "2024-04": {
+    "through": "2024-04-30",
+    "return_pct": 16.335134651291085,
+    "winner": {
+     "code": "6177",
+     "name": "達麗",
+     "contribution": 5.511601618819553
+    },
+    "loser": {
+     "code": "3188",
+     "name": "鑫龍騰",
+     "contribution": -0.7570453455918597
+    }
+   },
+   "2024-05": {
+    "through": "2024-05-31",
+    "return_pct": 6.6515941669516465,
+    "winner": {
+     "code": "3030",
+     "name": "德律",
+     "contribution": 2.2283776157515147
+    },
+    "loser": {
+     "code": "2534",
+     "name": "宏盛",
+     "contribution": -0.982953033232065
+    }
+   },
+   "2024-06": {
+    "through": "2024-06-28",
+    "return_pct": 3.5389760920032654,
+    "winner": {
+     "code": "8374",
+     "name": "羅昇",
+     "contribution": 2.273122809160625
+    },
+    "loser": {
+     "code": "4967",
+     "name": "十銓",
+     "contribution": -1.6266903598035953
+    }
+   },
+   "2024-07": {
+    "through": "2024-07-31",
+    "return_pct": 4.673041737168204,
+    "winner": {
+     "code": "8028",
+     "name": "昇陽半導體",
+     "contribution": 2.5455779760470483
+    },
+    "loser": {
+     "code": "4109",
+     "name": "加捷生醫",
+     "contribution": -1.393450380104561
+    }
+   },
+   "2024-08": {
+    "through": "2024-08-30",
+    "return_pct": 5.103215691043506,
+    "winner": {
+     "code": "4510",
+     "name": "高鋒",
+     "contribution": 5.300562292780968
+    },
+    "loser": {
+     "code": "4907",
+     "name": "富宇",
+     "contribution": -1.622575627046648
+    }
+   },
+   "2024-09": {
+    "through": "2024-09-30",
+    "return_pct": -2.1633209708716516,
+    "winner": {
+     "code": "3230",
+     "name": "錦明",
+     "contribution": 1.7394871651656076
+    },
+    "loser": {
+     "code": "3522",
+     "name": "御嵿",
+     "contribution": -1.457129569015776
+    }
+   },
+   "2024-10": {
+    "through": "2024-10-30",
+    "return_pct": -3.8875001823400757,
+    "winner": {
+     "code": "3709",
+     "name": "鑫聯大投控",
+     "contribution": 1.1665177758683067
+    },
+    "loser": {
+     "code": "3230",
+     "name": "錦明",
+     "contribution": -1.7290481690492177
+    }
+   },
+   "2024-11": {
+    "through": "2024-11-29",
+    "return_pct": -1.8287423902520472,
+    "winner": {
+     "code": "3211",
+     "name": "順達",
+     "contribution": 2.0066860202539565
+    },
+    "loser": {
+     "code": "3709",
+     "name": "鑫聯大投控",
+     "contribution": -1.6062986388015055
+    }
+   },
+   "2024-12": {
+    "through": "2024-12-31",
+    "return_pct": -0.07893919984630626,
+    "winner": {
+     "code": "6781",
+     "name": "AES-KY",
+     "contribution": 2.146486820523426
+    },
+    "loser": {
+     "code": "6535",
+     "name": "順藥",
+     "contribution": -2.315164755729479
+    }
+   },
+   "2025-01": {
+    "through": "2025-01-22",
+    "return_pct": 4.056710445134626,
+    "winner": {
+     "code": "6558",
+     "name": "興能高",
+     "contribution": 3.4397878569312743
+    },
+    "loser": {
+     "code": "2233",
+     "name": "宇隆",
+     "contribution": -1.5676551419057798
+    }
+   },
+   "2025-02": {
+    "through": "2025-02-27",
+    "return_pct": -2.800835605506824,
+    "winner": {
+     "code": "3019",
+     "name": "亞光",
+     "contribution": 1.5166037589963217
+    },
+    "loser": {
+     "code": "6781",
+     "name": "AES-KY",
+     "contribution": -1.3729697227521478
+    }
+   },
+   "2025-03": {
+    "through": "2025-03-31",
+    "return_pct": -9.932381869340013,
+    "winner": {
+     "code": "2852",
+     "name": "第一保",
+     "contribution": 0.487675280549282
+    },
+    "loser": {
+     "code": "6227",
+     "name": "茂綸",
+     "contribution": -1.3280307755355432
+    }
+   },
+   "2025-04": {
+    "through": "2025-04-30",
+    "return_pct": 26.314721412751886,
+    "winner": {
+     "code": "2468",
+     "name": "華經",
+     "contribution": 36.674614310534906
+    },
+    "loser": {
+     "code": "5439",
+     "name": "高技",
+     "contribution": -4.44626707869238
+    }
+   },
+   "2025-05": {
+    "through": "2025-05-29",
+    "return_pct": -21.576337266133617,
+    "winner": null,
+    "loser": {
+     "code": "2468",
+     "name": "華經",
+     "contribution": -21.321897030201086
+    }
+   },
+   "2025-06": {
+    "through": "2025-06-30",
+    "return_pct": -3.3603771055779497,
+    "winner": {
+     "code": "2468",
+     "name": "華經",
+     "contribution": 2.3700546649790275
+    },
+    "loser": {
+     "code": "1419",
+     "name": "新紡",
+     "contribution": -3.439283393542178
+    }
+   },
+   "2025-07": {
+    "through": "2025-07-31",
+    "return_pct": 12.818718242803318,
+    "winner": {
+     "code": "6191",
+     "name": "精成科",
+     "contribution": 3.3900832564753696
+    },
+    "loser": {
+     "code": "5234",
+     "name": "達興材料",
+     "contribution": -0.9880105254836076
+    }
+   },
+   "2025-08": {
+    "through": "2025-08-29",
+    "return_pct": 23.5614138284711,
+    "winner": {
+     "code": "8358",
+     "name": "金居",
+     "contribution": 6.191994135342043
+    },
+    "loser": {
+     "code": "1786",
+     "name": "科妍",
+     "contribution": -1.0458922449414505
+    }
+   },
+   "2025-09": {
+    "through": "2025-09-30",
+    "return_pct": -8.228852218590522,
+    "winner": {
+     "code": "3260",
+     "name": "威剛",
+     "contribution": 0.8290001308214177
+    },
+    "loser": {
+     "code": "8033",
+     "name": "雷虎",
+     "contribution": -1.3821695618453576
+    }
+   },
+   "2025-10": {
+    "through": "2025-10-31",
+    "return_pct": 10.166144885774543,
+    "winner": {
+     "code": "8299",
+     "name": "群聯",
+     "contribution": 4.525533163198588
+    },
+    "loser": {
+     "code": "4130",
+     "name": "健亞",
+     "contribution": -0.9833824626300469
+    }
+   },
+   "2025-11": {
+    "through": "2025-11-28",
+    "return_pct": -6.659133245379523,
+    "winner": {
+     "code": "8299",
+     "name": "群聯",
+     "contribution": 1.3874561472813638
+    },
+    "loser": {
+     "code": "8103",
+     "name": "瀚荃",
+     "contribution": -1.018262873645642
+    }
+   },
+   "2025-12": {
+    "through": "2025-12-31",
+    "return_pct": 1.393057801623021,
+    "winner": {
+     "code": "6163",
+     "name": "華電網",
+     "contribution": 1.8320859167047323
+    },
+    "loser": {
+     "code": "6290",
+     "name": "良維",
+     "contribution": -0.5743907141757069
+    }
+   },
+   "2026-01": {
+    "through": "2026-01-30",
+    "return_pct": 8.924676236659469,
+    "winner": {
+     "code": "5864",
+     "name": "致和證",
+     "contribution": 1.9541023433150384
+    },
+    "loser": {
+     "code": "1735",
+     "name": "日勝化",
+     "contribution": -0.6743006687399868
+    }
+   },
+   "2026-02": {
+    "through": "2026-02-26",
+    "return_pct": 11.048435463228934,
+    "winner": {
+     "code": "3037",
+     "name": "欣興",
+     "contribution": 2.746833735015569
+    },
+    "loser": {
+     "code": "5347",
+     "name": "世界",
+     "contribution": -1.4763671777959577
+    }
+   },
+   "2026-03": {
+    "through": "2026-03-31",
+    "return_pct": -3.82431108857747,
+    "winner": {
+     "code": "6187",
+     "name": "萬潤",
+     "contribution": 3.0684726660638555
+    },
+    "loser": {
+     "code": "4973",
+     "name": "廣穎電通",
+     "contribution": -2.404813509479595
+    }
+   },
+   "2026-04": {
+    "through": "2026-04-30",
+    "return_pct": 32.80410638986331,
+    "winner": {
+     "code": "6187",
+     "name": "萬潤",
+     "contribution": 5.819732524675037
+    },
+    "loser": {
+     "code": "3673",
+     "name": "TPK-KY",
+     "contribution": -1.2775531309426447
+    }
+   },
+   "2026-05": {
+    "through": "2026-05-29",
+    "return_pct": 24.969567268335325,
+    "winner": {
+     "code": "8042",
+     "name": "金山電",
+     "contribution": 5.185141939231142
+    },
+    "loser": {
+     "code": "8046",
+     "name": "南電",
+     "contribution": -1.1376029048470193
+    }
+   },
+   "2026-06": {
+    "through": "2026-06-30",
+    "return_pct": 0.4012451927077221,
+    "winner": {
+     "code": "2327",
+     "name": "國巨*",
+     "contribution": 4.139561089563306
+    },
+    "loser": {
+     "code": "6016",
+     "name": "康和證",
+     "contribution": -1.9068592804706193
+    }
+   },
+   "2026-07": {
+    "through": "2026-07-31",
+    "return_pct": -26.546981625301136,
+    "winner": {
+     "code": "4551",
+     "name": "智伸科",
+     "contribution": 1.20095998190906
+    },
+    "loser": {
+     "code": "6226",
+     "name": "光鼎",
+     "contribution": -1.9561882499633965
+    }
+   },
+   "2026-08": {
+    "through": "2026-08-31",
+    "return_pct": 14.215463737251955,
+    "winner": {
+     "code": "1709",
+     "name": "和益",
+     "contribution": 4.031392159465876
+    },
+    "loser": {
+     "code": "2615",
+     "name": "萬海",
+     "contribution": -0.6976642306163072
+    }
+   },
+   "2026-09": {
+    "through": "2026-09-30",
+    "return_pct": 1.8052902214178879,
+    "winner": {
+     "code": "1709",
+     "name": "和益",
+     "contribution": 4.649170468844763
+    },
+    "loser": {
+     "code": "5314",
+     "name": "世紀*",
+     "contribution": -1.2041294224045618
+    }
+   },
+   "2026-10": {
+    "through": "2026-10-16",
+    "return_pct": -2.8304244150792246,
+    "winner": {
+     "code": "1709",
+     "name": "和益",
+     "contribution": 2.187493326895324
+    },
+    "loser": {
+     "code": "6168",
+     "name": "宏齊",
+     "contribution": -1.4527066712150567
+    }
+   }
+  },
+  "basis": "monthly_strategy_return_contribution_percentage_points"
  },
  "nav": [
   [

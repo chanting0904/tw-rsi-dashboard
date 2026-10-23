@@ -1,6 +1,6 @@
 {
  "strategy_version": "V5",
- "release_version": "V5.0.1",
+ "release_version": "V5.0.2",
  "share_delivery_check": {
   "as_of": "2026-10-22",
   "status": "PASS",
@@ -80,7 +80,7 @@
  "rebalance_date": "2026-10-23",
  "sig_date": "2026-10-22",
  "generated_at": "2026-10-23T09:02:16+08:00",
- "commit_sha": "23239944",
+ "commit_sha": "a366ee53",
  "receivables": 9490.87,
  "cash": 590980.0,
  "buffer": 0.0738,
