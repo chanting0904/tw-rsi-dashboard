@@ -1,7 +1,7 @@
 {
  "strategy_version": "V5",
- "release_version": "V5.0.0",
- "generated_at": "2026-10-23T08:41:54.738715+08:00",
+ "release_version": "V5.0.1",
+ "generated_at": "2026-10-23T09:02:16.158893+08:00",
  "rebalance_date": "2026-10-23",
  "v5_consistency": true,
  "fixed_anchor": {
@@ -10,7 +10,7 @@
    "date": "2026-10-16",
    "cagr": 0.47008609848412597,
    "mdd": -0.3140062075362031,
-   "release_version": "V5.0.0",
+   "release_version": "V5.0.1",
    "selection_rules": {
     "selection_mode": "single_ranked_pool",
     "a_rank_days": 3,
@@ -98,6 +98,6 @@
   }
  },
  "verdict": "PASS",
- "signal_digest": "b30f0d8446cf5c2dd092713c2fb844d49465a97d4a280d441f5986dff340b80f",
- "performance_digest": "7ebd5ca264cd172d3ed085121213276aeaa6c489012b664211414929da39adfd"
+ "signal_digest": "283a020ca2db6111c00be5895b25bd72c16e149b07531719d85c3135b775f824",
+ "performance_digest": "3b4190ce954d39ddf24f8ab2e1f33bd998c0d3c135cc3285474ad96458a8acbd"
 }
