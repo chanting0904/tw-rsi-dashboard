@@ -1,6 +1,6 @@
 const test=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
 function fixture({ready=true,blockedStorage=false}={}){
- const elements={},make=()=>({value:'',textContent:'',hidden:false,listeners:{},addEventListener(k,v){this.listeners[k]=v;},replaceChildren(){},createTHead(){return this;},createTBody(){return this;},insertRow(){return this;},insertCell(){return make();},appendChild(){}});
+ const elements={},make=()=>({value:'',textContent:'',hidden:false,listeners:{},addEventListener(k,v){this.listeners[k]=v;},replaceChildren(){},createTHead(){return this;},createTBody(){return this;},insertRow(){return this;},insertCell(){return make();},appendChild(){},append(){}});
  const $=id=>elements[id]??=(make()),calls=[];let stored=null;
  const result={withinBudget:true,bandReached:true,rows:[{code:'1101',name:'fixture',current:10,target:10,change:0,side:'HOLD',reason:'續抱不動'}],invested:94000,cash:6000,fees:0,exposure:.94,previousDate:'2026-10-08',date:'2026-10-16',source:'reconstructed',snapshot:{schema:1,rebalance_date:'2026-10-16',capital:100000,holdings:[{code:'1101',shares:10}]}};
  const scope={document:{getElementById:$,createElement:make},localStorage:{getItem(){if(blockedStorage)throw Error('blocked');return stored;},setItem(k,v){if(blockedStorage)throw Error('blocked');stored=v;},removeItem(){stored=null;}},weeklyCapitalPlan(args){calls.push(args);if(!args.capital||!args.previousCapital)throw Error('兩個金額都必填');return result;},navigator:{clipboard:{writeText:async()=>{}}}};
@@ -24,4 +24,4 @@ test('current retry state blocks previous plan reuse',()=>assert.equal(weeklyCap
 test('a plan older than one weekly cycle cannot be reused',()=>assert.equal(weeklyCapitalReady(confirmed,'2026-10-27',readyStatus),false));
 test('unvalidated close is never usable for a remainder order',()=>assert.equal(weeklyCapitalReady({...confirmed,sig_validated:false},'2026-10-19',readyStatus),false));
 
-test('positive pending rights are shown separately so the capital total reconciles',()=>{const f=fixture();f.result.reservedAssets=118;f.$('cap-previous').value=f.$('cap').value='100000';f.click();assert.match(f.$('weekly-capital-summary').textContent,/待領權益 118/);});
+test('positive pending rights are shown separately so the capital total reconciles',()=>{const f=fixture();f.result.reservedAssets=118;f.$('cap-previous').value=f.$('cap').value='100000';f.click();assert.match(f.$('preview-result-note').textContent,/待領權益 118/);});

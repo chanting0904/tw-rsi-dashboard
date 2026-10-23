@@ -54,7 +54,7 @@ def publish(ctx, output_dir, root, *, end=None, report_only=False):
     if report_only:
         if ctx.config.start_capital == 100_000 and not anchor_ok:
             raise ValueError('固定期間回歸基準未通過，不更新正式績效')
-        document = perf_document(result, ctx.config, anchor)
+        document = perf_document(result, ctx.config, anchor, ctx=ctx)
         write_json(output_dir / 'perf.json', document)
         return {'result': result, 'perf': document, 'report_only': True}
     from .live_model import load_seed
@@ -90,7 +90,7 @@ def publish(ctx, output_dir, root, *, end=None, report_only=False):
         write_json(output_dir/'history'/(previous['rebalance_date']+'.json'),previous)
     for plan in historical:
         write_json(output_dir / 'history' / (plan['date'].strftime('%Y-%m-%d') + '.json'), canonical_for(ctx, plan, trades, sha))
-    document = perf_document(result, ctx.config, anchor)
+    document = perf_document(result, ctx.config, anchor, ctx=ctx)
     signal = canonical_for(ctx, latest, trades, sha)
     if seeded:signal['live_model_origin']=live_result['live_model_origin']
     validation['signal_digest']=document_digest(signal)

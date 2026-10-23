@@ -90,7 +90,9 @@ def annual_performance(nav, start_capital):
     return result
 
 
-def perf_document(result, config, anchor=None):
+def perf_document(result, config, anchor=None, *, ctx=None):
+    from .attribution import monthly_contributions
+    details = monthly_contributions(ctx,result) if ctx is not None else None
     nav = result['nav']
     series = nav['nav']
     annual = annual_performance(nav, config.start_capital)
@@ -110,6 +112,7 @@ def perf_document(result, config, anchor=None):
             'execution_policy': result.get('execution_policy', 'legacy_v4'),
             'nav_frequency': 'daily', 'delisted_valuation': config.delisted_valuation,
             'fixed_anchor': anchor,
+            'monthly_contributions': details,
             'nav': [[day.strftime('%Y-%m-%d'), round(float(value), 0)] for day, value in series.items()],
             'dd': [[day.strftime('%Y-%m-%d'), round(float(value), 2)] for day, value in ((series / series.cummax().clip(lower=config.start_capital) - 1) * 100).items()],
             'yearly': [{**item, 'ret': round(item['ret'], 2), 'mdd': round(item['mdd'], 2)} for item in annual],

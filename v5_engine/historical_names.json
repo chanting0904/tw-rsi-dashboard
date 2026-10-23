@@ -1,0 +1,22 @@
+{
+  "1701": {
+    "name": "中化",
+    "source": "https://www.twse.com.tw/staticFiles/news/news/tsecnews/8a8216d6906d4d34019077f6c16d001d.pdf"
+  },
+  "3454": {
+    "name": "晶睿",
+    "source": "https://www.twse.com.tw/fund/MI_QFIIS?date=20201113&response=html&selectType=ALLBUT0999"
+  },
+  "4130": {
+    "name": "健亞",
+    "source": "https://www.tpex.org.tw/storage/eb_data/11507/11502017631.html"
+  },
+  "4141": {
+    "name": "龍燈-KY",
+    "source": "https://www.twse.com.tw/fund/MI_QFIIS?date=20201113&response=html&selectType=ALLBUT0999"
+  },
+  "6452": {
+    "name": "康友-KY",
+    "source": "https://www.twse.com.tw/exchangeReport/FMNPTK?response=html&stockNo=6452"
+  }
+}
