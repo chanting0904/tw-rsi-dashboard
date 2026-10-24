@@ -15,7 +15,7 @@ def monthly_contributions(ctx, result):
     for row in result.get('corporate_action_audit',[]):
      if row.get('fractional_receivable'):fractional[pd.Timestamp(row['date'])].append(row)
     held=defaultdict(int);before={};previous_nav=ctx.config.start_capital
-    monthly={};max_error=0
+    monthly={}
     for day,total_nav in nav.items():
      key=day.strftime('%Y-%m')
      if key not in monthly:monthly[key]=dict(basis=previous_nav,end=float(total_nav),date=day.strftime('%Y-%m-%d'),pnl=defaultdict(float))
@@ -34,7 +34,7 @@ def monthly_contributions(ctx, result):
       price=float(marks.at[day,code])
       current[code]=qty*price if math.isfinite(price) and price>0 else 0.
      contributions={code:current.get(code,0)-before.get(code,0)+flow.get(code,0) for code in set(current)|set(before)|set(flow)}
-     error=abs(sum(contributions.values())-(float(total_nav)-previous_nav));max_error=max(max_error,error)
+     error=abs(sum(contributions.values())-(float(total_nav)-previous_nav))
      if error>max(1e-5,abs(float(total_nav))*1e-10):raise ValueError(f'Monthly attribution does not reconcile: {day} {error}')
      for code,pnl in contributions.items():month['pnl'][code]+=pnl
      month['end']=float(total_nav);month['date']=day.strftime('%Y-%m-%d')

@@ -13,6 +13,7 @@ def trade_cycles(trades, close, buy_fee, sell_fee):
         return pd.DataFrame(columns=CYCLE_COLUMNS)
     cycles = []
     for code, group in trades.groupby('code', sort=False):
+        prices = close[str(code)].to_numpy() if str(code) in close.columns else None
         shares = 0
         avg = buy_cost = sell_proceeds = 0.0
         entry = pool = rank = None
@@ -48,7 +49,8 @@ def trade_cycles(trades, close, buy_fee, sell_fee):
                 if shares:
                     continue
                 pnl = sell_proceeds - buy_cost
-                segment = close[str(code)].loc[entry:day].dropna() if str(code) in close.columns else pd.Series(dtype=float)
+                segment = prices[close.index.slice_indexer(entry, day)] if prices is not None else np.array([])
+                segment = segment[pd.notna(segment)]
                 cycles.append({'code': str(code), 'ret': pnl / buy_cost if buy_cost else 0,
                                'pnl': pnl, 'buy_cost': buy_cost, 'sell_proceeds': sell_proceeds,
                                'days': len(segment), 'pool': pool, 'exit_d': day,

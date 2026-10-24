@@ -8,8 +8,8 @@ CSV 欄位保留歷史名稱以供既有成交研究使用；
     python s5_live/generate_weekly_orders.py            # 用最新 canonical
     python s5_live/generate_weekly_orders.py --dry-run  # 只印清單不寫檔（測試用）
 """
-import os, sys, json, io, argparse
-from datetime import datetime, date
+import os, json, io, argparse
+from datetime import datetime
 import pandas as pd
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

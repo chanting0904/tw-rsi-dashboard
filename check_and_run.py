@@ -2,7 +2,7 @@
 """最後交易日前一交易日21:45產生計畫，最後交易日早上僅補做未完成部分。
 （週五休市 → 週三晚間產生週四計畫，與回測 w5_close 一致）。
 FORCE_FULL=1 可手動強制（workflow_dispatch full 用）。"""
-import datetime, json, os, subprocess, sys
+import datetime, os, subprocess, sys
 import shutil
 import tempfile
 from pathlib import Path

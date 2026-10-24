@@ -11,7 +11,7 @@
     python local_db_updater.py          # 每日盤後更新（13:30 後）
     python local_db_updater.py --force  # 強制重新抓取
 """
-import os, re, sys, json, ssl, shutil, urllib.request
+import os, sys, json, ssl, urllib.request
 from datetime import datetime
 import pandas as pd
 from market_dates import quote_date

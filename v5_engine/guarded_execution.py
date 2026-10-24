@@ -4,7 +4,6 @@ The legacy V5 path supplies dated selection/reference weights only. It never
 supplies the executed account's quantities or NAV. One JS policy computes the
 actual final quantities in backtests and the browser, preventing policy drift.
 """
-import copy
 import json
 import math
 import subprocess

@@ -3,7 +3,7 @@
 TWSE+TPEx 官方免費源（台灣/本機最穩）-> FinLab（國外 runner 兜底，token）-> yfinance（最後）。
 所有源皆失敗 -> exit(1) 讓 workflow 紅叉，絕不假成功。
 本版（V5 canonical）：另寫 output/prices.json 供 Web 顯示每日最新價（持股買賣不變）。"""
-import os, re, sys, json, ssl, urllib.request, math
+import os, re, json, ssl, urllib.request, math
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from publish_gate import load_holidays, last_trading_day_of_week, prev_trading_day_str, is_trading

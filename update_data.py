@@ -33,8 +33,6 @@ def load_token():
 
 TOKEN = load_token()
 
-import pandas as pd
-import numpy as np
 
 # [本地化] 盤後先自動更新本地庫（TWSE/TPEx 官方源優先、零 FinLab 流量）。失敗不阻斷。
 if os.environ.get('V5_SKIP_LOCAL_UPDATE') != '1':
@@ -987,12 +985,7 @@ $("delivery-check-note").textContent=deliveryCheck.as_of?'配股公告核對基�
 
 HTML = HTML.replace("V5.0.0", RELEASE_VERSION)
 HTML = HTML.replace("__DATA_JSON__", DATA_JSON)
-with open(os.path.join(HERE, 'weekly_status.js'), encoding='utf-8') as _source:
-    HTML = HTML.replace('__WEEKLY_STATUS_JS__', _source.read())
-with open(os.path.join(HERE, 'capital_preview.js'), encoding='utf-8') as _source:
-    HTML = HTML.replace('__CAPITAL_PREVIEW_JS__', _source.read())
-
-for _name,_placeholder in [('dashboard_ui.css','__DASHBOARD_CSS__'),('dashboard_ui.js','__DASHBOARD_UI_JS__'),('monthly_details.js','__MONTHLY_DETAILS_JS__'),('weekly_capital.js','__WEEKLY_CAPITAL_JS__'),('weekly_capital_ui.js','__WEEKLY_CAPITAL_UI_JS__'),('order_planner.js','__ORDER_PLANNER_JS__'),('order_planner_ui.js','__ORDER_PLANNER_UI_JS__')]:
+for _name,_placeholder in [('weekly_status.js','__WEEKLY_STATUS_JS__'),('capital_preview.js','__CAPITAL_PREVIEW_JS__'),('dashboard_ui.css','__DASHBOARD_CSS__'),('dashboard_ui.js','__DASHBOARD_UI_JS__'),('monthly_details.js','__MONTHLY_DETAILS_JS__'),('weekly_capital.js','__WEEKLY_CAPITAL_JS__'),('weekly_capital_ui.js','__WEEKLY_CAPITAL_UI_JS__'),('order_planner.js','__ORDER_PLANNER_JS__'),('order_planner_ui.js','__ORDER_PLANNER_UI_JS__')]:
     with open(os.path.join(HERE,_name),encoding='utf-8') as _source:
         HTML=HTML.replace(_placeholder,_source.read())
 

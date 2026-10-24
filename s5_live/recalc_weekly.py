@@ -6,7 +6,7 @@
 用法（每週回報成交後）：
     python s5_live/recalc_weekly.py                # 重算所有週
 """
-import os, sys, glob, json, io
+import os, glob
 import pandas as pd
 import numpy as np
 
