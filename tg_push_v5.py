@@ -11,7 +11,7 @@ import urllib.request
 import urllib.error
 from zoneinfo import ZoneInfo
 
-from publish_gate import evaluate, fingerprint, load_holidays, last_trading_day_of_week
+from publish_gate import evaluate, fingerprint, load_holidays, last_trading_day_of_week, prev_trading_day_str
 from publication_check import verify_public_index
 from delivery_state import deliver_parts, save_state, RejectedDelivery
 from v5_engine.recommendations import hidden_zero_asset_codes, public_warnings
@@ -127,17 +127,21 @@ def tg_send(text):
     return message_id
 
 
-def delivery_due(today, last_trading_day, *, force=False, event_name=None):
+def delivery_due(today, last_trading_day, *, force=False, event_name=None, signal_day=None):
     # A version release may land on a weekend. The publication gate still
     # requires this week's verified signal, and delivery receipts deduplicate.
-    return force or today == last_trading_day or event_name == 'push'
+    return force or (last_trading_day is not None and today in (last_trading_day, signal_day)) or event_name == 'push'
 
 
 def main():
     today = datetime.datetime.now(TW).date()
-    if not delivery_due(today, last_trading_day_of_week(today, load_holidays()),
+    holidays = load_holidays()
+    execution_day = last_trading_day_of_week(today, holidays)
+    signal_day = (datetime.date.fromisoformat(prev_trading_day_str(execution_day, holidays))
+                  if execution_day else None)
+    if not delivery_due(today, execution_day, signal_day=signal_day,
                         force=FORCE, event_name=os.environ.get('GITHUB_EVENT_NAME')):
-        print("非本週最後交易日，跳過推播")
+        print("非本週發布或補救日，跳過推播")
         return
     if os.environ.get('GITHUB_EVENT_NAME') == 'push':
         signal = json.loads(SIG_FILE.read_text(encoding='utf-8'))

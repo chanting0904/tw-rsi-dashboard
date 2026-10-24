@@ -1,6 +1,7 @@
 name: 更新選股器網頁
 on:
   schedule:
+    - cron: '45 13 * * 1-5'   # 台北21:45；僅最後交易日前一交易日發布，休市自動提前
     - cron: '0 22 * * 0-4'    # 台北週一至週五 06:00（UTC 前一天 22:00）
     - cron: '0 23 * * 0-4'    # 台北 07:00：僅本週最後交易日檢查與補做未完成部分
   workflow_dispatch:
@@ -67,10 +68,15 @@ jobs:
       # Recovery imports the same pandas/numpy modules as the main pipeline.
       - name: 安裝依賴
         run: pip install -q -r requirements.txt
-      - name: 07:00 檢查本週訊號、公開網站及通知是否完成
+      - name: 晚間發布及06:00／07:00核對本週完成狀態
         id: recovery
-        if: github.event_name == 'schedule' && github.event.schedule == '0 23 * * 0-4'
-        run: python recovery_check.py
+        if: github.event_name == 'schedule'
+        run: |
+          case '${{ github.event.schedule }}' in
+            '45 13 * * 1-5') python recovery_check.py --evening ;;
+            '0 22 * * 0-4') python recovery_check.py --daily ;;
+            *) python recovery_check.py ;;
+          esac
       - name: Cache finlab_db
         if: steps.recovery.outputs.mode != 'skip' && steps.recovery.outputs.mode != 'publish'
         uses: actions/cache@v4
@@ -85,11 +91,12 @@ jobs:
         env:
           FINLAB_TOKEN: ${{ secrets.FINLAB_TOKEN }}
         run: python retry_runner.py -- python daily_update.py
-      - name: V5 收盤調倉計畫（本週最後交易日，使用前一交易日資料）
+      - name: V5 晚間產生次交易日收盤計畫，早上僅補算未完成訊號
         if: >
           (github.event_name == 'schedule'
           || (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'full'))
           && steps.recovery.outputs.mode != 'skip' && steps.recovery.outputs.mode != 'publish'
+          && steps.recovery.outputs.mode != 'daily'
         env:
           FINLAB_TOKEN: ${{ secrets.FINLAB_TOKEN }}
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
@@ -133,7 +140,8 @@ jobs:
         run: python retry_runner.py -- python pages_publish.py
       - name: 網站上線後發送同一份 Telegram 訊號
         if: >
-          env.V5_SKIP_DEPLOY != '1' && steps.recovery.outputs.mode != 'skip' && (github.event_name == 'schedule'
+          env.V5_SKIP_DEPLOY != '1' && steps.recovery.outputs.mode != 'skip'
+          && steps.recovery.outputs.mode != 'daily' && (github.event_name == 'schedule'
           || github.event_name == 'push'
           || (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'full'))
         env:
