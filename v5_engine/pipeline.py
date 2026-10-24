@@ -10,7 +10,7 @@ from .canonical import canonical_for
 from .config import V5_COEFFICIENTS
 from .jsonio import write_json, document_digest
 from .performance import perf_document
-from .simulation import run, run_seeded
+from .simulation import run, run_seeded, run_reference
 from .validation import validate_plans
 
 
@@ -49,7 +49,9 @@ def fixed_anchor(result, config):
 def publish(ctx, output_dir, root, *, end=None, report_only=False):
     output_dir = Path(output_dir)
     historical_end = ctx.live_day - pd.Timedelta(days=ctx.live_day.weekday() + 3) if ctx.live_day is not None else end
-    result = run(ctx, coefs=V5_COEFFICIENTS, end=historical_end)
+    # One dated reference serves both reports and the continued model in this call.
+    reference = None if report_only else run_reference(ctx, coefs=V5_COEFFICIENTS, end=end)
+    result = run(ctx, coefs=V5_COEFFICIENTS, end=historical_end, reference=reference)
     anchor, anchor_ok = fixed_anchor(result, ctx.config)
     if report_only:
         if ctx.config.start_capital == 100_000 and not anchor_ok:
@@ -62,7 +64,7 @@ def publish(ctx, output_dir, root, *, end=None, report_only=False):
     if seed is None:
         raise ValueError('缺少 V5 持倉銜接快照，停止發布，避免重建成不同持股')
     seeded=seed is not None and ctx.close.index[-1]>pd.Timestamp(seed['date'])
-    live_result = run_seeded(ctx,seed,coefs=V5_COEFFICIENTS,end=end) if seeded else (run(ctx, coefs=V5_COEFFICIENTS) if ctx.live_day is not None else result)
+    live_result = run_seeded(ctx,seed,coefs=V5_COEFFICIENTS,end=end,reference=reference) if seeded else (run(ctx, coefs=V5_COEFFICIENTS,reference=reference) if ctx.live_day is not None else result)
     plans, trades = live_result['weekly_plans'], live_result['trades_df']
     if not plans:
         raise ValueError('沒有可以發布的調倉計畫')

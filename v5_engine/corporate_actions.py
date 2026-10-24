@@ -7,6 +7,7 @@ Unidentified adjusted-price jumps fail closed when held, never become profit.
 import re
 import math
 import pandas as pd
+import numpy as np
 
 
 def number(value):
@@ -47,19 +48,19 @@ def build_events(announcements, close, adjusted, official_cash=None, stock_grant
         if frame is None:
             continue
         frame = frame.reindex(columns=close.columns)
-        for day,row in frame.iterrows():
-            for code,value in row.items():
-                if pd.isna(value) or number(value) <= 0:
-                    continue
-                item=event(day,code)
-                if kind=='cash' and 'cash' not in item:
-                    item.update(cash=number(value),payment=None)
-                elif kind=='stock':
-                    ratio=1+number(value)/1000
-                    if 'ratio' in item and abs(item['ratio']-ratio)>.005:item.pop('ratio_known_on',None)
-                    item.update(ratio=ratio,kind='STOCK_DIVIDEND')
-                elif kind=='split':
-                    item.update(ratio=number(value),kind='SPLIT')
+        values = frame.apply(pd.to_numeric, errors='coerce').to_numpy(dtype=float, na_value=np.nan)
+        for row_index, column_index in zip(*np.nonzero(values > 0)):
+            day, code = frame.index[row_index], frame.columns[column_index]
+            value = float(values[row_index, column_index])
+            item=event(day,code)
+            if kind=='cash' and 'cash' not in item:
+                item.update(cash=value,payment=None)
+            elif kind=='stock':
+                ratio=1+value/1000
+                if 'ratio' in item and abs(item['ratio']-ratio)>.005:item.pop('ratio_known_on',None)
+                item.update(ratio=ratio,kind='STOCK_DIVIDEND')
+            elif kind=='split':
+                item.update(ratio=value,kind='SPLIT')
     for reduction in reductions or []:
         reasons,before,reference=reduction
         for date,row in reasons.reindex(columns=close.columns).iterrows():

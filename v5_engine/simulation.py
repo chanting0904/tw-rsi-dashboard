@@ -81,19 +81,21 @@ def run_reference(ctx, weekday=5, mode='close', coefs=(1.5, 1.0, .5), start=None
     return result
 
 
-def run(ctx, weekday=5, mode='close', coefs=(1.5, 1.0, .5), start=None, end=None, record=True):
+def run(ctx, weekday=5, mode='close', coefs=(1.5, 1.0, .5), start=None, end=None, record=True, *, reference=None):
     """Use the same guarded share planner as Web/TG, with actual market blocks."""
     from .guarded_execution import GuardedExecution
-    reference = run_reference(ctx, weekday, mode, coefs, start, end, True)
+    if reference is None:
+        reference = run_reference(ctx, weekday, mode, coefs, start, end, True)
     with GuardedExecution(ctx, reference) as executor:
         result = run_reference(ctx, weekday, mode, coefs, start, end, record, executor)
     result['execution_policy'] = 'guarded_weekly_capital_v1'
     return result
 
 
-def run_seeded(ctx,seed,weekday=5,mode='close',coefs=(1.5,1.,.5),end=None):
+def run_seeded(ctx,seed,weekday=5,mode='close',coefs=(1.5,1.,.5),end=None,*,reference=None):
     from .guarded_execution import GuardedExecution
-    reference=run_reference(ctx,weekday,mode,coefs,end=end)
+    if reference is None:
+        reference=run_reference(ctx,weekday,mode,coefs,end=end)
     with GuardedExecution(ctx,reference,seed=seed) as executor:
         result=run_reference(ctx,weekday,mode,coefs,end=end,executor=executor,seed=seed)
     result['execution_policy']='guarded_weekly_capital_v1'
