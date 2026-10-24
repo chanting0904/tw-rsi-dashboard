@@ -5,7 +5,7 @@ import json
 import os
 from pathlib import Path
 from zoneinfo import ZoneInfo
-from publish_gate import load_holidays, last_trading_day_of_week, fingerprint
+from publish_gate import load_holidays, last_trading_day_of_week, prev_trading_day_str, fingerprint
 
 ROOT = Path(__file__).resolve().parent
 STATUS_FILE = ROOT / 'output' / 'weekly_status.json'
@@ -17,8 +17,10 @@ def write_status(state, *, stage='signal', attempt=1, max_attempts=3,
     today = today or now.date()
     holidays = load_holidays() if holidays is None else holidays
     expected = last_trading_day_of_week(today, holidays)
-    # A daily refresh or a midweek deployment must not change weekly readiness.
-    if expected != today:
+    release_day = (dt.date.fromisoformat(prev_trading_day_str(expected, holidays))
+                   if expected else None)
+    # Both runs describe the execution date, never the evening publication date.
+    if today not in (release_day, expected) or expected is None:
         return None
     result = {'state': state, 'rebalance_date': expected.isoformat(),
               'updated_at': now.isoformat(), 'stage': stage,

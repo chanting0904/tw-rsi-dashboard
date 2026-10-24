@@ -1,4 +1,4 @@
-"""07:00 safety pass: do only the unfinished work on the weekly trading day."""
+"""Evening publication and morning recovery share the same verified weekly plan."""
 import datetime as dt
 import json
 import os
@@ -6,15 +6,20 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from publication_check import verify_public_index
-from publish_gate import evaluate, fingerprint, last_trading_day_of_week, load_holidays
+from publish_gate import evaluate, fingerprint, last_trading_day_of_week, load_holidays, prev_trading_day_str
 
 ROOT = Path(__file__).resolve().parent
 
 
-def recovery_mode(today=None):
+def recovery_mode(today=None, *, evening=False, daily=False):
     today = today or dt.datetime.now(ZoneInfo("Asia/Taipei")).date()
-    if today != last_trading_day_of_week(today, load_holidays()):
-        return "skip", "今天不是本週最後交易日，毋須補跑"
+    holidays = load_holidays()
+    execution_day = last_trading_day_of_week(today, holidays)
+    release_day = (dt.date.fromisoformat(prev_trading_day_str(execution_day, holidays))
+                   if execution_day else None)
+    due_day = release_day if evening else execution_day
+    if today != due_day:
+        return ("daily", "只更新日常行情") if daily else ("skip", "今天不是本週發布或補救日")
     gate = evaluate(today=today, notify=False)
     if not gate["ok"]:
         return "full", "本週訊號尚未完成或驗證未通過，補跑資料與選股"
@@ -27,7 +32,7 @@ def recovery_mode(today=None):
         status = json.loads((ROOT / "output/weekly_status.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):
         status = {}
-    if (status.get("state") != "ready" or status.get("rebalance_date") != today.isoformat()
+    if (status.get("state") != "ready" or status.get("rebalance_date") != execution_day.isoformat()
             or status.get("canonical_hash") != fingerprint(signal)):
         return "publish", "訊號已完成，補做網站完成狀態與發布"
     try:
@@ -40,7 +45,12 @@ def recovery_mode(today=None):
 
 
 if __name__ == "__main__":
-    mode, reason = recovery_mode()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--evening", action="store_true")
+    parser.add_argument("--daily", action="store_true")
+    args = parser.parse_args()
+    mode, reason = recovery_mode(evening=args.evening, daily=args.daily)
     print(reason)
     if os.environ.get("GITHUB_OUTPUT"):
         with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
