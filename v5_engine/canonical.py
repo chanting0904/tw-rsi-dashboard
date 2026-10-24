@@ -4,7 +4,7 @@ import datetime
 import pandas as pd
 from zoneinfo import ZoneInfo
 from .recommendations import recommendation_metadata
-from .security_status import snapshot_hash
+from .security_status import snapshot_hash, can_trade
 
 def classify_day(wp, trades_df):
     tdate = wp["date"]
@@ -72,6 +72,11 @@ def canonical_for(ctx, wp, trades_df, commit_sha):
         return name_map.get(code, code)
     ops = classify_day(wp, trades_df)
     acts = []
+    if ops:
+        frame = ctx.adjusted_close if ctx.adjusted_close is not None else ctx.close
+        index = frame.index.get_loc(wp['date'])
+        prior_prices = frame.iloc[index-1] if index else None
+        current_prices = frame.iloc[index]
     for o in ops:
         buy_sh = sell_sh = 0
         buy_amt = sell_amt = 0
@@ -115,11 +120,8 @@ def canonical_for(ctx, wp, trades_df, commit_sha):
         if acts[-1]['stock_name'] == o['code'] and known_name:
             acts[-1]['stock_name'] = known_name
         acts[-1].update(metadata)
-        from .security_status import can_trade
-        frame = ctx.adjusted_close if ctx.adjusted_close is not None else ctx.close
-        index = frame.index.get_loc(wp['date'])
-        prior_price = frame.iloc[index-1].get(o['code']) if index else None
-        current_price = frame.iloc[index].get(o['code'])
+        prior_price = prior_prices.get(o['code']) if prior_prices is not None else None
+        current_price = current_prices.get(o['code'])
         change = current_price/prior_price-1 if prior_price is not None and prior_price>0 else 0.
         allowed = can_trade(ctx,o['code'],wp['date'])
         acts[-1]['buy_allowed'] = bool(allowed and not change>=cfg.limit)

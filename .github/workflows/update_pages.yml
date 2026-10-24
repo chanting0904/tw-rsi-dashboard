@@ -127,7 +127,7 @@ jobs:
           fi
           git config user.name "rsi-bot"
           git config user.email "bot@rsi.local"
-          git add state.json index.html holidays.json check_and_run.py publish_gate.py update_data.py tg_push_v5.py ai_monitor.py ai_signals.json v5_canonical.py local_db_updater.py daily_update.py local_db/ output/
+          git add state.json index.html holidays.json check_and_run.py publish_gate.py update_data.py tg_push_v5.py v5_canonical.py local_db_updater.py daily_update.py local_db/ output/
           if ! git diff --cached --quiet; then
             git commit -m "auto update page [skip ci]"
             python retry_runner.py -- git pull --rebase

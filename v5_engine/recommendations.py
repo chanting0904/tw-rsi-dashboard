@@ -4,6 +4,7 @@ import math
 import re
 from functools import lru_cache
 from pathlib import Path
+import numpy as np
 import pandas as pd
 from .security_status import status_at
 
@@ -44,9 +45,12 @@ def security_events():
 def recommendation_metadata(ctx, wp, row):
     code, day = row['code'], wp['date']
     basis = ctx.signal_day if ctx.live_day is not None and day == ctx.live_day else day
-    quotes = ctx.close.loc[ctx.close.index <= basis, code].dropna() if code in ctx.close else pd.Series(dtype=float)
-    quotes = quotes[quotes > 0]
-    quote_date = quotes.index[-1] if len(quotes) else None
+    quote_date = None
+    if code in ctx.close:
+        prices = ctx.close[code].to_numpy(dtype=float, na_value=np.nan)
+        valid = np.flatnonzero((prices > 0) & (ctx.close.index <= basis))
+        if len(valid):
+            quote_date = ctx.close.index[valid[-1]]
     current_quote = quote_date is not None and quote_date == basis
     status, label, source, known_name = 'TRADABLE', '', None, None
     event = status_at(ctx, code, day)
