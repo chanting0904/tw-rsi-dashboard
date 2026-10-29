@@ -1,0 +1,34 @@
+name: One-time V5 data readiness audit
+on:
+  push:
+    branches: [codex/v5-readiness-20261029]
+permissions:
+  contents: read
+jobs:
+  data_readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: pip install -q -r requirements.txt
+      - name: Read market inputs without publishing or sending Telegram
+        env:
+          FINLAB_TOKEN: ${{ secrets.FINLAB_TOKEN }}
+        run: |
+          python -u - <<'PY'
+          import json
+          from pathlib import Path
+          from v5_engine.market import load_market
+          from v5_engine.config import StrategyConfig
+          from finlab import data
+          try:
+              context=load_market(StrategyConfig(), Path.cwd(), live_rebalance='2026-10-30')
+              print('V5_READINESS_RESULT',json.dumps({'ok':True,'signal_date':str(context.signal_day),'rebalance_date':str(context.live_day),'securities':len(context.close.columns),'share_delivery_status':context.share_delivery_status},ensure_ascii=False,default=str))
+          except Exception as error:
+              print('V5_READINESS_RESULT',json.dumps({'ok':False,'error':type(error).__name__+': '+str(error)},ensure_ascii=False))
+              raise
+          PY
