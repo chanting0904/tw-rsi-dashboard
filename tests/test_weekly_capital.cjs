@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 globalThis.previewAllocation=require('../capital_preview.js').previewAllocation;
 const {weeklyCapitalPlan}=require('../weekly_capital.js');
-function action(code,shares,weight=.475,action='HOLD',price=100){return {stock_code:code,stock_name:code,channel:'A',rank:1,action,allocation_eligible:action!=='SELL',post_shares:shares,current_shares:shares,target_weight:weight,post_weight:weight,strategy_target_weight:weight,price};}
+function action(code,shares,weight=.474,action='HOLD',price=100){return {stock_code:code,stock_name:code,channel:'A',rank:1,action,allocation_eligible:action!=='SELL',post_shares:shares,current_shares:shares,target_weight:weight,post_weight:weight,strategy_target_weight:weight,price};}
 function fixture(){const actions=[action('1101',474),action('1102',474)];return {previous:{rebalance_date:'2026-10-08',actions},current:{rebalance_date:'2026-10-16',actions:structuredClone(actions)},previousCapital:100000,capital:100000,quotes:{1101:{price:100,tradable:true},1102:{price:100,tradable:true}}};}
 function check(p){assert.ok(p.withinBudget);assert.ok(p.exposure<=.9500000001);assert.ok(p.cash>=-1e-7);assert.ok(Math.abs(p.invested+p.fees+p.cash-p.capital)<1e-6);assert.ok(p.rows.every(r=>Number.isSafeInteger(r.target)&&r.target>=0));assert.ok(p.rows.filter(r=>!r.tradable).every(r=>r.current===r.target));}
 test('same capital does not rebalance every retained holding',()=>{const p=weeklyCapitalPlan(fixture());check(p);assert.ok(p.rows.every(r=>r.side==='HOLD'));assert.equal(p.fees,0);});

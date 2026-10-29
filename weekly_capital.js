@@ -2,7 +2,7 @@
 (function(root){
   'use strict';
   const validCapital=n=>Number.isFinite(n)&&n>=10000&&n<=1e12;
-  function weeklyCapitalPlan({previous,current,previousCapital,capital,quotes={},snapshot=null,reservedAssets=null,simulation=false,adjustmentsApplied=false}){
+  function weeklyCapitalPlan({previous,current,previousCapital,capital,quotes={},snapshot=null,reservedAssets=null,simulation=false,adjustmentsApplied=false,adjustmentReference=null}){
     if(!(simulation?Number.isFinite(previousCapital)&&previousCapital>0&&previousCapital<=1e12:validCapital(previousCapital))||!(simulation?Number.isFinite(capital)&&capital>0&&capital<=1e12:validCapital(capital)))throw Error('上週及本週總資金都須為10,000元至1兆元。');
     if(!previous||!current||previous.rebalance_date>=current.rebalance_date)throw Error('缺少有效的上週模型資料，暫不產生下單清單。');
     if(reservedAssets===null)reservedAssets=Number(current.receivables||0)*capital/Number(current.capital_basis||current.portfolio_value||capital);
@@ -11,7 +11,6 @@
     if(![rate,min,tax].every(x=>Number.isFinite(x)&&x>=0)||rate>=1||tax>=1)throw Error('費用資料無效。');
     const fee=(amount,sell=false)=>amount>0?Math.max(min,amount*rate)+(sell?amount*tax:0):0;
     const before=(previous.actions||[]).filter(a=>a.allocation_eligible!==false&&a.action!=='SELL'&&a.post_shares>0);
-    const priorTargets=before.map(a=>({code:a.stock_code,price:a.price,target_weight:a.post_weight??a.target_weight,channel:a.channel}));
     let source='reconstructed',held={};
     if(snapshot){
       if(snapshot.schema!==1||snapshot.rebalance_date!==previous.rebalance_date||snapshot.capital!==previousCapital||!Array.isArray(snapshot.holdings))throw Error('上週儲存試算與輸入不符。');
@@ -19,11 +18,21 @@
       for(const h of snapshot.holdings){if(!known.has(h.code)||Object.hasOwn(held,h.code)||!Number.isSafeInteger(h.shares)||h.shares<0)throw Error('上週儲存股數無效，請清除試算紀錄後重算。');held[h.code]=h.shares;}
       source='saved';
     }else{
-      const reconstructed=root.previewAllocation(priorTargets,previousCapital,previous.buy_fee??rate,previous.minimum_commission??min);
-      if(reconstructed.missing.length)throw Error('上週模型缺少股價，無法推算上週股數。');
-      held=reconstructed.quantities;
+      // Restore existing shares; do not allocate their historical cash again.
+      let totalWeight=0;
+      for(const a of before){
+        const code=a.stock_code,weight=Number(a.post_weight??a.target_weight),price=Number(a.price);
+        if(Object.hasOwn(held,code)||!Number.isFinite(weight)||weight<0||weight>1)throw Error('上週模型配置權重無效。');
+        if(weight>0&&(!(price>0)||!Number.isFinite(price)))throw Error('上週模型缺少股價，無法推算上週股數。');
+        const shares=weight>0?Math.floor(previousCapital*weight/price+1e-8):0;
+        if(!Number.isSafeInteger(shares))throw Error('上週股數超過安全整數範圍。');
+        held[code]=shares;totalWeight+=weight;
+      }
+      if(totalWeight>1+1e-9)throw Error('上週模型配置權重超過100%。');
     }
-    const prior=new Map((previous.actions||[]).filter(a=>a.post_shares>0).map(a=>[a.stock_code,a]));
+    const corporatePrevious=adjustmentReference||previous;
+    if(corporatePrevious.rebalance_date!==previous.rebalance_date)throw Error('配股及拆併股銜接日期不一致。');
+    const prior=new Map((corporatePrevious.actions||[]).filter(a=>a.post_shares>0).map(a=>[a.stock_code,a]));
     const actions=new Map();
     for(const a of current.actions||[]){if(actions.has(a.stock_code))throw Error('本週模型股票代號重複。');actions.set(a.stock_code,a);}
     const writtenOff=new Set((current.restricted_assets||[]).filter(a=>a.policy==='zero'&&a.book_value===0).map(a=>String(a.code)));
@@ -37,7 +46,7 @@
         if(!Number.isSafeInteger(x.shares)||x.shares<0)throw Error('待領配股股數無效。');
         if(!currentPending.has(pendingKey(x))&&(releaseKeys.has(pendingKey(x))||(x.tradable_date&&x.tradable_date<=current.rebalance_date))){
           released[x.code]=(released[x.code]||0)+x.shares;
-          const m=(previous.pending_assets||[]).find(y=>pendingKey(y)===pendingKey(x));
+          const m=(corporatePrevious.pending_assets||[]).find(y=>pendingKey(y)===pendingKey(x));
           modelReleased[x.code]=(modelReleased[x.code]||0)+Number(m?.shares||0);
         }
       }
