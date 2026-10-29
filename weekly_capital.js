@@ -33,7 +33,11 @@
       if(totalWeight>1+1e-9)throw Error('上週模型配置權重超過100%。');
     }
     const corporatePrevious=adjustmentReference||previous;
-    if(corporatePrevious.rebalance_date!==previous.rebalance_date)throw Error('配股及拆併股銜接日期不一致。');
+    if(corporatePrevious.rebalance_date!==previous.rebalance_date){
+      const weekStart=date=>{const time=Date.parse(date+'T00:00:00Z');if(!Number.isFinite(time)||new Date(time).toISOString().slice(0,10)!==date)return NaN;return time-((new Date(time).getUTCDay()+6)%7)*86400000;};
+      const mapped=corporatePrevious.published_reference_date===previous.rebalance_date&&corporatePrevious.reference_reason==='NO_OFFICIAL_QUOTES_ON_PUBLISHED_DATE'&&corporatePrevious.rebalance_date<previous.rebalance_date&&weekStart(corporatePrevious.rebalance_date)===weekStart(previous.rebalance_date);
+      if(!mapped)throw Error('配股及拆併股銜接日期不一致。');
+    }
     const prior=new Map((corporatePrevious.actions||[]).filter(a=>a.post_shares>0).map(a=>[a.stock_code,a]));
     const actions=new Map();
     for(const a of current.actions||[]){if(actions.has(a.stock_code))throw Error('本週模型股票代號重複。');actions.set(a.stock_code,a);}

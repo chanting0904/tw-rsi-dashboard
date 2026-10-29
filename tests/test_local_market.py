@@ -7,6 +7,8 @@ import tempfile
 import unittest
 import zlib
 import hashlib
+from unittest.mock import patch
+from sync_market import update_financials
 
 import pandas as pd
 
@@ -16,6 +18,34 @@ from v5_engine.official_sources import date_string, quarter_roe, quote_rows
 
 
 class OfficialInputTests(unittest.TestCase):
+    def test_current_quarter_refreshes_and_revisions_do_not_rewrite_old_observations(self):
+        def html(kind, profit):
+            fields = ['公司代號', '本期淨利（淨損）'] if kind == 'income' else ['公司代號', '權益總計', '股本']
+            values = ['2330', str(profit)] if kind == 'income' else ['2330', '1000', '100']
+            return ('<table><tr>'+''.join('<th>'+x+'</th>' for x in fields)+'</tr><tr>'+''.join('<td>'+x+'</td>' for x in values)+'</tr></table>').encode()
+        with tempfile.TemporaryDirectory() as folder:
+            store=MarketStore(folder)
+            store._frames['price:收盤價']=pd.DataFrame({'2330':[1.]},index=pd.to_datetime(['2026-10-22']))
+            store._frames['company_basic_info']=pd.DataFrame([{'stock_id':'2330','公司名稱':'測試公司'}])
+            for market in ['sii','otc']:
+                for quarter in [1,2]:
+                    for kind in ['income','balance']:
+                        store.save_document(f'financial:{market}:2026Q{quarter}:{kind}','2026-10-28T21:00:00+08:00','test',html(kind,100 if quarter==1 else 140))
+            requests=[]
+            def getter(url,params,post):
+                requests.append(url)
+                return html('income' if 't163sb04' in url else 'balance',150)
+            def financial(name):
+                return pd.DataFrame({'2330':[4. if name.startswith('fundamental') else 100.]},index=pd.to_datetime(['2026-08-14']))
+            with patch.object(store,'financial',side_effect=financial):
+                update_financials(store,folder,'2026-10-29','2026-10-29T21:00:00+08:00',getter,{})
+                self.assertEqual(len(requests),4)
+                self.assertEqual(store.db.execute("SELECT day,value FROM values_by_date WHERE dataset='fundamental_features:ROE稅後'").fetchone(),('2026-10-29',5.))
+                requests.clear()
+                update_financials(store,folder,'2026-10-29','2026-10-29T21:05:00+08:00',getter,{})
+                self.assertEqual(requests,[])
+            store.close()
+
     def test_historical_stock_name_labels_normalize_before_matching_actions(self):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / 'local_db'

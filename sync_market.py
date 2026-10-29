@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 import datetime as dt
 import hashlib
 import json
+import zlib
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -124,9 +125,22 @@ def refresh(root=ROOT, through=None, *, getter=fetch):
             actions = list(pool.map(lambda x: request(*x), jobs))
 
         with store.db:
+            prior_receipt = store.db.execute('SELECT body FROM receipts ORDER BY day DESC LIMIT 1').fetchone()
+            no_quote_days = set(json.loads(prior_receipt[0]).get('no_quote_days', [])) if prior_receipt else set()
+            if prior_receipt and 'no_quote_days' not in json.loads(prior_receipt[0]):
+                for identity, body in store.db.execute("SELECT identity,body FROM documents WHERE identity LIKE '%:TWSE'"):
+                    if len(identity) != 15:
+                        continue
+                    other = store.db.execute('SELECT body FROM documents WHERE identity=?', (identity[:10] + ':TPEx',)).fetchone()
+                    if other and not tables(json.loads(zlib.decompress(body))) and not any(t.get('data') for t in tables(json.loads(zlib.decompress(other[0])))):
+                        no_quote_days.add(identity[:10])
             for response in quotes:
                 keep(response)
             for day, markets in batches.items():
+                if not markets['TWSE'] and not markets['TPEx']:
+                    no_quote_days.add(day)
+                else:
+                    no_quote_days.discard(day)
                 for market, rows in markets.items():
                     store.db.executemany('INSERT OR REPLACE INTO bars VALUES(?,?,?,?,?,?,?,?)',
                         [(*row, market) for row in rows])
@@ -144,6 +158,7 @@ def refresh(root=ROOT, through=None, *, getter=fetch):
                     save_references(store, json.loads(body), identity, source, cutoff, through)
             update_financials(store, root, through, checked_at, getter, receipt)
             receipt.update(status='PASS', latest_price_date=through,
+                no_quote_days=sorted(no_quote_days),
                 market_rows=store.db.execute('SELECT COUNT(*) FROM bars WHERE day=?', (through,)).fetchone()[0])
             store.db.execute('INSERT OR REPLACE INTO receipts VALUES(?,?)', (through, json.dumps(receipt, ensure_ascii=False)))
         write_json(Path(root) / 'output/data_status.json', receipt)
@@ -192,14 +207,16 @@ def update_financials(store, root, through, checked_at, getter, receipt):
     periods = [(year, quarter), (prior_year, prior_quarter)]
     frames = {}
     companies = {str(r['stock_id']): r for r in store.base('company_basic_info').to_dict('records')}
+    latest_values = {(name, code): value for name, code, value in store.db.execute('SELECT dataset,code,value FROM values_by_date ORDER BY day')}
+    baseline_values = {name: store.financial(name).ffill().iloc[-1] for name in ('fundamental_features:ROE稅後', 'financial_statement:股本')}
     for market in ['sii', 'otc']:
         for y, q in periods:
             for kind in ['income', 'balance']:
                 key = f'financial:{market}:{y}Q{q}:{kind}'
-                saved = store.db.execute('SELECT body FROM documents WHERE identity=?', (key,)).fetchone()
-                if saved:
-                    import zlib
-                    body = zlib.decompress(saved[0])
+                saved = store.db.execute('SELECT checked_at,body FROM documents WHERE identity=?', (key,)).fetchone()
+                age = (dt.datetime.fromisoformat(checked_at) - dt.datetime.fromisoformat(saved[0])).total_seconds() if saved else None
+                if saved and ((y, q) != (year, quarter) or 0 <= age < 21600):
+                    body = zlib.decompress(saved[1])
                 else:
                     source = MOPS + ('t163sb04' if kind == 'income' else 't163sb05')
                     body = getter(source, {'step': '1', 'firstin': '1', 'off': '1', 'isQuery': 'Y',
@@ -214,7 +231,7 @@ def update_financials(store, root, through, checked_at, getter, receipt):
         prior_equity = frames[market, prior_year, prior_quarter, 'balance']
         for code, income in current.items():
             effective = financial_effective_date(companies.get(code, {}), year, quarter, load_holidays())
-            if not store.baseline_day < effective.isoformat() <= through:
+            if effective.isoformat() > through:
                 continue
             cap = financial_value(equity.get(code, {}), 'capital')
             roe = quarter_roe(financial_value(income, 'profit'), financial_value(old.get(code, {}), 'profit'),
@@ -222,8 +239,14 @@ def update_financials(store, root, through, checked_at, getter, receipt):
             if roe is None or cap is None:
                 continue
             for name, value in [('fundamental_features:ROE稅後', roe), ('financial_statement:股本', cap)]:
+                old_value = latest_values.get((name, code), baseline_values[name].get(code))
+                if old_value is not None and pd.notna(old_value) and abs(float(old_value) - value) < 1e-10:
+                    continue
+                observed = max(effective.isoformat(), checked_at[:10])
+                if observed <= store.baseline_day:
+                    continue
                 store.db.execute('INSERT OR REPLACE INTO values_by_date VALUES(?,?,?,?,?)',
-                    (name, effective.isoformat(), code, value, MOPS))
+                    (name, observed, code, value, MOPS))
     receipt['financial_period'] = f'{year}Q{quarter}'
 
 
