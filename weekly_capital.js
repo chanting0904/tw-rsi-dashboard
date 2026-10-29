@@ -19,12 +19,14 @@
       source='saved';
     }else{
       // Restore existing shares; do not allocate their historical cash again.
+      const publishedCapital=previous.capital_basis;
+      if(publishedCapital!==undefined&&(!Number.isFinite(publishedCapital)||publishedCapital<=0))throw Error('上週公布本金基準無效。');
       let totalWeight=0;
       for(const a of before){
         const code=a.stock_code,weight=Number(a.post_weight??a.target_weight),price=Number(a.price);
         if(Object.hasOwn(held,code)||!Number.isFinite(weight)||weight<0||weight>1)throw Error('上週模型配置權重無效。');
         if(weight>0&&(!(price>0)||!Number.isFinite(price)))throw Error('上週模型缺少股價，無法推算上週股數。');
-        const shares=weight>0?Math.floor(previousCapital*weight/price+1e-8):0;
+        const shares=Math.floor((publishedCapital!==undefined?previousCapital*a.post_shares/publishedCapital:(weight>0?previousCapital*weight/price:0))+1e-8);
         if(!Number.isSafeInteger(shares))throw Error('上週股數超過安全整數範圍。');
         held[code]=shares;totalWeight+=weight;
       }
