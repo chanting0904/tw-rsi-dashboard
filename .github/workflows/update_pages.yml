@@ -91,7 +91,7 @@ jobs:
           (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
           && steps.recovery.outputs.mode != 'skip' && steps.recovery.outputs.mode != 'publish'
         run: python retry_runner.py -- python sync_market.py
-      - name: 更新收盤股價（官方源→FinLab→yfinance；每日 06:00 補昨日收盤）
+      - name: 更新收盤股價（官方源→本地資料庫→yfinance；每日 06:00 補昨日收盤）
         if: >
           (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
           && steps.recovery.outputs.mode != 'skip' && steps.recovery.outputs.mode != 'publish'
