@@ -37,7 +37,7 @@
         if(!list.length){const empty=document.createElement('p');empty.className='group-empty';empty.textContent='本週沒有這類操作';box.appendChild(empty);rootTable.appendChild(box);continue;}
         const table=document.createElement('table'),head=table.createTHead().insertRow();for(const text of ['股票','本次下單','原有 → 調整後','原因']){const th=document.createElement('th');th.textContent=text;head.appendChild(th);}
         const body=table.createTBody();
-        for(const r of list){const tr=body.insertRow(),stock=tr.insertCell(),code=document.createElement('span'),name=document.createElement('strong');code.className='stock-code';code.textContent=r.code;name.className='stock-name';name.textContent=r.name;stock.append(code,name);
+        for(const r of list){const tr=body.insertRow(),stock=tr.insertCell(),code=document.createElement('span'),name=document.createElement('strong');if(r.side==='SELL'&&r.target>0)tr.className='is-reduction';code.className='stock-code';code.textContent=r.code;name.className='stock-name';name.textContent=r.name;stock.append(code,name);
           const quantity=tr.insertCell(),number=document.createElement('strong'),label=document.createElement('small');quantity.className='order-quantity';number.textContent=r.side==='HOLD'?'—':Math.abs(r.change)+' 股';label.textContent=r.side==='BUY'?(r.current?'加碼':'新買'):r.side==='SELL'?(r.target?'減碼':'賣出'):'不用動';quantity.append(number,label);
           const bridge=tr.insertCell();bridge.className='share-bridge';bridge.textContent=r.current+' → '+r.target+' 股';
           const reason=tr.insertCell(),details=document.createElement('details'),summary=document.createElement('summary'),text=document.createElement('p');details.className='row-reason';summary.textContent='查看';text.textContent=r.reason;details.append(summary,text);reason.appendChild(details);
@@ -63,7 +63,7 @@
         const rows=[...plan.rows].filter(r=>r.current||r.target).sort((a,b)=>a.code.localeCompare(b.code));
         renderGroupedRows(rows);
         renderOverview(plan,rows);$('weekly-capital-summary').textContent='';
-        $('weekly-capital-basis').textContent='上週基準 '+plan.previousDate+' → 本週 '+plan.date+'；'+(plan.source==='saved'?'沿用本瀏覽器已儲存的上週訊號基準股數。':(entry?'舊試算不符目前基準，已重新還原。':'')+'依上週公布股數與原本金基準，按你輸入的上週資金還原原有股數，不重新補滿倉位。')+' 本週行情只用於估值與本週調整；下週承接紀錄採本週訊號基準價，日常報價不會改寫上週股數。這是理論持股，未連接券商庫存。';
+        $('weekly-capital-basis').textContent='上週基準 '+plan.previousDate+' → 本週 '+plan.date+'；'+(plan.source==='saved'?'沿用本瀏覽器已儲存的上週訊號基準股數。':(entry?'舊試算不符目前基準，已重新還原。':'')+'依上週公布股數與原本金基準，按你輸入的上週資金還原原有股數，不重新補滿倉位。')+' 本週行情只用於估值與本週調整；下週承接紀錄採本週訊號基準價，日常報價不會改寫上週股數。這是理論持股，未連接券商庫存；有未成交或實際股數不同，請在下方輸入完整實際持股，重新核對下單股數。';
         $('weekly-capital-error').textContent='';$('weekly-capital-results').hidden=false;
         saved[plan.date]={...anchor.snapshot,price_policy:pricePolicy,signal_basis:snapshotBasis(current)};
         saved=Object.fromEntries(Object.entries(saved).sort(([a],[b])=>a.localeCompare(b)).slice(-6));
@@ -77,7 +77,7 @@
     $('weekly-capital-clear').addEventListener('click',()=>{saved={};try{localStorage.removeItem(key);}catch(_){}invalidate();$('weekly-capital-error').textContent='已清除理論股數紀錄；下次依上週模型重新推算。';});
     $('weekly-capital-copy').addEventListener('click',async()=>{
       if(!plan)return;
-      const lines=plan.rows.filter(r=>r.change).sort((a,b)=>(a.side==='SELL'?0:1)-(b.side==='SELL'?0:1)||a.code.localeCompare(b.code)).map(r=>r.code+' '+r.name+' '+(r.side==='BUY'?'買進':'賣出')+' '+Math.abs(r.change)+' 股');
+      const lines=plan.rows.filter(r=>r.change).sort((a,b)=>(a.side==='SELL'?0:1)-(b.side==='SELL'?0:1)||a.code.localeCompare(b.code)).map(r=>r.code+' '+r.name+' '+(r.side==='BUY'?'買進':r.target>0?'減碼':'賣出')+' '+Math.abs(r.change)+' 股');
       try{await navigator.clipboard.writeText('理論調倉 '+plan.date+'｜上週 '+plan.previousCapital+' 元｜本週 '+plan.capital+' 元\n'+(lines.join('\n')||'本週不用買賣'));$('weekly-capital-copy-note').textContent='已複製';}catch(_){$('weekly-capital-copy-note').textContent='無法複製，請參考下表。';}
     });
     return {validateFreshness:()=>{if(plan&&!isReady()){invalidate();$('weekly-capital-error').textContent='本週訊號狀態已改變，舊清單已隱藏；請等待確認後重新計算。';}},getTargets:()=>plan?plan.rows.map(r=>({code:r.code,name:r.name,quantity:r.target})):null};

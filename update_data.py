@@ -354,16 +354,16 @@ __DASHBOARD_CSS__
 
   </section>
 
-  <section class="orders-panel"><div class="orders-heading"><h2>本週買賣清單</h2><span>粗體數字＝這次下單的股數</span></div><div id="weekly-capital-error" class="note" role="status">請輸入兩週總資金，再按「計算本週買賣」。</div><div id="weekly-capital-results" hidden><div id="weekly-capital-summary" class="note"></div><div id="weekly-capital-basis" class="note basis-note"></div><div class="orders-actions"><button id="weekly-capital-copy" class="ghost">複製買賣清單</button><span id="weekly-capital-copy-note" class="note"></span></div><div id="weekly-capital-table"></div></div><button id="weekly-capital-clear" class="ghost clear-records">清除理論股數紀錄</button></section>
+  <section class="orders-panel"><div class="orders-heading"><h2>本週理論買賣清單</h2><span>琥珀色為減碼，綠色為全部賣出</span></div><div id="weekly-capital-error" class="note" role="status">請輸入兩週總資金，再按「計算本週買賣」。</div><div id="weekly-capital-results" hidden><div id="weekly-capital-summary" class="note"></div><div id="weekly-capital-basis" class="note basis-note"></div><div class="orders-actions"><button id="weekly-capital-copy" class="ghost">複製買賣清單</button><span id="weekly-capital-copy-note" class="note"></span></div><div id="weekly-capital-table"></div></div><button id="weekly-capital-clear" class="ghost clear-records">清除理論股數紀錄</button></section>
   <section>
-    <details id="order-planner"><summary style="cursor:pointer;font-weight:700">🧾 算這次要買賣幾股／檢查委託資金（選用）</summary>
+    <details id="order-planner"><summary style="cursor:pointer;font-weight:700">🧾 有未成交或股數不同？輸入實際持股核對買賣（選用）</summary>
       <div class="note">每行輸入「股票代號 股數」，例如 2033 100；單位是股，不是張。目前沒有持股請填「空手」。<b>請輸入完整、已可交易的持股；待領配股不要算入。</b>內容不會上傳或寫回模擬持倉。</div>
       <label for="order-holdings">當次持股</label><textarea id="order-holdings" class="order-input" placeholder="2330 10&#10;2317 20"></textarea>
       <div class="order-controls">
         <label for="order-mode">委託價格</label><select id="order-mode"><option value="stress">買進＋10%／賣出－10%估算</option><option value="reference">依頁面基準行情</option></select>
         <button id="order-calc">計算買賣差額</button><button id="order-clear" class="ghost">清除當次資料</button>
       </div>
-      <div class="note">目標股數沿用上方總資金試算；下表的委託價可逐檔修改。±10%只是資金壓力試算，<b>不是當日官方漲跌停價，也不保證成交</b>；除權息等情況會改變基準。掛單請以券商顯示的有效價格為準。<br>行情及交易狀態都有各自基準日，委託前請再確認當日狀態。只依上方輸入的總資金核對整份調倉是否超支，不需另填現金。請先完成上方兩週總資金計算；此處只核對同一份目標與實際持股，不另外產生另一組配置。資金檢查以清單全數成交為前提。</div>
+    <div class="note"><b>如果有未成交，或實際股數與理論不同，請輸入全部券商持股；這裡會用實際股數計算買賣差額。</b><br>目標股數沿用上方總資金試算；下表的委託價可逐檔修改。±10%只是資金壓力試算，<b>不是當日官方漲跌停價，也不保證成交</b>；除權息等情況會改變基準。掛單請以券商顯示的有效價格為準。<br>行情及交易狀態都有各自基準日，委託前請再確認當日狀態。只依上方輸入的總資金核對整份調倉是否超支，不需另填現金。請先完成上方兩週總資金計算；此處只核對同一份目標與實際持股，不另外產生另一組配置。資金檢查以清單全數成交為前提。</div>
       <div id="order-error" class="note" role="alert"></div>
       <div id="order-results" hidden><div id="order-summary" class="note" role="status"></div><div class="order-controls"><button id="order-copy" class="ghost">複製買賣清單</button><span id="order-copy-note" class="note"></span></div><div style="overflow-x:auto"><table id="order-table"></table></div></div>
     </details>

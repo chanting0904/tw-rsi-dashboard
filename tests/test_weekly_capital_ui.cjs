@@ -1,13 +1,20 @@
 const test=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
 function fixture({ready=true,blockedStorage=false}={}){
- const elements={},make=()=>({value:'',textContent:'',hidden:false,listeners:{},addEventListener(k,v){this.listeners[k]=v;},replaceChildren(){},createTHead(){return this;},createTBody(){return this;},insertRow(){return this;},insertCell(){return make();},appendChild(){},append(){}});
+ const elements={},created=[],make=()=>{const node={value:'',textContent:'',hidden:false,className:'',children:[],listeners:{},addEventListener(k,v){this.listeners[k]=v;},replaceChildren(){this.children=[];},createTHead(){const child=make();this.children.push(child);return child;},createTBody(){const child=make();this.children.push(child);return child;},insertRow(){const child=make();this.children.push(child);return child;},insertCell(){const child=make();this.children.push(child);return child;},appendChild(child){this.children.push(child);},append(...children){this.children.push(...children);}};created.push(node);return node;};
  const $=id=>elements[id]??=(make()),calls=[];let stored=null;
  const result={withinBudget:true,bandReached:true,rows:[{code:'1101',name:'fixture',current:10,target:10,change:0,side:'HOLD',reason:'續抱不動'}],invested:94000,cash:6000,fees:0,exposure:.94,previousDate:'2026-10-08',date:'2026-10-16',source:'reconstructed',snapshot:{schema:1,rebalance_date:'2026-10-16',capital:100000,holdings:[{code:'1101',shares:10}]}};
  const scope={document:{getElementById:$,createElement:make},localStorage:{getItem(){if(blockedStorage)throw Error('blocked');return stored;},setItem(k,v){if(blockedStorage)throw Error('blocked');stored=v;},removeItem(){stored=null;}},weeklyCapitalPlan(args){calls.push(args);if(!args.capital||!args.previousCapital)throw Error('兩個金額都必填');return result;},navigator:{clipboard:{writeText:async()=>{}}}};
  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../weekly_capital_ui.js'),'utf8'),scope);
  const api=scope.initWeeklyCapital({data:{sig_validated:true,previous_capital_signal:{rebalance_date:'2026-10-08'},capital_signal:{}},money:String,isReady:()=>ready});
- return {$,api,calls,result,setReady:v=>ready=v,stored:()=>stored,click:()=>$.call(null,'cap-apply').listeners.click()};
+ return {$,api,calls,result,created,setReady:v=>ready=v,stored:()=>stored,click:()=>$.call(null,'cap-apply').listeners.click()};
 }
+test('partial sells have a distinct visual marker while exits do not',()=>{const f=fixture();f.result.rows=[
+ {code:'6214',name:'精誠',current:26,target:12,change:-14,side:'SELL',reason:'減碼'},
+ {code:'6672',name:'騰輝電子',current:7,target:0,change:-7,side:'SELL',reason:'退出'}];
+ f.$('cap-previous').value=f.$('cap').value='100000';f.click();
+ const marked=f.created.filter(n=>n.className==='is-reduction');assert.equal(marked.length,1);
+ assert.equal(marked[0].children[0].children[0].textContent,'6214');
+});
 test('both manual fields are required without falling back to a hidden default',()=>{const f=fixture();f.$('cap-previous').value='100000';f.click();assert.equal(f.api.getTargets(),null);assert.match(f.$('weekly-capital-error').textContent,/必填/);assert.equal(f.stored(),null);});
 test('valid manual fields produce targets and save only the theoretical snapshot',()=>{const f=fixture();f.$('cap-previous').value='100000';f.$('cap').value='150000';f.click();assert.equal(f.calls[0].previousCapital,100000);assert.equal(f.calls[0].capital,150000);assert.equal(f.api.getTargets()[0].quantity,10);assert.ok(f.stored());});
 test('editing either amount invalidates the old order list immediately',()=>{const f=fixture();f.$('cap-previous').value=f.$('cap').value='100000';f.click();f.$('cap-previous').listeners.input();assert.equal(f.api.getTargets(),null);assert.equal(f.$('weekly-capital-results').hidden,true);});

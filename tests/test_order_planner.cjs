@@ -17,6 +17,11 @@ test('differences use personal holdings, never model trade labels',()=>{
  assert.deepEqual(r.rows.map(x=>[x.code,x.side,x.change]),[['1303','SELL',-6],['2033','SELL',-15],['2892','SELL',-80]]);
  assert.equal(r.rows.find(x=>x.code==='2892').target,0);
 });
+test('a full exit uses all eight actual shares even when the model held seven',()=>{
+ const r=planOrders({targets:[{code:'6672',name:'騰輝電子-KY',quantity:0}],holdings:parseHoldings('6672 8'),
+  quotes:{'6672':{price:566,tradable:true}},capital:100810,stress:false});
+ assert.deepEqual([r.rows[0].current,r.rows[0].target,r.rows[0].change,r.rows[0].side],[8,0,-8,'SELL']);
+});
 test('one commission minimum per actual delta; sales include stock tax',()=>{
  const r=planOrders({targets:[{code:'2033',quantity:2}],holdings:parseHoldings('2033 1\n2892 1'),quotes,stress:false});
  assert.equal(r.buyCost,60.8);assert.equal(r.sellNet,41.4-1-41.4*.003);

@@ -3,7 +3,7 @@
   root.initOrderPlanner=function({data,getTargets,getCapital,money}){
     const $=id=>document.getElementById(id);
     let holdings=null,prices={},lastSides={};
-    const sideLabel={BUY:'買進',SELL:'賣出',HOLD:'不用動'};
+    const sideLabel=row=>row.side==='SELL'&&row.target>0?'減碼':{BUY:'買進',SELL:'賣出',HOLD:'不用動'}[row.side];
     function render(){
       if(holdings===null)return;
       try{
@@ -20,8 +20,8 @@
         const body=table.createTBody();
         const sorted=plan.rows.filter(r=>r.current||r.target).sort((a,b)=>({SELL:0,BUY:1,HOLD:2}[a.side]-{SELL:0,BUY:1,HOLD:2}[b.side])||a.code.localeCompare(b.code));
         for(const row of sorted){
-          const tr=body.insertRow();tr.insertCell().textContent=row.code+' '+row.name;
-          tr.insertCell().textContent=sideLabel[row.side];tr.insertCell().textContent=Math.abs(row.change)+' 股';
+          const tr=body.insertRow();if(row.side==='SELL'&&row.target>0)tr.className='is-reduction';tr.insertCell().textContent=row.code+' '+row.name;
+          tr.insertCell().textContent=sideLabel(row);tr.insertCell().textContent=Math.abs(row.change)+' 股';
           tr.insertCell().textContent=row.current+' → '+row.target;
           const cell=tr.insertCell();
           if(row.side!=='HOLD'){
@@ -45,7 +45,7 @@
         $('order-error').textContent='';$('order-results').hidden=false;
         $('order-copy').onclick=async()=>{
           const text='總資金 '+getCapital()+' 元｜'+data.release_version+'｜目標基準 '+data.rebal_date+'\n'+
-            sorted.map(r=>r.code+' '+r.name+' '+sideLabel[r.side]+' '+Math.abs(r.change)+' 股'+(r.issues.length?'（'+r.issues.join('；')+'）':'')).join('\n');
+            sorted.map(r=>r.code+' '+r.name+' '+sideLabel(r)+' '+Math.abs(r.change)+' 股'+(r.issues.length?'（'+r.issues.join('；')+'）':'')).join('\n');
           try{await navigator.clipboard.writeText(text);$('order-copy-note').textContent='已複製';}catch(_){$('order-copy-note').textContent='無法複製，請直接參考下表。';}
         };
       }catch(error){$('order-error').textContent=error.message;$('order-results').hidden=true;}
