@@ -2,13 +2,13 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const source=fs.readFileSync(path.join(__dirname,'../update_data.py'),'utf8').replaceAll('\r\n','\n');
 function functionSource(name){const start=source.indexOf('function '+name+'('),end=source.indexOf('\n}\n',start);assert.ok(start>=0&&end>start);return source.slice(start,end+2);}
 function elements(){const values={};return {values,$:id=>(values[id]??={textContent:''})};}
-test('missing chart library preserves performance text and does not abort later UI setup',()=>{
+test('static full-period labels do not require a chart library',()=>{
  const e=elements(),scope={...e,DATA:{perf:{cagr:.4,mdd:-.3,final_nav:100,start_capital:100,nav:[['2026-10-16',100]],completed_through:'2026-10-16'}},P:String,M:String,F:String};
- vm.runInNewContext(functionSource('renderCharts')+';renderCharts();',scope);assert.equal(e.values['p-cagr'].textContent,'0.4');assert.match(e.values['chart-nav'].textContent,/股數試算仍可使用/);
+ vm.runInNewContext(functionSource('renderCharts')+';renderCharts();',scope);assert.equal(e.values['p-cagr'].textContent,'0.4');assert.equal(e.values['p-mdd'].textContent,'-0.3');assert.equal(e.values['p-nav'].textContent,'100');assert.equal(e.values['chart-nav'],undefined);
 });
-test('chart rendering exceptions are isolated from the rest of the page',()=>{
+test('static labels never invoke the independently managed interactive chart renderer',()=>{
  const e=elements(),scope={...e,DATA:{perf:{}},P:String,M:String,F:String,echarts:{init(){throw Error('injected renderer failure');}}};
- assert.doesNotThrow(()=>vm.runInNewContext(functionSource('renderCharts')+';renderCharts();',scope));assert.match(e.values['chart-dd'].textContent,/圖表暫時/);
+ assert.doesNotThrow(()=>vm.runInNewContext(functionSource('renderCharts')+';renderCharts();',scope));assert.equal(e.values['chart-dd'],undefined);assert.equal(e.values['p-period'].textContent,'— ～ —');
 });
 test('blocked storage reads writes and resets keep the current calculation usable',()=>{
  const e=elements(),blocked=()=>{throw Error('storage denied');};const scope={...e,localStorage:{getItem:blocked,setItem:blocked,removeItem:blocked}};

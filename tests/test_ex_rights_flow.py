@@ -159,7 +159,7 @@ class ExRightsFlowTests(unittest.TestCase):
         root=Path(__file__).resolve().parents[1]
         with tempfile.TemporaryDirectory() as directory:
             temp=Path(directory);(temp/'output').mkdir()
-            for name in ['update_data.py','dashboard_ui.css','dashboard_ui.js','monthly_details.js','capital_preview.js','weekly_status.js','order_planner.js','order_planner_ui.js','weekly_capital.js','weekly_capital_ui.js']:
+            for name in ['update_data.py','dashboard_ui.css','dashboard_ui.js','monthly_details.js','performance_ui.js','capital_preview.js','weekly_status.js','order_planner.js','order_planner_ui.js','weekly_capital.js','weekly_capital_ui.js']:
                 (temp/name).write_bytes((root/name).read_bytes())
             (temp/'output/latest_signals.json').write_text(json.dumps(signal,ensure_ascii=False),encoding='utf-8')
             (temp/'output/prices.json').write_text(json.dumps({'px_date':'2026-01-08','prices':{'2400':100.}}),encoding='utf-8')
