@@ -65,7 +65,7 @@ class CapitalSignalArchiveTests(unittest.TestCase):
                 preserve_previous_capital_signal(self.output, self.current)
             self.assertEqual(archive.read_text(encoding='utf-8'), value)
 
-    def test_web_uses_published_prices_and_keeps_separate_corporate_reference(self):
+    def test_web_uses_verified_published_predecessor_and_rejects_mismatch(self):
         temp = self.output
         assets = ['update_data.py', 'dashboard_ui.css', 'dashboard_ui.js', 'monthly_details.js',
                   'performance_ui.js', 'capital_preview.js', 'weekly_status.js', 'order_planner.js',
@@ -81,6 +81,9 @@ class CapitalSignalArchiveTests(unittest.TestCase):
         model = json.loads(paths[-1].read_text(encoding='utf-8'))
         published = copy.deepcopy(model)
         published['actions'][0]['price'] = float(model['actions'][0]['price']) + 17
+        from v5_engine.jsonio import document_digest
+        current['predecessor_digest'] = document_digest(published)
+        write_json(temp / 'output/latest_signals.json', current)
         write_json(temp / 'output/history' / paths[-1].name, model)
         write_json(temp / 'output/previous_capital_signal.json', published)
         process = subprocess.run([sys.executable, '-B', '-X', 'utf8', str(temp / 'update_data.py')],
@@ -89,7 +92,14 @@ class CapitalSignalArchiveTests(unittest.TestCase):
         self.assertEqual(process.returncode, 0, process.stdout + process.stderr)
         data = embedded_data((temp / 'index.html').read_text(encoding='utf-8'))
         self.assertEqual(data['previous_capital_signal'], published)
-        self.assertEqual(data['previous_model_signal'], model)
+        self.assertEqual(data['previous_model_signal'], published)
+        published['actions'][0]['post_shares'] += 1
+        write_json(temp / 'output/previous_capital_signal.json', published)
+        process = subprocess.run([sys.executable, '-B', '-X', 'utf8', str(temp / 'update_data.py')],
+                                 env=dict(os.environ, V5_SKIP_LOCAL_UPDATE='1', PYTHONPATH=str(ROOT)),
+                                 capture_output=True, text=True, encoding='utf-8')
+        self.assertNotEqual(process.returncode, 0)
+        self.assertIn('本週訊號與上週已發布持股不一致', process.stderr)
 
 
 if __name__ == '__main__':

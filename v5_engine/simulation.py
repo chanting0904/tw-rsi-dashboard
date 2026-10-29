@@ -1,4 +1,5 @@
 """Pure cash/share simulation; no authentication or file writes on import."""
+import copy
 import pandas as pd
 from .execution import execute_week
 from .performance import summarize_simulation
@@ -29,10 +30,11 @@ def run_reference(ctx, weekday=5, mode='close', coefs=(1.5, 1.0, .5), start=None
     if seed is not None:
         from .live_model import restore_seed
         positions,cash,trades=restore_seed(seed,ledger)
-        pending=ledger.pending_assets(first_day,positions,ctx.valuation_close.loc[first_day],known_through=first_day)
+        opening_prices = pd.Series(seed['valuation_prices']) if 'valuation_prices' in seed else ctx.valuation_close.loc[first_day]
+        pending=ledger.pending_assets(first_day,positions,opening_prices,known_through=first_day)
         reserve=ledger.value+sum(asset['book_value'] for asset in pending)
-        stocks=sum((pos['shares']-pos.get('locked_shares',0))*float(ctx.valuation_close.at[first_day,c])
-                   for c,pos in positions.items() if pd.notna(ctx.valuation_close.at[first_day,c]) and ctx.valuation_close.at[first_day,c]>0)
+        stocks=sum((pos['shares']-pos.get('locked_shares',0))*float(opening_prices[c])
+                   for c,pos in positions.items() if pd.notna(opening_prices[c]) and opening_prices[c]>0)
         if abs(cash+stocks+reserve-seed['nav'])>1e-5:raise ValueError('Opening V4 model NAV does not reconcile')
         nav_hist.append(dict(date=first_day,nav=seed['nav'],cash=cash,stocks=stocks,receivables=reserve,
                              pending_stock_value=sum(asset['book_value'] for asset in pending)))
@@ -78,6 +80,9 @@ def run_reference(ctx, weekday=5, mode='close', coefs=(1.5, 1.0, .5), start=None
     result['corporate_action_audit'] = ledger.audit
     result['receivables'] = ledger.receivables
     result['pending_assets'] = ctx.share_entitlements
+    result['closing_state'] = dict(date=str(sessions[-1].date()), nav=nav_hist[-1]['nav'], cash=cash,
+        positions=copy.deepcopy(positions), receivables=copy.deepcopy(ledger.receivables), pending=copy.deepcopy(ledger.pending),
+        valuation_prices={code:float(ctx.valuation_close.at[sessions[-1],code]) for code in positions})
     return result
 
 

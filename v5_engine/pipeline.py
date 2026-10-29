@@ -86,10 +86,12 @@ def publish(ctx, output_dir, root, *, end=None, report_only=False):
         document = perf_document(result, ctx.config, anchor, ctx=ctx)
         write_json(output_dir / 'perf.json', document)
         return {'result': result, 'perf': document, 'report_only': True}
-    from .live_model import load_seed
-    seed=load_seed(root)
+    from .live_model import load_checkpoint, check_predecessor, checkpoint_document, validate_published_carry
+    cutoff = ctx.live_day if ctx.live_day is not None else ctx.close.index[-1]
+    seed=load_checkpoint(root, output_dir, cutoff)
     if seed is None:
         raise ValueError('缺少 V5 持倉銜接快照，停止發布，避免重建成不同持股')
+    check_predecessor(output_dir, seed, cutoff)
     seeded=seed is not None and ctx.close.index[-1]>pd.Timestamp(seed['date'])
     live_result = run_seeded(ctx,seed,coefs=V5_COEFFICIENTS,end=end,reference=reference) if seeded else (run(ctx, coefs=V5_COEFFICIENTS,reference=reference) if ctx.live_day is not None else result)
     plans, trades = live_result['weekly_plans'], live_result['trades_df']
@@ -100,6 +102,8 @@ def publish(ctx, output_dir, root, *, end=None, report_only=False):
     if not status or status.get('checked_for') != latest['date'].strftime('%Y-%m-%d'):
         raise ValueError('缺少本期官方交易狀態核對，停止發布')
     historical = [plan for plan in plans if ctx.live_day is None or plan['date'] != ctx.live_day][-20:]
+    if seeded and ctx.live_day is not None and historical:
+        raise ValueError('上次發布後有未保存的調倉週，停止以重算持股發布')
     checks, failures, warnings = validate_plans(ctx, historical[-19:] + [latest] if ctx.live_day is not None else historical, trades)
     valid = anchor_ok and not failures
     validation = {'strategy_version': STRATEGY_VERSION, 'release_version': RELEASE_VERSION, 'generated_at': datetime.datetime.now(ZoneInfo('Asia/Taipei')).isoformat(),
@@ -121,7 +125,11 @@ def publish(ctx, output_dir, root, *, end=None, report_only=False):
         write_json(output_dir / 'history' / (plan['date'].strftime('%Y-%m-%d') + '.json'), canonical_for(ctx, plan, trades, sha))
     document = perf_document(result, ctx.config, anchor, ctx=ctx)
     signal = canonical_for(ctx, latest, trades, sha)
-    if seeded:signal['live_model_origin']=live_result['live_model_origin']
+    if seeded:
+        signal['live_model_origin']=live_result['live_model_origin']
+        signal['predecessor_digest'] = seed['previous_signal_digest']
+        validate_published_carry(seed['previous_signal'], signal)
+        checkpoint = checkpoint_document(live_result, signal, seed)
     preserve_previous_capital_signal(output_dir, signal)
     validation['signal_digest']=document_digest(signal)
     validation['performance_digest']=document_digest(document)
@@ -129,5 +137,7 @@ def publish(ctx, output_dir, root, *, end=None, report_only=False):
     write_json(output_dir / 'corporate_actions.json', live_result.get('corporate_action_audit', []))
     write_json(output_dir / 'perf.json', document)
     write_json(output_dir / 'latest_signals.json', signal)
+    if seeded:
+        write_json(output_dir / 'live_checkpoints' / (signal['rebalance_date']+'.json'), checkpoint)
     print(f"validation PASS | date={signal['rebalance_date']} | exposure={signal['stock_exposure']:.2%}")
     return {'result': result, 'live_result': live_result, 'perf': document, 'signal': signal, 'validation': validation}
