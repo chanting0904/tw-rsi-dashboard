@@ -1,7 +1,8 @@
 name: 更新選股器網頁
 on:
   schedule:
-    - cron: '45 13 * * 1-5'   # 台北21:45；僅最後交易日前一交易日發布，休市自動提前
+    - cron: '0 13 * * 1-5'    # 台北21:00；僅最後交易日前一交易日發布，休市自動提前
+    - cron: '45 13 * * 1-5'   # 台北21:45：僅補做尚未完成的晚間發布
     - cron: '0 22 * * 0-4'    # 台北週一至週五 06:00（UTC 前一天 22:00）
     - cron: '0 23 * * 0-4'    # 台北 07:00：僅本週最後交易日檢查與補做未完成部分
   workflow_dispatch:
@@ -77,7 +78,7 @@ jobs:
         if: github.event_name == 'schedule'
         run: |
           case '${{ github.event.schedule }}' in
-            '45 13 * * 1-5') python recovery_check.py --evening ;;
+            '0 13 * * 1-5'|'45 13 * * 1-5') python recovery_check.py --evening ;;
             '0 22 * * 0-4') python recovery_check.py --daily ;;
             *) python recovery_check.py ;;
           esac
