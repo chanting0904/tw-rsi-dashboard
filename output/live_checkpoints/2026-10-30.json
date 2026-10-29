@@ -2,12 +2,12 @@
  "schema": 1,
  "strategy_version": "V5",
  "from_strategy": "V5",
- "from_release": "V5.1.1",
+ "from_release": "V5.1.2",
  "effective_date": "2026-10-31",
  "capital_basis": 8060363.065004303,
  "previous_signal": {
   "strategy_version": "V5",
-  "release_version": "V5.1.1",
+  "release_version": "V5.1.2",
   "share_delivery_check": {
    "as_of": "2026-10-29",
    "status": "PASS",
@@ -72,7 +72,7 @@
   "rebalance_date": "2026-10-30",
   "sig_date": "2026-10-29",
   "generated_at": "2026-10-29T23:54:35+08:00",
-  "commit_sha": "d196be7b",
+  "commit_sha": "4b09d3a8",
   "receivables": 9490.87,
   "cash": 393237.0,
   "buffer": 0.0488,
@@ -713,7 +713,7 @@
   },
   "predecessor_digest": "2dfa22082a3990e2292f98fcf819eccf83a854b4e7e85668a1b8aead27a0e3d1"
  },
- "previous_signal_digest": "a42504d706019ddab41250f6f28867d7d5a089dddd50494599cf6b27e7d89248",
+ "previous_signal_digest": "e60474eea8df367be9b085dcd18a66c5ffb2757bf5a57ee665116ef9d3664817",
  "parent_digest": "2dfa22082a3990e2292f98fcf819eccf83a854b4e7e85668a1b8aead27a0e3d1",
  "date": "2026-10-30",
  "nav": 8054211.531653904,
@@ -1019,5 +1019,5 @@
   "6233": 30.9,
   "8099": 102.5
  },
- "checkpoint_digest": "277e8dd4735feaa6c8c9b9128ded07b5c8083e00ec3d32099c4be6230f9b19c3"
+ "checkpoint_digest": "024796fada9379d47fdea5a63a8df97ce27d3a642362f4ca0099e99d91f0b32d"
 }
