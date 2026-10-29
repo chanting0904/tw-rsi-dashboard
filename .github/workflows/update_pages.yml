@@ -34,6 +34,7 @@ on:
       - 'dashboard_ui.js'
       - 'dashboard_ui.css'
       - 'monthly_details.js'
+      - 'performance_ui.js'
       - 'version.py'
       - 'VERSION_HISTORY.txt'
       - 'v5_baseline.json'

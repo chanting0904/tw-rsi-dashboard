@@ -68,7 +68,7 @@ class BindingTests(unittest.TestCase):
         validation={'strategy_version':'V5','release_version':RELEASE_VERSION,'rebalance_date':signal['rebalance_date'],'verdict':'PASS','signal_digest':document_digest(signal),'performance_digest':document_digest(perf)}
         with tempfile.TemporaryDirectory() as d:
             tmp=Path(d);(tmp/'output').mkdir()
-            for name in ['update_data.py','dashboard_ui.css','dashboard_ui.js','monthly_details.js','capital_preview.js','weekly_status.js','order_planner.js','order_planner_ui.js','weekly_capital.js','weekly_capital_ui.js','holidays.json']:(tmp/name).write_bytes((ROOT/name).read_bytes())
+            for name in ['update_data.py','dashboard_ui.css','dashboard_ui.js','monthly_details.js','performance_ui.js','capital_preview.js','weekly_status.js','order_planner.js','order_planner_ui.js','weekly_capital.js','weekly_capital_ui.js','holidays.json']:(tmp/name).write_bytes((ROOT/name).read_bytes())
             for name,doc in [('latest_signals',signal),('perf',perf),('validation_log',validation)]: (tmp/'output'/(name+'.json')).write_text(json.dumps(doc,ensure_ascii=False),encoding='utf-8')
             env=dict(os.environ,V5_SKIP_LOCAL_UPDATE='1',PYTHONPATH=str(ROOT))
             def render():

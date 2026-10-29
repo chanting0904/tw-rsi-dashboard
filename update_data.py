@@ -414,18 +414,20 @@ __DASHBOARD_CSS__
 
   </details>
 
-  <section>
+  <section id="performance-section">
     <h2>📊 V5 歷史績效互動計算器 <span class="tag">策略 V5｜全期 CAGR <span id="p-cagr" class="up"></span>｜全期 MDD <span id="p-mdd" class="down"></span></span></h2>
-    <div class="capbar">
-      <input type="number" id="pc-cap" min="10000" step="10000" placeholder="投入本金（例：1000000）">
-      <span style="color:var(--dim); font-size:13px;">起始</span>
+    <p class="note perf-intro">輸入假設投入的本金、選擇年份，數字與下方圖表立即同步；此處與上方調倉資金分開。</p>
+    <div class="capbar perf-controls">
+      <label for="pc-cap">回測本金</label><input type="number" id="pc-cap" min="1" step="10000" placeholder="例如：100000">
+      <label for="pc-y0">起始年</label>
       <select id="pc-y0"></select>
-      <span style="color:var(--dim); font-size:13px;">→</span>
+      <label for="pc-y1">結束年</label>
       <select id="pc-y1"></select>
       <button id="pc-apply">計算</button>
-      <button id="pc-demo" class="ghost">範例：2018 投入 100 萬到 2024</button>
+      <button id="pc-demo" class="ghost">查看全期</button>
     </div>
-    <div class="cards" style="grid-template-columns:repeat(3,1fr);">
+    <div id="pc-range" class="perf-status" role="status" aria-live="polite"></div>
+    <div class="cards perf-cards">
       <div class="card"><div class="k">期初本金（投入）</div><div class="v" id="pc-start">—</div><div class="s" id="pc-start-date"></div></div>
       <div class="card"><div class="k">累積報酬率</div><div class="v" id="pc-ret">—</div><div class="s" id="pc-years"></div></div>
       <div class="card"><div class="k">總獲利</div><div class="v" id="pc-profit">—</div><div class="s">期末資產 − 期初本金</div></div>
@@ -433,10 +435,16 @@ __DASHBOARD_CSS__
       <div class="card"><div class="k">CAGR（年化報酬）</div><div class="v" id="pc-cagr">—</div><div class="s">NAV 端點年化，非年度報酬相加</div></div>
       <div class="card"><div class="k">區間最大回撤 MDD</div><div class="v down" id="pc-mdd">—</div><div class="s">區間內 NAV 重算</div></div>
     </div>
-    <div id="chart-nav" class="chart"></div>
-    <div id="chart-dd" class="chart small"></div>
+    <div class="perf-plot">
+      <div class="perf-chart-heading"><div><h3>模擬資產走勢</h3><span id="pc-chart-period"></span></div><label class="perf-view">顯示<select id="pc-view"><option value="asset">資產金額</option><option value="return">累積報酬 %</option></select></label></div>
+      <div id="pc-chart-end" class="perf-chart-value"></div>
+      <div id="chart-nav" class="chart" role="img" aria-label="所選期間的每日模擬資產走勢"></div>
+    </div>
+    <div class="perf-plot perf-drawdown"><div class="perf-chart-heading"><div><h3>距離區間高點的跌幅</h3><span>越接近 0%，代表越接近這段期間的資產高點</span></div></div>
+      <div id="chart-dd" class="chart small" role="img" aria-label="所選期間每日距離資產高點的跌幅"></div>
+    </div>
     <div class="note">
-      計算方式：直接讀 V5 歷史 NAV，取「起始年年初 NAV」與「結束年年末 NAV」端點相除，不重新跑回測。<span id="pc-range"></span><br>
+      計算方式：以所選起始年前一交易日的資產為起點；回測第一年使用原始期初本金，包含第一天費用。讀取既有每日回測，不重新選股。金額依輸入本金等比例試算，不重算小額整股與最低手續費。<br>
       回測基準：初始本金 <span id="p-initial"></span>｜已完成期間 <span id="p-period"></span>｜最終資產 <span id="p-nav"></span>。<br>
       <b style="color:var(--warn)">⚠️ 純 V5 歷史回測，不代表未來收益。V5 上線時接續既有 V4 模擬持倉，與2015年起的純 V5 回測分開。</b>
     </div>
@@ -456,6 +464,7 @@ __DASHBOARD_CSS__
 </div>
 
 <script>
+__PERFORMANCE_UI_JS__
 __ORDER_PLANNER_JS__
 __ORDER_PLANNER_UI_JS__
 const DATA = __DATA_JSON__;
@@ -789,8 +798,9 @@ function renderRestrictedHoldings() {
 }
 
 /* ================= 績效圖（回測口徑，不隨本金） ================= */
-function renderMonthlyReturns() {
+function renderMonthlyReturns(range) {
   const box=document.getElementById('monthly-returns-table');
+  if(range===null){box.textContent='請先完成有效的本金與年份設定。';document.getElementById('monthly-returns-period').textContent='尚未選擇有效區間';return;}
   const perf=DATA.perf||{}, nav=perf.nav||[];
   if(!nav.length){box.textContent='尚無月報酬資料。';return;}
   const months=new Map(), years=new Map();
@@ -806,7 +816,7 @@ function renderMonthlyReturns() {
     basis=Number(value);
   }
   const last=nav[nav.length-1][0];
-  document.getElementById('monthly-returns-period').textContent=(perf.release_version||'策略')+'｜截至 '+last;
+  document.getElementById('monthly-returns-period').textContent=(perf.release_version||'策略')+'｜'+(range?range.startYear+'～'+range.endYear+' 年':'全期')+'｜回測截至 '+last;
   const table=document.createElement('table');table.className='monthly-returns';
   table.setAttribute('aria-label','策略回測每月報酬率百分比');
   const head=table.createTHead().insertRow();
@@ -821,6 +831,7 @@ function renderMonthlyReturns() {
     if(rounded){cell.classList.add(rounded>0?'up':'down');cell.style.setProperty('--tile-rgb',rounded>0?'255,99,112':'65,211,159');cell.style.setProperty('--tile-strength',(.09+Math.min(Math.abs(value)/20,1)*.19).toFixed(3));}
   }
   for(const [year,annual] of [...years].reverse()){
+    if(range&&(Number(year)<range.startYear||Number(year)>range.endYear))continue;
     const row=body.insertRow(),label=document.createElement('th');label.scope='row';label.textContent=year;row.appendChild(label);
     for(let n=1;n<=12;n++){
       const key=year+'-'+String(n).padStart(2,'0'),m=months.get(key),cell=row.insertCell();
@@ -845,31 +856,6 @@ function renderCharts() {
   $("p-nav").textContent = M(DATA.perf.final_nav);
   $("p-initial").textContent = F(DATA.perf.start_capital || 100000, 0);
   $("p-period").textContent = (DATA.perf.nav?.[0]?.[0] || '—') + ' ～ ' + (DATA.perf.completed_through || DATA.perf.nav?.at(-1)?.[0] || '—');
-  function unavailable() {
-    for (const id of ['chart-nav','chart-dd']) $(id).textContent='圖表暫時無法載入；買賣清單與股數試算仍可使用。';
-  }
-  if (typeof echarts === 'undefined') { unavailable(); return; }
-  try {
-  const navData = (DATA.perf.nav||[]).map(x => [x[0], x[1]]);
-  const ddData = (DATA.perf.dd||[]).map(x => [x[0], x[1]]);
-  const navChart = echarts.init($("chart-nav"));
-  navChart.setOption({
-    backgroundColor:"transparent", grid:{left:70,right:20,top:20,bottom:40},
-    tooltip:{trigger:"axis", valueFormatter:v => "$" + Number(v).toLocaleString()},
-    xAxis:{type:"time", axisLine:{lineStyle:{color:"#2c3a55"}}, axisLabel:{color:"#8fa0b8"}},
-    yAxis:{type:"value", splitLine:{lineStyle:{color:"#1f293d"}}, axisLabel:{color:"#8fa0b8", formatter:v => "$"+(v/10000)+"萬"}},
-    series:[{type:"line", data:navData, showSymbol:false, lineStyle:{color:"#4da3ff", width:2}, areaStyle:{color:"rgba(77,163,255,.12)"}}]
-  });
-  const ddChart = echarts.init($("chart-dd"));
-  ddChart.setOption({
-    backgroundColor:"transparent", grid:{left:70,right:20,top:20,bottom:40},
-    tooltip:{trigger:"axis", valueFormatter:v => v.toFixed(2)+"%"},
-    xAxis:{type:"time", axisLine:{lineStyle:{color:"#2c3a55"}}, axisLabel:{color:"#8fa0b8"}},
-    yAxis:{type:"value", splitLine:{lineStyle:{color:"#1f293d"}}, axisLabel:{color:"#8fa0b8", formatter:v => v+"%"}},
-    series:[{type:"line", data:ddData, showSymbol:false, lineStyle:{color:"#3ddc84", width:2}}]
-  });
-
-  } catch (_) { unavailable(); }
 }
 
 /* ================= 歷史週（金額按目前本金估算） ================= */
@@ -909,53 +895,6 @@ function renderHist() {
   sel.dispatchEvent(new Event("change"));
 }
 
-/* ================= V5 歷史績效互動計算器（只讀 DATA.perf NAV，不重跑回測） ================= */
-function initPerfCalc() {
-  const YEARS = [...new Set(((DATA.perf && DATA.perf.nav) || []).map(row => Number(row[0].slice(0,4))))].sort();
-  const y0 = $("pc-y0"), y1 = $("pc-y1");
-  YEARS.forEach(y => { y0.appendChild(new Option(y, y)); y1.appendChild(new Option(y, y)); });
-  $("pc-apply").addEventListener("click", runPerfCalc);
-  $("pc-demo").addEventListener("click", () => { $("pc-cap").value = 1000000; y0.value = 2018; y1.value = 2024; runPerfCalc(); });
-  ["change","input"].forEach(ev => {
-    $("pc-cap").addEventListener(ev, runPerfCalc);
-    y0.addEventListener(ev, runPerfCalc);
-    y1.addEventListener(ev, runPerfCalc);
-  });
-  y0.value = 2018; y1.value = 2024; $("pc-cap").value = 1000000;
-  runPerfCalc();
-}
-
-function runPerfCalc() {
-  const nav = (DATA.perf && DATA.perf.nav) || [];
-  const capital = Math.max(0, parseFloat($("pc-cap").value)) || 0;
-  const y0 = parseInt($("pc-y0").value), y1 = parseInt($("pc-y1").value);
-  if (!nav.length || !y0 || !y1 || y1 < y0) { $("pc-range").textContent = "請選擇有效的起始／結束年份（起始 ≤ 結束）"; return; }
-  let i0 = 0;
-  for (let i = 0; i < nav.length; i++) { if (nav[i][0] <= y0 + "-01-01") i0 = i; else break; }
-  let i1 = nav.length - 1;
-  for (let i = 0; i < nav.length; i++) { if (nav[i][0] <= y1 + "-12-31") i1 = i; else break; }
-  const s = nav[i0][1], e = nav[i1][1];
-  const days = (new Date(nav[i1][0]) - new Date(nav[i0][0])) / 86400000;
-  const years = days / 365.25;
-  const growth = e / s;
-  const ret = growth - 1;
-  const cagr = years > 0 ? Math.pow(growth, 1 / years) - 1 : 0;
-  let peak = -Infinity, mdd = 0;
-  for (let i = i0; i <= i1; i++) { if (nav[i][1] > peak) peak = nav[i][1]; const d = nav[i][1] / peak - 1; if (d < mdd) mdd = d; }
-  const endAsset = capital * growth;
-  const setV = (id, val) => { const el = $(id); el.textContent = val; return el; };
-  setV("pc-start", M(capital));
-  setV("pc-start-date", "基準日 " + nav[i0][0] + "｜NAV " + F(s, 0));
-  const elRet = setV("pc-ret", P(ret, 2)); elRet.className = "v " + (ret >= 0 ? "up" : "down");
-  setV("pc-years", "持有 " + years.toFixed(1) + " 年（" + days.toFixed(0) + " 天）");
-  const elProfit = setV("pc-profit", M(endAsset - capital)); elProfit.className = "v " + (ret >= 0 ? "up" : "down");
-  setV("pc-end", M(endAsset));
-  setV("pc-end-date", "基準日 " + nav[i1][0] + "｜NAV " + F(e, 0));
-  const elCagr = setV("pc-cagr", P(cagr, 2)); elCagr.className = "v " + (cagr >= 0 ? "up" : "down");
-  setV("pc-mdd", P(mdd, 2));
-  $("pc-range").textContent = "目前區間：" + y0 + " 年（基準 " + nav[i0][0] + "，NAV " + F(s,0) + "）→ " + y1 + " 年（" + nav[i1][0] + "，NAV " + F(e,0) + "），NAV 成長 " + growth.toFixed(2) + " 倍";
-}
-
 /* ================= 全部渲染 ================= */
 function renderAll() {
   renderCards();
@@ -968,10 +907,9 @@ function renderAll() {
 $("cap").value = "";
 renderAll();
 renderSellNote();
-renderMonthlyReturns();
 renderCharts();
 renderHist();
-initPerfCalc();
+HistoricalPerformance.init({perf:DATA.perf,onRange:renderMonthlyReturns});
 ORDER_PLANNER_UI=initOrderPlanner({data:DATA,money:M,getCapital:()=>USER_CAPITAL,getTargets:()=>{const targets=WEEKLY_CAPITAL_UI?.getTargets();if(!targets)throw Error('請先完成上方兩週總資金計算，再核對實際持股。');return targets;}});
 WEEKLY_CAPITAL_UI=initWeeklyCapital({data:DATA,money:M,isReady:()=>weeklyCapitalReady(DATA,taipeiDate(),publicWeeklyStatus),onChange:()=>{if(ORDER_PLANNER_UI)ORDER_PLANNER_UI.render();}});
 const deliveryCheck=DATA.share_delivery_check||{};
@@ -985,7 +923,7 @@ $("delivery-check-note").textContent=deliveryCheck.as_of?'配股公告核對基�
 
 HTML = HTML.replace("V5.0.0", RELEASE_VERSION)
 HTML = HTML.replace("__DATA_JSON__", DATA_JSON)
-for _name,_placeholder in [('weekly_status.js','__WEEKLY_STATUS_JS__'),('capital_preview.js','__CAPITAL_PREVIEW_JS__'),('dashboard_ui.css','__DASHBOARD_CSS__'),('dashboard_ui.js','__DASHBOARD_UI_JS__'),('monthly_details.js','__MONTHLY_DETAILS_JS__'),('weekly_capital.js','__WEEKLY_CAPITAL_JS__'),('weekly_capital_ui.js','__WEEKLY_CAPITAL_UI_JS__'),('order_planner.js','__ORDER_PLANNER_JS__'),('order_planner_ui.js','__ORDER_PLANNER_UI_JS__')]:
+for _name,_placeholder in [('performance_ui.js','__PERFORMANCE_UI_JS__'),('weekly_status.js','__WEEKLY_STATUS_JS__'),('capital_preview.js','__CAPITAL_PREVIEW_JS__'),('dashboard_ui.css','__DASHBOARD_CSS__'),('dashboard_ui.js','__DASHBOARD_UI_JS__'),('monthly_details.js','__MONTHLY_DETAILS_JS__'),('weekly_capital.js','__WEEKLY_CAPITAL_JS__'),('weekly_capital_ui.js','__WEEKLY_CAPITAL_UI_JS__'),('order_planner.js','__ORDER_PLANNER_JS__'),('order_planner_ui.js','__ORDER_PLANNER_UI_JS__')]:
     with open(os.path.join(HERE,_name),encoding='utf-8') as _source:
         HTML=HTML.replace(_placeholder,_source.read())
 
