@@ -192,3 +192,21 @@ test('missing previous price stops reconstruction instead of borrowing a newer q
  const previous=clone(signal);previous.actions.find(a=>a.stock_code==='2466').price=null;
  assert.throws(()=>directPlan(previous,nextWeek(signal),100037,101000,quotesOf(signal,{'2466':315.5})),/缺少股價/);
 });
+
+
+test('2033 carries the125-share published-capital position instead of using fee-reduced NAV weights',()=>{
+ const scope={};for(const name of ['capital_preview.js','weekly_capital.js'])vm.runInNewContext(read(name),scope);
+ const previous=clone(signal),current=nextWeek(signal);
+ const plan=scope.weeklyCapitalPlan({previous,current,previousCapital:100037,capital:101000,quotes:quotesOf(current)});
+ assert.equal(ownRow(plan,'2033').current,125);
+ const prior=directPlan(priorSignal,signal,100037,100037,quotesOf(signal));
+ assert.equal(ownRow(prior,'2033').current,96);
+ assert.equal(ownRow(prior,'2033').change,29);
+ assert.equal(ownRow(prior,'2033').target,125);
+});
+
+test('published capital basis is required to be finite and positive when supplied',()=>{
+ for(const invalid of [0,-1,Infinity,NaN]){const previous=clone(signal);previous.capital_basis=invalid;
+  assert.throws(()=>directPlan(previous,nextWeek(signal),100037,101000,quotesOf(signal)),/本金基準/);
+ }
+});

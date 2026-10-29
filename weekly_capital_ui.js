@@ -63,7 +63,7 @@
         const rows=[...plan.rows].filter(r=>r.current||r.target).sort((a,b)=>a.code.localeCompare(b.code));
         renderGroupedRows(rows);
         renderOverview(plan,rows);$('weekly-capital-summary').textContent='';
-        $('weekly-capital-basis').textContent='上週基準 '+plan.previousDate+' → 本週 '+plan.date+'；'+(plan.source==='saved'?'沿用本瀏覽器已儲存的上週訊號基準股數。':(entry?'舊試算不符目前基準，已重新還原。':'')+'依上週公布權重、上週訊號股價及上週總資金還原原有股數，不重新補滿倉位。')+' 本週行情只用於估值與本週調整；下週承接紀錄採本週訊號基準價，日常報價不會改寫上週股數。這是理論持股，未連接券商庫存。';
+        $('weekly-capital-basis').textContent='上週基準 '+plan.previousDate+' → 本週 '+plan.date+'；'+(plan.source==='saved'?'沿用本瀏覽器已儲存的上週訊號基準股數。':(entry?'舊試算不符目前基準，已重新還原。':'')+'依上週公布股數與原本金基準，按你輸入的上週資金還原原有股數，不重新補滿倉位。')+' 本週行情只用於估值與本週調整；下週承接紀錄採本週訊號基準價，日常報價不會改寫上週股數。這是理論持股，未連接券商庫存。';
         $('weekly-capital-error').textContent='';$('weekly-capital-results').hidden=false;
         saved[plan.date]={...anchor.snapshot,price_policy:pricePolicy,signal_basis:snapshotBasis(current)};
         saved=Object.fromEntries(Object.entries(saved).sort(([a],[b])=>a.localeCompare(b)).slice(-6));
