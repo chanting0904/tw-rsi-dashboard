@@ -19,6 +19,7 @@ on:
       - main
     paths:
       - 'output/latest_signals.json'   # 推送 canonical → 重建 Web（canonical 即 V5 結果，不重算）
+      - 'output/previous_capital_signal.json'
       - 'update_data.py'               # 推送 Web 產生器 → 重建 Web
       - '.github/workflows/update_pages.yml'
       - 'weekly_status.js'

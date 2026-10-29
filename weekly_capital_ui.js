@@ -1,5 +1,18 @@
 (function(root){
   'use strict';
+  const pricePolicy='signal_close_v2';
+  function snapshotBasis(signal){
+    return JSON.stringify({date:signal.rebalance_date,basis:signal.price_basis_date,capital:[signal.capital_basis,signal.portfolio_value],
+      fees:[signal.buy_fee,signal.minimum_commission,signal.fee_model?.stock_sale_tax],receivables:signal.receivables,
+      actions:(signal.actions||[]).map(a=>[a.stock_code,a.action,a.price,a.price_date,a.price_kind,a.post_shares,a.current_shares,
+        a.post_weight,a.target_weight,a.planner_target_weight,a.strategy_target_weight,a.allocation_eligible,a.trading_status,a.buy_allowed,a.sell_allowed])
+        .sort((a,b)=>String(a[0]).localeCompare(String(b[0]))),
+      pending:signal.pending_assets||[],deliveries:signal.stock_deliveries||[],restricted:signal.restricted_assets||[]});
+  }
+  function signalQuotes(signal){
+    return Object.fromEntries((signal.actions||[]).map(a=>[a.stock_code,{price:a.price,date:a.price_date||signal.price_basis_date,
+      tradable:a.trading_status===undefined||['TRADABLE','OUTSIDE_TARGET'].includes(a.trading_status),buyable:a.buy_allowed!==false,sellable:a.sell_allowed!==false}]));
+  }
   root.initWeeklyCapital=function({data,money,isReady=()=>true,onChange=()=>{}}){
     const $=id=>document.getElementById(id),key='v4_weekly_capital_snapshots_v1';
     let plan=null,saved={};
@@ -38,18 +51,21 @@
       try{
         if(!data.sig_validated||!isReady())throw Error('本週訊號尚未確認完成，暫不產生買賣清單；請先確認頁首狀態。');
         const previous=data.previous_capital_signal,current=data.capital_signal;
+        const adjustmentReference=data.previous_model_signal||previous;
         const previousCapital=Number($('cap-previous').value),capital=Number($('cap').value);
         const entry=saved[previous?.rebalance_date];
-        const snapshot=entry?.capital===previousCapital?entry:null;
-        const result=root.weeklyCapitalPlan({previous,current,previousCapital,capital,quotes:data.order_quotes||{},snapshot});
+        const snapshot=entry?.capital===previousCapital&&entry.price_policy===pricePolicy&&entry.signal_basis===snapshotBasis(previous)?entry:null;
+        const result=root.weeklyCapitalPlan({previous,current,previousCapital,capital,quotes:data.order_quotes||{},snapshot,adjustmentReference});
         if(!result.withinBudget)throw Error('受限持股或費用使配置超出本週資金／95%上限，已停止產生可執行清單。');
+        const anchor=root.weeklyCapitalPlan({previous,current,previousCapital,capital,quotes:signalQuotes(current),snapshot,adjustmentReference});
+        if(!anchor.withinBudget)throw Error('訊號基準配置超出資金／95%上限，暫不產生可承接的清單。');
         plan=result;
         const rows=[...plan.rows].filter(r=>r.current||r.target).sort((a,b)=>a.code.localeCompare(b.code));
         renderGroupedRows(rows);
         renderOverview(plan,rows);$('weekly-capital-summary').textContent='';
-        $('weekly-capital-basis').textContent='上週基準 '+plan.previousDate+' → 本週 '+plan.date+'；'+(plan.source==='saved'?'沿用本瀏覽器已儲存的上週試算股數。':'首次或上週資金不同：依上週模型配置、上週股價及輸入資金推算股數。')+' 本週依各檔頁面基準行情估算，實際成交價會改變費用及剩餘資金；這是理論持股，未連接券商庫存。';
+        $('weekly-capital-basis').textContent='上週基準 '+plan.previousDate+' → 本週 '+plan.date+'；'+(plan.source==='saved'?'沿用本瀏覽器已儲存的上週訊號基準股數。':(entry?'舊試算不符目前基準，已重新還原。':'')+'依上週公布權重、上週訊號股價及上週總資金還原原有股數，不重新補滿倉位。')+' 本週行情只用於估值與本週調整；下週承接紀錄採本週訊號基準價，日常報價不會改寫上週股數。這是理論持股，未連接券商庫存。';
         $('weekly-capital-error').textContent='';$('weekly-capital-results').hidden=false;
-        saved[plan.date]=plan.snapshot;
+        saved[plan.date]={...anchor.snapshot,price_policy:pricePolicy,signal_basis:snapshotBasis(current)};
         saved=Object.fromEntries(Object.entries(saved).sort(([a],[b])=>a.localeCompare(b)).slice(-6));
         try{localStorage.setItem(key,JSON.stringify(saved));}catch(_){$('weekly-capital-error').textContent='本次計算有效，但瀏覽器無法儲存股數；下次將依模型推算。';}
         onChange();

@@ -141,10 +141,21 @@ from weekly_status import sync_ready_status
 _weekly_status = sync_ready_status(SIG, _validation, perf)
 from v5_engine.order_quotes import build_order_quotes
 _order_quotes=build_order_quotes(SIG,prices,px_date,read_optional('output/security_status.json'))
-_previous_capital_signal = next((h for h in reversed(history) if h.get('rebalance_date','') < SIG.get('rebalance_date','')), None)
+_previous_model_signal = next((h for h in reversed(history) if h.get('rebalance_date','') < SIG.get('rebalance_date','')), None)
+_previous_capital_signal = _previous_model_signal
+if os.path.exists('output/previous_capital_signal.json'):
+    with open('output/previous_capital_signal.json', encoding='utf-8') as _source:
+        _previous_capital_signal = json.load(_source)
+    if (not isinstance(_previous_capital_signal, dict) or not isinstance(_previous_capital_signal.get('actions'), list)
+            or not _previous_capital_signal.get('rebalance_date')
+            or _previous_capital_signal['rebalance_date'] >= SIG.get('rebalance_date','')):
+        raise ValueError('上週已發布資金承接訊號無效，停止重建網頁')
+    if _previous_model_signal and _previous_model_signal['rebalance_date'] != _previous_capital_signal['rebalance_date']:
+        raise ValueError('上週已發布計畫與歷史模型日期不一致，停止重建網頁')
 DATA = {
     "capital_signal": SIG,
     "previous_capital_signal": _previous_capital_signal,
+    "previous_model_signal": _previous_model_signal,
     "canonical_hash": fingerprint(SIG),
     "order_quotes": _order_quotes,
     "fee_model": SIG.get("fee_model", {}),

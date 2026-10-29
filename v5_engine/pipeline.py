@@ -1,6 +1,7 @@
 from version import STRATEGY_VERSION, RELEASE_VERSION
 """Orchestrate historical performance, prospective plans and verified publication."""
 import datetime
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -21,6 +22,32 @@ def commit_sha(root):
         return subprocess.check_output(['git', 'rev-parse', '--short=8', 'HEAD'], cwd=root, text=True, stderr=subprocess.DEVNULL).strip()
     except (OSError, subprocess.CalledProcessError):
         return 'dev'
+
+
+def preserve_previous_capital_signal(output_dir, signal):
+    """Keep the published plan, independently of the recomputed backtest history."""
+    output_dir = Path(output_dir)
+    def date_of(document):
+        if not isinstance(document, dict) or not isinstance(document.get('actions'), list):
+            raise ValueError('資金承接訊號格式無效')
+        return datetime.date.fromisoformat(document['rebalance_date'])
+    incoming = date_of(signal)
+    path = output_dir / 'previous_capital_signal.json'
+    archived = json.loads(path.read_text(encoding='utf-8')) if path.exists() else None
+    archived_date = date_of(archived) if archived is not None else None
+    if archived_date is not None and archived_date >= incoming:
+        raise ValueError('上週資金承接日期不得晚於或等於本週')
+    latest_path = output_dir / 'latest_signals.json'
+    if not latest_path.exists():
+        return
+    previous = json.loads(latest_path.read_text(encoding='utf-8'))
+    previous_date = date_of(previous)
+    if previous_date > incoming:
+        raise ValueError('不得用較早訊號覆寫已發布計畫')
+    if previous_date < incoming:
+        if archived_date is not None and archived_date > previous_date:
+            raise ValueError('已發布計畫與資金承接日期不一致')
+        write_json(path, previous)
 
 
 def fixed_anchor(result, config):
@@ -95,6 +122,7 @@ def publish(ctx, output_dir, root, *, end=None, report_only=False):
     document = perf_document(result, ctx.config, anchor, ctx=ctx)
     signal = canonical_for(ctx, latest, trades, sha)
     if seeded:signal['live_model_origin']=live_result['live_model_origin']
+    preserve_previous_capital_signal(output_dir, signal)
     validation['signal_digest']=document_digest(signal)
     validation['performance_digest']=document_digest(document)
     write_json(output_dir / 'validation_log.json', validation)
