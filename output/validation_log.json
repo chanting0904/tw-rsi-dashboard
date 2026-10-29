@@ -1,8 +1,8 @@
 {
  "strategy_version": "V5",
- "release_version": "V5.0.9",
- "generated_at": "2026-10-23T09:02:16.158893+08:00",
- "rebalance_date": "2026-10-23",
+ "release_version": "V5.1.0",
+ "generated_at": "2026-10-29T23:12:44.450615+08:00",
+ "rebalance_date": "2026-10-30",
  "v5_consistency": true,
  "fixed_anchor": {
   "pass": true,
@@ -10,7 +10,7 @@
    "date": "2026-10-16",
    "cagr": 0.47008609848412597,
    "mdd": -0.3140062075362031,
-   "release_version": "V5.0.9",
+   "release_version": "V5.1.0",
    "selection_rules": {
     "selection_mode": "single_ranked_pool",
     "a_rank_days": 3,
@@ -22,82 +22,86 @@
  "warning_checks": [],
  "checks": {
   "duplicate": {
-   "pass": 1,
+   "pass": 2,
    "fail": 0,
    "detail": []
   },
   "conflict": {
-   "pass": 1,
+   "pass": 2,
    "fail": 0,
    "detail": []
   },
   "target_sum": {
-   "pass": 1,
+   "pass": 2,
    "fail": 0,
    "detail": []
   },
   "cash_no_overdraft": {
-   "pass": 1,
+   "pass": 2,
    "fail": 0,
    "detail": []
   },
   "buffer": {
-   "pass": 1,
+   "pass": 2,
    "fail": 0,
    "detail": [
     [
-     "2026-10-23",
+     "2026-10-22",
      7.4
+    ],
+    [
+     "2026-10-30",
+     5.1
     ]
    ]
   },
   "exposure_band": {
-   "pass": 1,
+   "pass": 2,
    "fail": 0,
    "detail": []
   },
   "exposure_upper_bound": {
-   "pass": 1,
+   "pass": 2,
    "fail": 0,
    "detail": []
   },
   "share_qty": {
-   "pass": 1,
+   "pass": 2,
    "fail": 0,
    "detail": []
   },
   "limit_up": {
-   "pass": 1,
+   "pass": 2,
    "fail": 0,
    "detail": []
   },
   "limit_dn": {
-   "pass": 1,
+   "pass": 2,
    "fail": 0,
    "detail": []
   },
   "delisted": {
-   "pass": 1,
+   "pass": 2,
    "fail": 0,
    "detail": []
   },
   "missing_price": {
-   "pass": 1,
+   "pass": 2,
    "fail": 0,
    "detail": []
   },
   "lookahead": {
-   "pass": 1,
+   "pass": 2,
    "fail": 0,
    "detail": []
   },
   "security_status": {
-   "pass": 1,
+   "pass": 2,
    "fail": 0,
    "detail": []
   }
  },
  "verdict": "PASS",
- "signal_digest": "2dfa22082a3990e2292f98fcf819eccf83a854b4e7e85668a1b8aead27a0e3d1",
- "performance_digest": "cf3ce4a920ac1a1e635d4c1e39078bd927c5dfe2b39a375700352db8fbf38c2a"
+ "signal_digest": "8a346e04d6361110c254dca976106915327f2aaca4cd9e45c6c9f236c6d6479e",
+ "performance_digest": "9e759180b4ccc948039967bfd6c5584f37b89b80f67158e0f53d2867b6e8bb64"
 }

@@ -1,5 +1,5 @@
 {
- "as_of": "2026-10-22",
+ "as_of": "2026-10-29",
  "status": "PARTIAL",
  "sources": [
   {
@@ -181,22 +181,21 @@
   {
    "market": "twse",
    "year": 2026,
-   "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20260101&endDate1=20261022&selectType=&stockNo=&response=json",
-   "ok": true,
-   "cached": false,
-   "records": 70
+   "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20260101&endDate1=20261029&selectType=&stockNo=&response=json",
+   "ok": false,
+   "error": "ReadTimeout"
   },
   {
    "market": "tpex",
    "year": 2026,
-   "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2026%2F01%2F01&endDate=2026%2F10%2F22&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
+   "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2026%2F01%2F01&endDate=2026%2F10%2F29&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
    "ok": true,
    "cached": false,
-   "records": 90
+   "records": 91
   }
  ],
- "discovered": 1803,
- "registered": 1826,
+ "discovered": 1745,
+ "registered": 1768,
  "conflicts": [
   {
    "code": "8050",

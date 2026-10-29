@@ -73,6 +73,20 @@ function nextWeek(previous){
 function quotesOf(current,overrides={}){
  return Object.fromEntries(current.actions.map(a=>[a.stock_code,{name:a.stock_name,price:overrides[a.stock_code]??a.price,date:current.price_basis_date,tradable:['TRADABLE','OUTSIDE_TARGET'].includes(a.trading_status),buyable:a.buy_allowed!==false,sellable:a.sell_allowed!==false}]));
 }
+
+test('a verified missing-quote session keeps published shares with a same-week model reference',()=>{
+ const current=nextWeek(signal),model={...clone(signal),rebalance_date:'2026-10-22',published_reference_date:signal.rebalance_date,reference_reason:'NO_OFFICIAL_QUOTES_ON_PUBLISHED_DATE'};
+ const f=fixture({...liveData(signal,current),previous_model_signal:model});
+ const result=f.calculate();
+ assert.equal(result.rows.find(r=>r.code==='2466').current,23);
+ assert.equal(result.rows.find(r=>r.code==='2033').current,125);
+});
+
+test('a reference from a different week remains blocked despite a claimed publication mapping',()=>{
+ const current=nextWeek(signal),model={...clone(signal),rebalance_date:'2026-10-15',published_reference_date:signal.rebalance_date,reference_reason:'NO_OFFICIAL_QUOTES_ON_PUBLISHED_DATE'};
+ const f=fixture({...liveData(signal,current),previous_model_signal:model});
+ assert.throws(()=>f.calculate(),/配股及拆併股銜接日期不一致/);
+});
 function fixture(data,stored={}){
  const elements={},make=()=>({value:'',textContent:'',className:'',hidden:false,children:[],listeners:{},
   addEventListener(type,handler){this.listeners[type]=handler;},replaceChildren(){this.children=[];},

@@ -1,19 +1,19 @@
 {
- "final_nav": 9354107.0,
- "cagr": 0.4701,
+ "final_nav": 9449083.0,
+ "cagr": 0.4706,
  "mdd": -0.314,
- "sharpe": 1.49,
+ "sharpe": 1.5,
  "sortino": 2.23,
  "calmar": 1.5,
- "pf": 1.4585915511074647,
- "winrate": 44.6,
- "trades": 6169,
- "turnover": 366.77,
+ "pf": 1.4974422453021496,
+ "winrate": 44.5,
+ "trades": 6179,
+ "turnover": 367.63,
  "selection_mode": "single_ranked_pool",
  "performance_basis": "hypothetical_single_strategy_since_start",
  "start_capital": 100000,
  "strategy_version": "V5",
- "release_version": "V5.0.9",
+ "release_version": "V5.1.0",
  "buy_fee": 0.000399,
  "sell_fee": 0.003399,
  "minimum_commission": 1.0,
@@ -24,7 +24,7 @@
   "etf_sale_tax": 0.001,
   "order_policy": "one_minimum_per_code_side_rebalance"
  },
- "completed_through": "2026-10-16",
+ "completed_through": "2026-10-22",
  "execution_policy": "guarded_weekly_capital_v1",
  "nav_frequency": "daily",
  "delisted_valuation": "zero",
@@ -32,7 +32,7 @@
   "date": "2026-10-16",
   "cagr": 0.47008609848412597,
   "mdd": -0.3140062075362031,
-  "release_version": "V5.0.9",
+  "release_version": "V5.1.0",
   "selection_rules": {
    "selection_mode": "single_ranked_pool",
    "a_rank_days": 3,
@@ -41,7 +41,7 @@
   }
  },
  "monthly_contributions": {
-  "through": "2026-10-16",
+  "through": "2026-10-22",
   "months": {
    "2015-01": {
     "through": "2015-01-30",
@@ -2006,12 +2006,12 @@
     }
    },
    "2026-10": {
-    "through": "2026-10-16",
-    "return_pct": -2.8304244150792246,
+    "through": "2026-10-22",
+    "return_pct": -1.8438190491039341,
     "winner": {
-     "code": "1709",
-     "name": "和益",
-     "contribution": 2.187493326895324
+     "code": "2033",
+     "name": "佳大",
+     "contribution": 2.447829661282856
     },
     "loser": {
      "code": "6168",
@@ -13510,6 +13510,22 @@
   [
    "2026-10-16",
    9354107.0
+  ],
+  [
+   "2026-10-19",
+   9253932.0
+  ],
+  [
+   "2026-10-20",
+   9320549.0
+  ],
+  [
+   "2026-10-21",
+   9513539.0
+  ],
+  [
+   "2026-10-22",
+   9449083.0
   ]
  ],
  "dd": [
@@ -25000,6 +25016,22 @@
   [
    "2026-10-16",
    -20.51
+  ],
+  [
+   "2026-10-19",
+   -21.36
+  ],
+  [
+   "2026-10-20",
+   -20.79
+  ],
+  [
+   "2026-10-21",
+   -19.15
+  ],
+  [
+   "2026-10-22",
+   -19.7
   ]
  ],
  "yearly": [
@@ -25093,11 +25125,11 @@
   },
   {
    "year": 2026,
-   "ret": 60.88,
+   "ret": 62.51,
    "mdd": -31.4,
    "basis_nav": 5814444.427552292,
    "basis_date": "2025-12-31",
-   "end_date": "2026-10-16"
+   "end_date": "2026-10-22"
   }
  ],
  "pending_stock_deliveries": [],

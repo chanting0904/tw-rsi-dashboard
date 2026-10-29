@@ -1,6 +1,6 @@
 {
- "checked_for": "2026-10-23",
- "quote_day": "2026-10-22",
+ "checked_for": "2026-10-30",
+ "quote_day": "2026-10-29",
  "listed": {
   "1101": {
    "name": "台泥",
@@ -931,7 +931,7 @@
    "exchange": "TWSE"
   },
   "2072": {
-   "name": "世紀風電",
+   "name": "世紀能源",
    "exchange": "TWSE"
   },
   "2101": {
@@ -3852,6 +3852,10 @@
   },
   "7705": {
    "name": "三商餐飲",
+   "exchange": "TWSE"
+  },
+  "7710": {
+   "name": "東擎科技",
    "exchange": "TWSE"
   },
   "7711": {
@@ -7226,6 +7230,10 @@
    "name": "宏碩系統",
    "exchange": "TPEX"
   },
+  "6898": {
+   "name": "程曦資訊",
+   "exchange": "TPEX"
+  },
   "6899": {
    "name": "創為精密",
    "exchange": "TPEX"
@@ -7260,6 +7268,10 @@
   },
   "6929": {
    "name": "佑全",
+   "exchange": "TPEX"
+  },
+  "6938": {
+   "name": "藍新資訊",
    "exchange": "TPEX"
   },
   "6945": {
@@ -7944,8 +7956,8 @@
   }
  },
  "source_dates": {
-  "twse_listed": "2026-10-22",
-  "tpex_listed": "2026-10-22"
+  "twse_listed": "2026-10-28",
+  "tpex_listed": "2026-10-29"
  },
  "events": [
   {
@@ -11242,7 +11254,7 @@
    "code": "2072",
    "effective_date": "2026-03-26",
    "status": "TRADABLE",
-   "name": "世紀風電",
+   "name": "世紀能源",
    "source": "https://openapi.twse.com.tw/v1/opendata/t187ap03_L",
    "label": "上市櫃",
    "observed_on": null,
@@ -19909,6 +19921,16 @@
    "effective_time": "000000"
   },
   {
+   "code": "4207",
+   "effective_date": "2026-10-30",
+   "status": "SUSPENDED",
+   "name": "環泰",
+   "source": "https://www.tpex.org.tw/openapi/v1/tpex_cmode",
+   "label": "停止交易（本次官方狀態）",
+   "observed_on": "2026-10-30",
+   "effective_time": "000000"
+  },
+  {
    "code": "4303",
    "effective_date": "1999-03-10",
    "status": "TRADABLE",
@@ -21130,12 +21152,12 @@
   },
   {
    "code": "4804",
-   "effective_date": "2026-10-23",
+   "effective_date": "2026-10-30",
    "status": "SUSPENDED",
    "name": "大略-KY",
    "source": "https://www.tpex.org.tw/openapi/v1/tpex_cmode",
    "label": "停止交易（本次官方狀態）",
-   "observed_on": "2026-10-23",
+   "observed_on": "2026-10-30",
    "effective_time": "000000"
   },
   {
@@ -22586,6 +22608,16 @@
    "source": "https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap03_O",
    "label": "上市櫃",
    "observed_on": null,
+   "effective_time": "000000"
+  },
+  {
+   "code": "5355",
+   "effective_date": "2026-10-30",
+   "status": "SUSPENDED",
+   "name": "佳總",
+   "source": "https://www.tpex.org.tw/openapi/v1/tpex_cmode",
+   "label": "停止交易（本次官方狀態）",
+   "observed_on": "2026-10-30",
    "effective_time": "000000"
   },
   {
@@ -27879,6 +27911,16 @@
    "effective_time": "000000"
   },
   {
+   "code": "6898",
+   "effective_date": "2026-10-23",
+   "status": "TRADABLE",
+   "name": "程曦資訊",
+   "source": "https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap03_O",
+   "label": "上市櫃",
+   "observed_on": null,
+   "effective_time": "000000"
+  },
+  {
    "code": "6899",
    "effective_date": "2024-04-08",
    "status": "TRADABLE",
@@ -28144,6 +28186,16 @@
    "status": "TRADABLE",
    "name": "天虹",
    "source": "https://openapi.twse.com.tw/v1/opendata/t187ap03_L",
+   "label": "上市櫃",
+   "observed_on": null,
+   "effective_time": "000000"
+  },
+  {
+   "code": "6938",
+   "effective_date": "2026-10-23",
+   "status": "TRADABLE",
+   "name": "藍新資訊",
+   "source": "https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap03_O",
    "label": "上市櫃",
    "observed_on": null,
    "effective_time": "000000"
@@ -28514,6 +28566,16 @@
    "status": "TRADABLE",
    "name": "榮田",
    "source": "https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap03_O",
+   "label": "上市櫃",
+   "observed_on": null,
+   "effective_time": "000000"
+  },
+  {
+   "code": "7710",
+   "effective_date": "2026-10-27",
+   "status": "TRADABLE",
+   "name": "東擎科技",
+   "source": "https://openapi.twse.com.tw/v1/opendata/t187ap03_L",
    "label": "上市櫃",
    "observed_on": null,
    "effective_time": "000000"
@@ -29369,16 +29431,6 @@
    "effective_time": "080000"
   },
   {
-   "code": "8047",
-   "effective_date": "2026-10-23",
-   "status": "SUSPENDED",
-   "name": "星雲",
-   "source": "https://www.tpex.org.tw/openapi/v1/tpex_cmode",
-   "label": "停止交易（本次官方狀態）",
-   "observed_on": "2026-10-23",
-   "effective_time": "000000"
-  },
-  {
    "code": "8048",
    "effective_date": "2009-09-08",
    "status": "TRADABLE",
@@ -29926,6 +29978,16 @@
    "source": "https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap03_O",
    "label": "上市櫃",
    "observed_on": null,
+   "effective_time": "000000"
+  },
+  {
+   "code": "8176",
+   "effective_date": "2026-10-30",
+   "status": "SUSPENDED",
+   "name": "智捷",
+   "source": "https://www.tpex.org.tw/openapi/v1/tpex_cmode",
+   "label": "停止交易（本次官方狀態）",
+   "observed_on": "2026-10-30",
    "effective_time": "000000"
   },
   {
@@ -31710,5 +31772,5 @@
   "tpex_delisted_2025": "https://www.tpex.org.tw/www/zh-tw/company/deListed?date=2025&paging-table=0&paging-size=10000&paging-offset=0&response=json",
   "tpex_delisted_2026": "https://www.tpex.org.tw/www/zh-tw/company/deListed?date=2026&paging-table=0&paging-size=10000&paging-offset=0&response=json"
  },
- "observed_at": "2026-10-23T08:38:48.950730+08:00"
+ "observed_at": "2026-10-29T23:12:08.626455+08:00"
 }

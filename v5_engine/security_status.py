@@ -89,7 +89,9 @@ def build_snapshot(payloads, checked_for, quote_day, sources=None):
         if len({str(row[code_field]) for row in rows})<minimum:
             raise ValueError('Duplicate or incomplete official listed company universe: '+key)
         dates = {date_string(row[date_field]) for row in rows}
-        if len(dates) != 1 or min(dates) < quote_day:
+        from publish_gate import prev_trading_day_str, load_holidays
+        earliest = prev_trading_day_str(datetime.date.fromisoformat(quote_day), load_holidays())
+        if len(dates) != 1 or min(dates) < earliest:
             raise ValueError('Stale or mixed-date official company universe: '+key)
         source_dates[key] = min(dates)
         for row in rows:

@@ -17,30 +17,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 os.chdir(HERE)
 
 
-def load_token():
-    env_t = (os.environ.get("FINLAB_TOKEN") or "").strip()
-    if env_t:
-        return env_t
-    try:
-        cfg = json.load(open("config.json", encoding="utf-8"))
-        t = (cfg.get("FINLAB_TOKEN") or "").strip()
-        if t:
-            return t
-    except Exception:
-        pass
-    return ""
-
-
-TOKEN = load_token()
-
-
-# [本地化] 盤後先自動更新本地庫（TWSE/TPEx 官方源優先、零 FinLab 流量）。失敗不阻斷。
-if os.environ.get('V5_SKIP_LOCAL_UPDATE') != '1':
-    try:
-        from local_db_updater import main as _local_update
-        _local_update()
-    except Exception as _e:
-        print(f"[本地庫更新] 跳過（{str(_e)[:80]}）")
+# Database refresh belongs to sync_market.py; rendering only reads saved outputs.
 
 # ---------- 1. 讀 canonical（V5 唯一策略結果）----------
 sig_path = "output/latest_signals.json"
@@ -151,7 +128,15 @@ if os.path.exists('output/previous_capital_signal.json'):
             or _previous_capital_signal['rebalance_date'] >= SIG.get('rebalance_date','')):
         raise ValueError('上週已發布資金承接訊號無效，停止重建網頁')
     if _previous_model_signal and _previous_model_signal['rebalance_date'] != _previous_capital_signal['rebalance_date']:
-        raise ValueError('上週已發布計畫與歷史模型日期不一致，停止重建網頁')
+        _published_day = datetime.date.fromisoformat(_previous_capital_signal['rebalance_date'])
+        _model_day = datetime.date.fromisoformat(_previous_model_signal['rebalance_date'])
+        _no_quotes = read_optional('output/data_status.json').get('no_quote_days', [])
+        if (str(_published_day) not in _no_quotes or _model_day >= _published_day
+                or _model_day.isocalendar()[:2] != _published_day.isocalendar()[:2]):
+            raise ValueError('上週已發布計畫與歷史模型日期不一致，停止重建網頁')
+        _previous_model_signal = dict(_previous_model_signal,
+            published_reference_date=str(_published_day),
+            reference_reason='NO_OFFICIAL_QUOTES_ON_PUBLISHED_DATE')
 DATA = {
     "capital_signal": SIG,
     "previous_capital_signal": _previous_capital_signal,

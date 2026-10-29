@@ -21,7 +21,7 @@ class DailyFreshnessTests(unittest.TestCase):
                 (root/'output').mkdir();(root/'output/prices.json').write_text(json.dumps({'px_date':prior_date,'prices':{'2330':10.}}),encoding='utf-8')
             def provider(value):return Mock(side_effect=value) if isinstance(value,Exception) else Mock(return_value=value)
             fin=provider(finlab or ({},None));get_twse,get_tpex=provider(twse),provider(tpex)
-            with patch.multiple(daily,HERE=d,IDX=str(html),SRC=str(root/'missing.html')),patch.object(daily,'datetime',Clock),patch.dict(os.environ,{'FINLAB_TOKEN':'test-token' if finlab else ''}),patch.object(daily,'twse_prices',get_twse),patch.object(daily,'tpex_prices',get_tpex),patch.object(daily,'finlab_prices',fin),patch.object(daily,'yf_prices',return_value=({},None)),contextlib.redirect_stdout(io.StringIO()):
+            with patch.multiple(daily,HERE=d,IDX=str(html),SRC=str(root/'missing.html')),patch.object(daily,'datetime',Clock),patch.dict(os.environ,{'FINLAB_TOKEN':'test-token' if finlab else ''}),patch.object(daily,'twse_prices',get_twse),patch.object(daily,'tpex_prices',get_tpex),patch.object(daily,'saved_prices',fin),patch.object(daily,'yf_prices',return_value=({},None)),contextlib.redirect_stdout(io.StringIO()):
                 if write_error:
                     with patch.object(daily,'write_json',side_effect=OSError('injected disk failure')):
                         with self.assertRaises(OSError):daily.main()
