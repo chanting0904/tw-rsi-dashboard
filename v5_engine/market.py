@@ -1,4 +1,4 @@
-"""Load authenticated market data and compute V5 indicators once."""
+"""Load saved official market data and compute V5 indicators once."""
 import json
 import os
 from pathlib import Path
@@ -9,25 +9,9 @@ from publish_gate import load_holidays
 from .context import MarketContext
 
 
-def load_token(root):
-    token = (os.environ.get('FINLAB_TOKEN') or '').strip()
-    if token:
-        return token
-    try:
-        with open(Path(root) / 'config.json', encoding='utf-8-sig') as stream:
-            return (json.load(stream).get('FINLAB_TOKEN') or '').strip()
-    except (OSError, ValueError):
-        return ''
-
-
 def load_market(config, root, *, live_rebalance=None, data_root=None, token=None):
-    import finlab
-    from finlab import data
-    token = token or load_token(root)
-    if not token:
-        raise ValueError('找不到 FinLab token（FINLAB_TOKEN 或本機 config.json）')
-    finlab.login(api_token=token)
-    data.set_storage(data.FileStorage(str(Path(data_root or root) / 'finlab_db')))
+    from .market_store import MarketStore
+    data = MarketStore(data_root or root)
     LIVE_DAY = SIGNAL_DAY = None
     close = data.get("price:收盤價").apply(pd.to_numeric, errors="coerce")
     open_ = data.get("price:開盤價").apply(pd.to_numeric, errors="coerce")
@@ -137,7 +121,7 @@ def load_market(config, root, *, live_rebalance=None, data_root=None, token=None
     otc_cash = data.get('dividend_otc:現金股利')
     cash_fallback = cash_fallback.combine_first(otc_cash)
     stock_grants = data.get('dividend_otc:每千股無償配股')
-    splits = data.get('etf_split:分割(反分割)比率')
+    splits = None  # The V5 universe excludes ETFs; ordinary splits use official references.
     reductions = []
     for exchange, before_name, reference_name in [('tse','停止買賣前收盤價格','恢復買賣參考價'),('otc','最後交易之收盤價格','減資恢復買賣開始日參考價格')]:
         prefix='capital_reduction_'+exchange+':'
@@ -167,4 +151,5 @@ def load_market(config, root, *, live_rebalance=None, data_root=None, token=None
     # snapshot bound to an already published signal. Publication stages it.
     context.security_status = refresh_security_status(None,
         LIVE_DAY or raw_close.index[-1], SIGNAL_DAY or raw_close.index[-1])
+    data.close()
     return context

@@ -22,6 +22,9 @@ on:
       - 'output/latest_signals.json'   # 推送 canonical → 重建 Web（canonical 即 V5 結果，不重算）
       - 'output/previous_capital_signal.json'
       - 'update_data.py'               # 推送 Web 產生器 → 重建 Web
+      - 'daily_update.py'
+      - 'sync_market.py'
+      - 'local_db/*.sqlite3'
       - '.github/workflows/update_pages.yml'
       - 'weekly_status.js'
       - 'weekly_status.py'
@@ -78,23 +81,20 @@ jobs:
         if: github.event_name == 'schedule'
         run: |
           case '${{ github.event.schedule }}' in
-            '0 13 * * 1-5'|'45 13 * * 1-5') python recovery_check.py --evening ;;
+            '0 13 * * 1-5') python recovery_check.py --evening --daily ;;
+            '45 13 * * 1-5') python recovery_check.py --evening ;;
             '0 22 * * 0-4') python recovery_check.py --daily ;;
             *) python recovery_check.py ;;
           esac
-      - name: Cache finlab_db
-        if: steps.recovery.outputs.mode != 'skip' && steps.recovery.outputs.mode != 'publish'
-        uses: actions/cache@v4
-        with:
-          path: finlab_db
-          key: finlab-db-v4-${{ github.run_id }}
-          restore-keys: finlab-db-v4-
+      - name: 增量更新官方本地資料庫（行情、財報、除權息）
+        if: >
+          (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+          && steps.recovery.outputs.mode != 'skip' && steps.recovery.outputs.mode != 'publish'
+        run: python retry_runner.py -- python sync_market.py
       - name: 更新收盤股價（官方源→FinLab→yfinance；每日 06:00 補昨日收盤）
         if: >
           (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
           && steps.recovery.outputs.mode != 'skip' && steps.recovery.outputs.mode != 'publish'
-        env:
-          FINLAB_TOKEN: ${{ secrets.FINLAB_TOKEN }}
         run: python retry_runner.py -- python daily_update.py
       - name: V5 晚間產生次交易日收盤計畫，早上僅補算未完成訊號
         if: >
@@ -103,7 +103,6 @@ jobs:
           && steps.recovery.outputs.mode != 'skip' && steps.recovery.outputs.mode != 'publish'
           && steps.recovery.outputs.mode != 'daily'
         env:
-          FINLAB_TOKEN: ${{ secrets.FINLAB_TOKEN }}
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
           FORCE_FULL: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
@@ -111,8 +110,6 @@ jobs:
           python retry_runner.py --weekly -- python check_and_run.py
       - name: 重建 Web（push 觸發，讀既有 canonical）
         if: github.event_name == 'push'
-        env:
-          FINLAB_TOKEN: ${{ secrets.FINLAB_TOKEN }}
         run: python retry_runner.py -- python update_data.py
       - name: 補做發布時恢復已驗證訊號狀態並重建網頁
         if: steps.recovery.outputs.mode == 'publish'
@@ -161,6 +158,9 @@ jobs:
           git config user.name "rsi-bot"
           git config user.email "bot@rsi.local"
           git add state.json
+          for file in local_db/official.sqlite3 output/data_status.json; do
+            if [ -f "$file" ]; then git add -- "$file"; fi
+          done
           # The publication gate can also persist regression and fee baselines.
           for file in output/publication_verified.json output/regression_history.json output/baseline.json; do
             if [ -f "$file" ]; then git add -- "$file"; fi

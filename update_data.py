@@ -17,30 +17,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 os.chdir(HERE)
 
 
-def load_token():
-    env_t = (os.environ.get("FINLAB_TOKEN") or "").strip()
-    if env_t:
-        return env_t
-    try:
-        cfg = json.load(open("config.json", encoding="utf-8"))
-        t = (cfg.get("FINLAB_TOKEN") or "").strip()
-        if t:
-            return t
-    except Exception:
-        pass
-    return ""
-
-
-TOKEN = load_token()
-
-
-# [本地化] 盤後先自動更新本地庫（TWSE/TPEx 官方源優先、零 FinLab 流量）。失敗不阻斷。
-if os.environ.get('V5_SKIP_LOCAL_UPDATE') != '1':
-    try:
-        from local_db_updater import main as _local_update
-        _local_update()
-    except Exception as _e:
-        print(f"[本地庫更新] 跳過（{str(_e)[:80]}）")
+# Database refresh belongs to sync_market.py; rendering only reads saved outputs.
 
 # ---------- 1. 讀 canonical（V5 唯一策略結果）----------
 sig_path = "output/latest_signals.json"

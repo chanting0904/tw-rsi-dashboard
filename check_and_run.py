@@ -36,7 +36,7 @@ def main():
         with tempfile.TemporaryDirectory(prefix="v5-stage-", dir=ROOT) as temp:
             staged = Path(temp) / "output"
             staged.mkdir()
-            for name in ("baseline.json", "regression_history.json"):
+            for name in ("baseline.json", "regression_history.json", "latest_signals.json", "previous_capital_signal.json"):
                 source = Path(ROOT) / "output" / name
                 if source.exists():
                     shutil.copy2(source, staged / name)

@@ -3,6 +3,9 @@ finlab_db/
 __pycache__/
 *.pyc
 *.tmp
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
 _v4_canonical.log.txt
 v4-stage-*/
 audit_*/

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """每日盤後更新網頁收盤價。資料源優先序：
-TWSE+TPEx 官方免費源（台灣/本機最穩）-> FinLab（國外 runner 兜底，token）-> yfinance（最後）。
+TWSE+TPEx 官方源 -> 已保存本地資料庫 -> yfinance（最後）。
 所有源皆失敗 -> exit(1) 讓 workflow 紅叉，絕不假成功。
 本版（V5 canonical）：另寫 output/prices.json 供 Web 顯示每日最新價（持股買賣不變）。"""
 import os, re, json, ssl, urllib.request, math
@@ -60,16 +60,16 @@ def tpex_prices():
     return px, next(iter(dates))
 
 
-def finlab_prices(token):
-    import finlab
-    from finlab import data
-    finlab.login(api_token=token)
-    data.set_storage(data.FileStorage(os.path.join(HERE, "finlab_db")))
-    raw = data.get("price:收盤價")
-    last = raw.dropna(how="all").index[-1]
-    row = raw.loc[last]
-    px = {str(c): float(v) for c, v in row.items() if v == v and float(v) > 0}
-    return px, last.strftime("%Y%m%d")
+def saved_prices():
+    from v5_engine.market_store import MarketStore
+    store = MarketStore(HERE)
+    try:
+        raw = store.get("price:收盤價")
+        last = raw.dropna(how="all").index[-1]
+        row = raw.loc[last]
+        return {str(c): float(v) for c, v in row.items() if v == v and float(v) > 0}, last.strftime("%Y%m%d")
+    finally:
+        store.close()
 
 
 def yf_prices(codes):
@@ -146,7 +146,6 @@ def checked_prices(prices, stamp, earliest, latest):
 
 
 def main():
-    token = os.environ.get('FINLAB_TOKEN', '')
     now_tw = datetime.now(ZoneInfo('Asia/Taipei'))
     today_tw = now_tw.date()
     holidays = load_holidays()
@@ -166,8 +165,8 @@ def main():
             return False
     official = [collect(name, fn) for name, fn in [('TWSE',twse_prices),('TPEx',tpex_prices)]]
     # A surviving official market must not suppress fallback for the missing one.
-    if token and (not all(official) or len({day for _,day in batches}) > 1):
-        collect('FinLab', lambda: finlab_prices(token))
+    if not all(official) or len({day for _,day in batches}) > 1:
+        collect('已驗證本地庫', saved_prices)
     if not batches:
         for path in (IDX, SRC):
             if os.path.exists(path):

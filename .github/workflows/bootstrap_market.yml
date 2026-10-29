@@ -4,11 +4,18 @@ on:
     branches: [codex/v5-market-local]
 permissions:
   contents: write
+concurrency:
+  group: local-database-bootstrap
+  cancel-in-progress: false
 jobs:
-  inspect:
+  bootstrap:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -19,12 +26,29 @@ jobs:
           path: finlab_db
           key: seed-audit-${{ github.run_id }}
           restore-keys: finlab-db-v4-
-      - name: Inspect existing history without a data-service login
+      - name: Save published comparison inputs
         run: |
-          python - <<'PY'
-          from pathlib import Path
-          import pandas as pd
-          for path in Path('finlab_db').glob('*.feather'):
-              frame=pd.read_feather(path)
-              print(path.name,len(frame),str(frame['date'].max()) if 'date' in frame else 'reference')
-          PY
+          cp output/perf.json /tmp/prior_perf.json
+          cp output/latest_signals.json /tmp/prior_signal.json
+      - name: Build durable history and refresh official inputs without a service login
+        run: python sync_market.py --bootstrap finlab_db
+      - name: Run offline checks
+        run: |
+          python -m unittest discover -s tests -v
+          node --test tests/test_weekly_status.cjs tests/test_capital_preview.cjs tests/test_order_planner.cjs tests/test_browser_resilience.cjs tests/test_weekly_capital.cjs tests/test_weekly_capital_ui.cjs tests/test_performance_ui.cjs tests/test_capital_carry.cjs
+      - name: Produce candidate, check history, preserve prior published shares
+        env:
+          V5_SKIP_LOCAL_UPDATE: '1'
+        run: |
+          python daily_update.py
+          python check_and_run.py
+          python verify_market_data.py --baseline /tmp/prior_perf.json --previous /tmp/prior_signal.json
+      - name: Save verified database and candidate on this branch
+        run: |
+          git config user.name rsi-bot
+          git config user.email bot@rsi.local
+          git add local_db/*.sqlite3 output/ index.html
+          if ! git diff --cached --quiet; then
+            git commit -m "Save verified local database and next plan [skip ci]"
+            git -c core.compression=1 push origin HEAD
+          fi
