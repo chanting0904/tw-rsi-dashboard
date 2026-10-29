@@ -1,0 +1,30 @@
+name: V5 local database bootstrap
+on:
+  push:
+    branches: [codex/v5-market-local]
+permissions:
+  contents: write
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: pip install -q -r requirements.txt
+      - uses: actions/cache/restore@v4
+        with:
+          path: finlab_db
+          key: seed-audit-${{ github.run_id }}
+          restore-keys: finlab-db-v4-
+      - name: Inspect existing history without a data-service login
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import pandas as pd
+          for path in Path('finlab_db').glob('*.feather'):
+              frame=pd.read_feather(path)
+              print(path.name,len(frame),str(frame['date'].max()) if 'date' in frame else 'reference')
+          PY
