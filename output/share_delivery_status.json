@@ -182,20 +182,21 @@
    "market": "twse",
    "year": 2026,
    "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20260101&endDate1=20261029&selectType=&stockNo=&response=json",
-   "ok": false,
-   "error": "ReadTimeout"
+   "ok": true,
+   "cached": true,
+   "records": 71
   },
   {
    "market": "tpex",
    "year": 2026,
    "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2026%2F01%2F01&endDate=2026%2F10%2F29&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
    "ok": true,
-   "cached": false,
+   "cached": true,
    "records": 91
   }
  ],
- "discovered": 1745,
- "registered": 1768,
+ "discovered": 1805,
+ "registered": 1828,
  "conflicts": [
   {
    "code": "8050",

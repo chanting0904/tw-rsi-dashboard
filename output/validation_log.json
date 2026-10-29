@@ -1,7 +1,7 @@
 {
  "strategy_version": "V5",
- "release_version": "V5.1.0",
- "generated_at": "2026-10-29T23:12:44.450615+08:00",
+ "release_version": "V5.1.1",
+ "generated_at": "2026-10-29T23:54:34.041492+08:00",
  "rebalance_date": "2026-10-30",
  "v5_consistency": true,
  "fixed_anchor": {
@@ -10,7 +10,7 @@
    "date": "2026-10-16",
    "cagr": 0.47008609848412597,
    "mdd": -0.3140062075362031,
-   "release_version": "V5.1.0",
+   "release_version": "V5.1.1",
    "selection_rules": {
     "selection_mode": "single_ranked_pool",
     "a_rank_days": 3,
@@ -22,86 +22,82 @@
  "warning_checks": [],
  "checks": {
   "duplicate": {
-   "pass": 2,
+   "pass": 1,
    "fail": 0,
    "detail": []
   },
   "conflict": {
-   "pass": 2,
+   "pass": 1,
    "fail": 0,
    "detail": []
   },
   "target_sum": {
-   "pass": 2,
+   "pass": 1,
    "fail": 0,
    "detail": []
   },
   "cash_no_overdraft": {
-   "pass": 2,
+   "pass": 1,
    "fail": 0,
    "detail": []
   },
   "buffer": {
-   "pass": 2,
+   "pass": 1,
    "fail": 0,
    "detail": [
     [
-     "2026-10-22",
-     7.4
-    ],
-    [
      "2026-10-30",
-     5.1
+     4.9
     ]
    ]
   },
   "exposure_band": {
-   "pass": 2,
+   "pass": 1,
    "fail": 0,
    "detail": []
   },
   "exposure_upper_bound": {
-   "pass": 2,
+   "pass": 1,
    "fail": 0,
    "detail": []
   },
   "share_qty": {
-   "pass": 2,
+   "pass": 1,
    "fail": 0,
    "detail": []
   },
   "limit_up": {
-   "pass": 2,
+   "pass": 1,
    "fail": 0,
    "detail": []
   },
   "limit_dn": {
-   "pass": 2,
+   "pass": 1,
    "fail": 0,
    "detail": []
   },
   "delisted": {
-   "pass": 2,
+   "pass": 1,
    "fail": 0,
    "detail": []
   },
   "missing_price": {
-   "pass": 2,
+   "pass": 1,
    "fail": 0,
    "detail": []
   },
   "lookahead": {
-   "pass": 2,
+   "pass": 1,
    "fail": 0,
    "detail": []
   },
   "security_status": {
-   "pass": 2,
+   "pass": 1,
    "fail": 0,
    "detail": []
   }
  },
  "verdict": "PASS",
- "signal_digest": "8a346e04d6361110c254dca976106915327f2aaca4cd9e45c6c9f236c6d6479e",
- "performance_digest": "9e759180b4ccc948039967bfd6c5584f37b89b80f67158e0f53d2867b6e8bb64"
+ "signal_digest": "a42504d706019ddab41250f6f28867d7d5a089dddd50494599cf6b27e7d89248",
+ "performance_digest": "c451ababcbfbbe396d130c11a04aed99d3350d444f868cf2e1308fbf72725712"
 }
