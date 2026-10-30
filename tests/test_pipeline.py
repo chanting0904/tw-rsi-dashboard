@@ -93,16 +93,16 @@ class PublishTests(unittest.TestCase):
                 "target_weight": .925, "current_weight": .925, "current_shares": 925,
                 "post_shares": 925, "target_shares": 925, "buy_shares": 0, "sell_shares": 0}]}
 
-    def evaluate(self, signal, perf=None, baseline=None, validated_signal=None, validated_perf=None):
+    def evaluate(self, signal, perf=None, baseline=None, validated_signal=None, validated_perf=None, release=RELEASE_VERSION):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / 'security_status.json').write_text(json.dumps(self.status()),encoding='utf-8')
             (root / "latest_signals.json").write_text(json.dumps(signal), encoding="utf-8")
 
             performance = dict(perf or {"cagr": .3869, "mdd": -.3564, "completed_through": "2026-10-02"})
-            performance.setdefault('release_version', RELEASE_VERSION)
+            performance.setdefault('release_version', release)
             from v5_engine.jsonio import document_digest
-            validation={'strategy_version':'V5','release_version':RELEASE_VERSION,'verdict':'PASS','rebalance_date':signal['rebalance_date'],
+            validation={'strategy_version':'V5','release_version':release,'verdict':'PASS','rebalance_date':signal['rebalance_date'],
                 'signal_digest':document_digest(validated_signal or signal),'performance_digest':document_digest(validated_perf or performance)}
             (root/'validation_log.json').write_text(json.dumps(validation),encoding='utf-8')
             (root / "perf.json").write_text(json.dumps(performance), encoding="utf-8")
@@ -112,6 +112,16 @@ class PublishTests(unittest.TestCase):
 
     def test_valid_prior_close_plan_is_publishable(self):
         self.assertTrue(self.evaluate(self.signal())["ok"])
+
+    def test_release_bump_keeps_already_published_week_valid(self):
+        signal = self.signal()
+        signal["release_version"] = "V5.0.1"
+        self.assertTrue(self.evaluate(signal, release="V5.0.1")["ok"])
+
+    def test_signal_and_validation_from_different_releases_are_rejected(self):
+        signal = self.signal()
+        signal["release_version"] = "V5.0.1"
+        self.assertFalse(self.evaluate(signal)["ok"])
 
     def test_new_week_returns_do_not_trigger_fixed_anchor_drift(self):
         perf = {"cagr": .8, "mdd": -.2, "completed_through": "2026-10-02",

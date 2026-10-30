@@ -29,7 +29,7 @@ from types import SimpleNamespace
 from collections import Counter
 import urllib.request
 from zoneinfo import ZoneInfo
-from version import STRATEGY_VERSION, RELEASE_VERSION
+from version import STRATEGY_VERSION
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SIG_FILE = os.path.join(HERE, "output", "latest_signals.json")
@@ -216,8 +216,9 @@ def evaluate(force=False, today=None, output_dir=None, notify=True):
         if sig.get("strategy_version") != STRATEGY_VERSION:
             reasons.append(f"canonical strategy_version={sig.get('strategy_version')} 非 V5")
 
-        if sig.get('release_version') != RELEASE_VERSION or (val or {}).get('release_version') != RELEASE_VERSION:
-            reasons.append('訊號／驗證程式版本與目前版本不一致')
+        # 已發布的週計畫以產生時的版本為準；之後升版不重算本週，下次排程才用新版產生。
+        if not sig.get('release_version') or sig.get('release_version') != (val or {}).get('release_version'):
+            reasons.append('訊號與驗證程式版本不一致')
         # --- 資料新鮮度（不分 FORCE，永遠生效）---
         # 1) 資料必須已含「本週最後交易日」：rebal_date 必須 == 本週最後交易日
         #    （資料庫缺最後交易日收盤 → 擋，連 FORCE 補跑亦不發布，避免用過期資料出訊號）
@@ -279,7 +280,7 @@ def evaluate(force=False, today=None, output_dir=None, notify=True):
         reg_hist = _load_json(REG_PATH)
         baseline = _load_json(BASE_PATH)
         rd = sig.get("rebalance_date")
-        reg_key = (RELEASE_VERSION + '|' + rd + ('|PRE_CLOSE_PLAN' if sig.get('signal_mode') == 'PRE_CLOSE_PLAN' else '')) if rd else None
+        reg_key = (str(sig.get('release_version')) + '|' + rd + ('|PRE_CLOSE_PLAN' if sig.get('signal_mode') == 'PRE_CLOSE_PLAN' else '')) if rd else None
 
         # 全歷史基準：perf.json 的 cagr/mdd；漂移 >1.0pp → FAIL；0.1~1.0（資料演進）→ 自動更新；無檔 → 建立
         perf = _load_json(os.path.join(output_dir, "perf.json"))
@@ -290,7 +291,7 @@ def evaluate(force=False, today=None, output_dir=None, notify=True):
             reasons.append('驗證檔未綁定本次完整訊號與績效，停止發布')
         if sig.get("signal_mode") == "PRE_CLOSE_PLAN" and (not perf.get("completed_through") or perf["completed_through"] >= rd):
             reasons.append("歷史績效必須截止於本週計畫之前的已完成交易週")
-        if perf and perf.get('release_version') != RELEASE_VERSION:
+        if perf and perf.get('release_version') != sig.get('release_version'):
             reasons.append('績效與訊號版本不一致')
         if perf:
             anchor = perf.get("fixed_anchor") or perf

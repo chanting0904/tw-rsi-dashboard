@@ -8,7 +8,6 @@ import time
 import urllib.request
 
 from publish_gate import fingerprint
-from version import RELEASE_VERSION
 
 ROOT = Path(__file__).resolve().parent
 PUBLIC_URL = "https://chanting0904.github.io/tw-rsi-dashboard/"
@@ -26,12 +25,10 @@ def expected_publication(root=ROOT):
     body = (root / "index.html").read_bytes()
     signal = json.loads((root / "output/latest_signals.json").read_text(encoding="utf-8"))
     data = embedded_data(body.decode("utf-8"))
-    expected = {"release_version": RELEASE_VERSION, "canonical_hash": fingerprint(signal),
+    expected = {"release_version": signal.get("release_version"), "canonical_hash": fingerprint(signal),
                 "rebal_date": signal.get("rebalance_date"), "sig_date": signal.get("sig_date"),
                 "price_basis_date": signal.get("price_basis_date") or signal.get("rebalance_date"),
                 "sig_validated": True}
-    if signal.get("release_version") != RELEASE_VERSION:
-        raise ValueError("本地訊號版本與程式版本不同")
     if any(data.get(key) != value for key, value in expected.items()):
         raise ValueError("本地網頁與訊號版本、日期或驗證狀態不一致")
     return expected, hashlib.sha256(body).hexdigest()

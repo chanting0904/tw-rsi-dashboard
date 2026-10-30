@@ -155,7 +155,7 @@ DATA = {
     "calendar_years": list(_calendar),
     "holidays": sorted({day for days in _calendar.values() for day in days}),
     "weekly_status": _weekly_status,
-    "sig_validated": validation_matches(SIG,_validation,perf) and _validation.get('verdict') == 'PASS' and _validation.get('strategy_version') == STRATEGY_VERSION and _validation.get('rebalance_date') == SIG.get('rebalance_date') and _validation.get('release_version') == SIG.get('release_version') == RELEASE_VERSION,
+    "sig_validated": validation_matches(SIG,_validation,perf) and _validation.get('verdict') == 'PASS' and _validation.get('strategy_version') == STRATEGY_VERSION and _validation.get('rebalance_date') == SIG.get('rebalance_date') and _validation.get('release_version') == SIG.get('release_version'),
     "signal_mode": SIG.get("signal_mode", "CLOSE_SIMULATION"),
     "price_basis_date": SIG.get("price_basis_date") or SIG.get("rebalance_date"),
     "strategy_version": SIG.get("strategy_version", STRATEGY_VERSION),
