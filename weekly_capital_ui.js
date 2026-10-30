@@ -17,6 +17,8 @@
     const $=id=>document.getElementById(id),key='v4_weekly_capital_snapshots_v1';
     let plan=null,saved={};
     try{saved=JSON.parse(localStorage.getItem(key)||'{}');if(!saved||Array.isArray(saved)||typeof saved!=='object')saved={};}catch(_){saved={};}
+    // One week may be tried with several amounts; keep each so the amount actually used can be carried.
+    const savedEntries=date=>{const e=saved[date];return !e?[]:Array.isArray(e.byCapital)?e.byCapital:[e];};
 
     function resetSummary(){
       for(const id of ['preview-buy-count','preview-sell-count','preview-exposure','preview-cash'])$(id).textContent='—';
@@ -53,19 +55,21 @@
         const previous=data.previous_capital_signal,current=data.capital_signal;
         const adjustmentReference=data.previous_model_signal||previous;
         const previousCapital=Number($('cap-previous').value),capital=Number($('cap').value);
-        const entry=saved[previous?.rebalance_date];
-        const snapshot=entry?.capital===previousCapital&&entry.price_policy===pricePolicy&&entry.signal_basis===snapshotBasis(previous)?entry:null;
+        const entry=savedEntries(previous?.rebalance_date).find(x=>x.capital===previousCapital);
+        const snapshot=entry&&entry.price_policy===pricePolicy&&entry.signal_basis===snapshotBasis(previous)?entry:null;
         const result=root.weeklyCapitalPlan({previous,current,previousCapital,capital,quotes:data.order_quotes||{},snapshot,adjustmentReference});
         if(!result.withinBudget)throw Error('受限持股或費用使配置超出本週資金／95%上限，已停止產生可執行清單。');
         const anchor=root.weeklyCapitalPlan({previous,current,previousCapital,capital,quotes:signalQuotes(current),snapshot,adjustmentReference});
         if(!anchor.withinBudget)throw Error('訊號基準配置超出資金／95%上限，暫不產生可承接的清單。');
-        plan=result;
+        // Show the signal-basis plan: the list on screen is exactly what next week carries.
+        plan=anchor;
         const rows=[...plan.rows].filter(r=>r.current||r.target).sort((a,b)=>a.code.localeCompare(b.code));
         renderGroupedRows(rows);
         renderOverview(plan,rows);$('weekly-capital-summary').textContent='';
-        $('weekly-capital-basis').textContent='上週基準 '+plan.previousDate+' → 本週 '+plan.date+'；'+(plan.source==='saved'?'沿用本瀏覽器已儲存的上週訊號基準股數。':(entry?'舊試算不符目前基準，已重新還原。':'')+'依上週公布股數與原本金基準，按你輸入的上週資金還原原有股數，不重新補滿倉位。')+' 本週行情只用於估值與本週調整；下週承接紀錄採本週訊號基準價，日常報價不會改寫上週股數。這是理論持股，未連接券商庫存；有未成交或實際股數不同，請在下方輸入完整實際持股，重新核對下單股數。';
+        $('weekly-capital-basis').textContent='上週基準 '+plan.previousDate+' → 本週 '+plan.date+'；'+(plan.source==='saved'?'原有股數沿用本瀏覽器上週用 '+money(plan.previousCapital)+' 算出的清單，與上週畫面相同。':'⚠ 注意：這台瀏覽器找不到上週用 '+money(plan.previousCapital)+' 算出的清單'+(entry?'（上週資料已更新）':'')+'，原有股數改依上週模型推算，可能與上週畫面差幾股；請先對照券商庫存，不同時在下方輸入實際持股核對。')+' 本週清單一律用訊號基準價計算，之後股價漲跌不會改變清單或原有股數，下週會原樣承接。這是理論持股，未連接券商庫存；有未成交或實際股數不同，請在下方輸入完整實際持股，重新核對下單股數。';
         $('weekly-capital-error').textContent='';$('weekly-capital-results').hidden=false;
-        saved[plan.date]={...anchor.snapshot,price_policy:pricePolicy,signal_basis:snapshotBasis(current)};
+        const record={...anchor.snapshot,price_policy:pricePolicy,signal_basis:snapshotBasis(current)};
+        saved[plan.date]={byCapital:[...savedEntries(plan.date).filter(x=>x.capital!==record.capital),record].slice(-5)};
         saved=Object.fromEntries(Object.entries(saved).sort(([a],[b])=>a.localeCompare(b)).slice(-6));
         try{localStorage.setItem(key,JSON.stringify(saved));}catch(_){$('weekly-capital-error').textContent='本次計算有效，但瀏覽器無法儲存股數；下次將依模型推算。';}
         onChange();

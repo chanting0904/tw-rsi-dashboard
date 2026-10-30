@@ -108,6 +108,7 @@ function fixture(data,stored={}){
  }
  return {$,calls,api,data,calculate,stored:()=>JSON.parse(local)};
 }
+function entryOf(stored,date){const e=stored[date];return e&&e.byCapital?e.byCapital[e.byCapital.length-1]:e;}
 function ownRow(result,code='2466'){const row=result.rows.find(r=>r.code===code);assert.ok(row,code+' row missing');return row;}
 function directPlan(previous,current,previousCapital,capital,quotes,adjustmentReference=null){
  const scope={};for(const name of ['capital_preview.js','weekly_capital.js'])vm.runInNewContext(read(name),scope);
@@ -135,20 +136,20 @@ test('legacy stored19-share preview is not reused as a confirmed previous holdin
  assert.equal(f.calls[0].args.snapshot,null);
 });
 
-test('daily quote changes remain visible but cannot overwrite the23-share dated carry anchor',()=>{
+test('daily quote changes cannot change the shown list or overwrite the23-share dated carry anchor',()=>{
  const f=fixture(liveData());
  const first=f.calculate();
- const saved0=f.stored()[signal.rebalance_date];
+ const saved0=entryOf(f.stored(),signal.rebalance_date);
  assert.equal(saved0.price_policy,'signal_close_v2');
  assert.ok(saved0.signal_basis);
  assert.equal(saved0.holdings.find(h=>h.code==='2466').shares,23);
  assert.equal(ownRow(first).target,23);
  f.data.order_quotes['2466'].price=315.5;
  f.data.order_quotes['2466'].date='2026-10-28';
- const second=f.calculate();
- assert.equal(ownRow(second).price,315.5);
- assert.equal(f.stored()[signal.rebalance_date].holdings.find(h=>h.code==='2466').shares,23);
- assert.deepEqual(f.stored()[signal.rebalance_date].holdings,saved0.holdings);
+ f.calculate();
+ assert.equal(f.api.getTargets().find(t=>t.code==='2466').quantity,23,'shown list must equal the carried list');
+ assert.equal(entryOf(f.stored(),signal.rebalance_date).holdings.find(h=>h.code==='2466').shares,23);
+ assert.deepEqual(entryOf(f.stored(),signal.rebalance_date).holdings,saved0.holdings);
 });
 
 test('a real prior trim snapshot survives into the next week and is not replaced by model reconstruction',()=>{
@@ -157,7 +158,7 @@ test('a real prior trim snapshot survives into the next week and is not replaced
  const first=fixture(liveData(previous,current));const trimmed=first.calculate(100000,100000);
  const held=ownRow(trimmed,'1101').target;
  assert.ok(held<Math.floor(100000*.95/300),'fixture must create a fee-aware actual trim');
- const stored=first.stored();assert.equal(stored[current.rebalance_date].price_policy,'signal_close_v2');
+ const stored=first.stored();assert.equal(entryOf(stored,current.rebalance_date).price_policy,'signal_close_v2');
  const future={...clone(current),rebalance_date:'2026-10-30',price_basis_date:'2026-10-29'};
  const second=fixture(liveData(current,future),stored);const result=second.calculate(100000,100000);
  assert.equal(ownRow(result,'1101').current,held);
@@ -174,7 +175,7 @@ test('matching economic signal still reuses its stable snapshot after a display 
 
 test('a stable marker with the wrong economic basis is ignored rather than carrying19 shares',()=>{
  const first=fixture(liveData());first.calculate();const stored=first.stored();
- const entry=stored[signal.rebalance_date];entry.price_policy='signal_close_v2';entry.signal_basis='unrelated signal';
+ const entry=entryOf(stored,signal.rebalance_date);entry.price_policy='signal_close_v2';entry.signal_basis='unrelated signal';
  entry.holdings.find(h=>h.code==='2466').shares=19;
  const second=fixture(liveData(signal,nextWeek(signal)),stored);const result=second.calculate();
  assert.equal(second.calls[0].args.snapshot,null);
@@ -185,7 +186,7 @@ test('adding stable snapshot metadata preserves pending stock-dividend shares',(
  const current=clone(signal);
  current.pending_assets=[{code:'2466',shares:188,ex_date:'2026-10-20',tradable_date:null,grant_ratio:1.1}];
  const f=fixture(liveData(priorSignal,current));f.calculate();
- const entry=f.stored()[current.rebalance_date];
+ const entry=entryOf(f.stored(),current.rebalance_date);
  assert.equal(entry.price_policy,'signal_close_v2');
  assert.deepEqual(JSON.parse(JSON.stringify(entry.pendingHoldings)),[{code:'2466',shares:1,ex_date:'2026-10-20',tradable_date:null}]);
 });

@@ -1,11 +1,11 @@
 const test=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
-function fixture({ready=true,blockedStorage=false}={}){
+function fixture({ready=true,blockedStorage=false,data=null,stored:initial=null}={}){
  const elements={},created=[],make=()=>{const node={value:'',textContent:'',hidden:false,className:'',children:[],listeners:{},addEventListener(k,v){this.listeners[k]=v;},replaceChildren(){this.children=[];},createTHead(){const child=make();this.children.push(child);return child;},createTBody(){const child=make();this.children.push(child);return child;},insertRow(){const child=make();this.children.push(child);return child;},insertCell(){const child=make();this.children.push(child);return child;},appendChild(child){this.children.push(child);},append(...children){this.children.push(...children);}};created.push(node);return node;};
- const $=id=>elements[id]??=(make()),calls=[];let stored=null;
+ const $=id=>elements[id]??=(make()),calls=[];let stored=initial;
  const result={withinBudget:true,bandReached:true,rows:[{code:'1101',name:'fixture',current:10,target:10,change:0,side:'HOLD',reason:'續抱不動'}],invested:94000,cash:6000,fees:0,exposure:.94,previousDate:'2026-10-08',date:'2026-10-16',source:'reconstructed',snapshot:{schema:1,rebalance_date:'2026-10-16',capital:100000,holdings:[{code:'1101',shares:10}]}};
  const scope={document:{getElementById:$,createElement:make},localStorage:{getItem(){if(blockedStorage)throw Error('blocked');return stored;},setItem(k,v){if(blockedStorage)throw Error('blocked');stored=v;},removeItem(){stored=null;}},weeklyCapitalPlan(args){calls.push(args);if(!args.capital||!args.previousCapital)throw Error('兩個金額都必填');return result;},navigator:{clipboard:{writeText:async()=>{}}}};
  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../weekly_capital_ui.js'),'utf8'),scope);
- const api=scope.initWeeklyCapital({data:{sig_validated:true,previous_capital_signal:{rebalance_date:'2026-10-08'},capital_signal:{}},money:String,isReady:()=>ready});
+ const api=scope.initWeeklyCapital({data:data||{sig_validated:true,previous_capital_signal:{rebalance_date:'2026-10-08'},capital_signal:{}},money:String,isReady:()=>ready});
  return {$,api,calls,result,created,setReady:v=>ready=v,stored:()=>stored,click:()=>$.call(null,'cap-apply').listeners.click()};
 }
 test('partial sells have a distinct visual marker while exits do not',()=>{const f=fixture();f.result.rows=[
@@ -32,3 +32,12 @@ test('a plan older than one weekly cycle cannot be reused',()=>assert.equal(week
 test('unvalidated close is never usable for a remainder order',()=>assert.equal(weeklyCapitalReady({...confirmed,sig_validated:false},'2026-10-19',readyStatus),false));
 
 test('positive pending rights are shown separately so the capital total reconciles',()=>{const f=fixture();f.result.reservedAssets=118;f.$('cap-previous').value=f.$('cap').value='100000';f.click();assert.match(f.$('preview-result-note').textContent,/待領權益 118/);});
+
+test('every amount tried for a week is kept so next week finds the one actually used',()=>{
+ const week={rebalance_date:'2026-10-16',actions:[]},f=fixture({data:{sig_validated:true,previous_capital_signal:{rebalance_date:'2026-10-08'},capital_signal:week}});
+ for(const capital of [100037,90000]){f.result.snapshot={schema:1,rebalance_date:'2026-10-16',capital,holdings:[{code:'1101',shares:capital===100037?23:20}]};f.$('cap-previous').value='100000';f.$('cap').value=String(capital);f.click();}
+ const next=fixture({stored:f.stored(),data:{sig_validated:true,previous_capital_signal:week,capital_signal:{rebalance_date:'2026-10-23'}}});
+ next.$('cap-previous').value='100037';next.$('cap').value='100810';next.click();
+ assert.equal(next.calls[0].snapshot.holdings[0].shares,23);
+});
+test('a missing record is called out instead of silently estimated',()=>{const f=fixture();f.$('cap-previous').value=f.$('cap').value='100000';f.click();assert.equal(f.calls[0].snapshot,null);assert.match(f.$('weekly-capital-basis').textContent,/⚠ 注意/);});

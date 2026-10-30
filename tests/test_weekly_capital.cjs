@@ -110,3 +110,17 @@ test('retained shares receive delivered rights exactly once',()=>{
  f.snapshot={schema:1,rebalance_date:f.previous.rebalance_date,capital:100000,holdings:[{code:'1101',shares:100},{code:'1102',shares:474}],pendingHoldings:[{code:'1101',shares:5,ex_date:'2026-09-01',tradable_date:'2026-10-12'}]};
  assert.equal(weeklyCapitalPlan(f).rows.find(r=>r.code==='1101').current,105);
 });
+
+test('published weekly list carries to next week share-for-share whatever prices do',()=>{
+ const fs=require('fs'),path=require('path'),read=f=>JSON.parse(fs.readFileSync(path.join(__dirname,'../output',f),'utf8'));
+ const previous=read('previous_capital_signal.json'),current=read('latest_signals.json');
+ const quotes=(s,move=1)=>Object.fromEntries(s.actions.map(a=>[a.stock_code,{price:a.price*move,tradable:true}]));
+ const next={...structuredClone(current),rebalance_date:'2099-01-02',actions:current.actions.map(a=>({...a,current_shares:a.post_shares,action:a.post_shares>0?'HOLD':a.action}))};
+ for(const capital of [100810,250000,1000000]){
+  const week=weeklyCapitalPlan({previous,current,previousCapital:100037,capital,quotes:quotes(current)});
+  for(const move of [.5,1,1.8]){
+   const carried=weeklyCapitalPlan({previous:current,current:next,previousCapital:capital,capital,quotes:quotes(current,move),snapshot:week.snapshot});
+   for(const h of week.snapshot.holdings)assert.equal(carried.rows.find(r=>r.code===h.code).current,h.shares,h.code+' '+capital+' '+move);
+  }
+ }
+});
