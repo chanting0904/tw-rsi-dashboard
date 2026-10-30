@@ -1,11 +1,11 @@
 {
   "state": "ready",
   "rebalance_date": "2026-10-30",
-  "updated_at": "2026-10-30T13:51:07.620477+08:00",
+  "updated_at": "2026-10-30T13:52:07.589396+08:00",
   "stage": "signal",
   "attempt": 1,
   "max_attempts": 3,
   "run_id": "40897954467",
-  "canonical_hash": "678cd4b5828fcf90",
-  "release_version": "V5.1.4"
+  "canonical_hash": "b4f327178981d457",
+  "release_version": "V5.1.2"
 }
