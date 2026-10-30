@@ -11,7 +11,6 @@ from v5_engine.jsonio import write_json
 from market_dates import quote_date
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SRC = os.path.join(HERE, "RSI選股器.html")
 IDX = os.path.join(HERE, "index.html")
 CTX = ssl.create_default_context()  # 保留憑證驗證，避免接收被冒充的行情資料
 HDR = {"User-Agent": "Mozilla/5.0"}
@@ -168,13 +167,12 @@ def main():
     if not all(official) or len({day for _,day in batches}) > 1:
         collect('已驗證本地庫', saved_prices)
     if not batches:
-        for path in (IDX, SRC):
-            if os.path.exists(path):
-                with open(path, encoding='utf-8') as stream:
-                    _, data = read_data(stream.read())
-                codes = codes_of(data)
-                if codes and collect('yfinance', lambda: yf_prices(codes)):
-                    break
+        if os.path.exists(IDX):
+            with open(IDX, encoding='utf-8') as stream:
+                _, data = read_data(stream.read())
+            codes = codes_of(data)
+            if codes:
+                collect('yfinance', lambda: yf_prices(codes))
     if not batches:
         raise RuntimeError('所有來源皆無有效近期行情，保留原價格資料')
     sig = max(day for _, day in batches)
@@ -194,10 +192,9 @@ def main():
     # Atomic write and propagate disk errors. No success or HTML update on failure.
     write_json(price_path, {'px_date': sig, 'prices': px})
     print(f'[OK] 已寫 output/prices.json（{len(px)} 檔，{sig}）')
-    for path in (SRC, IDX):
-        if os.path.exists(path):
-            update_file(path, px, sig, expected_rebal_date)
-            print('[OK] 已更新', os.path.basename(path), '->', sig)
+    if os.path.exists(IDX):
+        update_file(IDX, px, sig, expected_rebal_date)
+        print('[OK] 已更新', os.path.basename(IDX), '->', sig)
 
 
 if __name__ == '__main__':
