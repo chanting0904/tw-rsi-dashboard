@@ -52,6 +52,8 @@ def load_holidays():
         s = set()
         for v in h.values():
             s.update(v)
+        # 元旦是固定國定假日；年底最後一週判斷調倉日時，明年表即使未公布也不會把 1/1 當交易日。
+        s.add(f"{int(year) + 1}-01-01")
         return s
     except Exception as error:
         raise RuntimeError("交易日設定無法載入，停止發布：" + str(error)) from error

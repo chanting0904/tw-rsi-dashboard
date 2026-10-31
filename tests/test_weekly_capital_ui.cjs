@@ -1,12 +1,12 @@
 const test=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
 function fixture({ready=true,blockedStorage=false,data=null,stored:initial=null}={}){
  const elements={},created=[],make=()=>{const node={value:'',textContent:'',hidden:false,className:'',children:[],listeners:{},addEventListener(k,v){this.listeners[k]=v;},replaceChildren(){this.children=[];},createTHead(){const child=make();this.children.push(child);return child;},createTBody(){const child=make();this.children.push(child);return child;},insertRow(){const child=make();this.children.push(child);return child;},insertCell(){const child=make();this.children.push(child);return child;},appendChild(child){this.children.push(child);},append(...children){this.children.push(...children);}};created.push(node);return node;};
- const $=id=>elements[id]??=(make()),calls=[];let stored=initial;
+ const $=id=>elements[id]??=(make()),calls=[],copied=[],opened=[];let stored=initial;
  const result={withinBudget:true,bandReached:true,rows:[{code:'1101',name:'fixture',current:10,target:10,change:0,side:'HOLD',reason:'續抱不動'}],invested:94000,cash:6000,fees:0,exposure:.94,previousDate:'2026-10-08',date:'2026-10-16',source:'reconstructed',snapshot:{schema:1,rebalance_date:'2026-10-16',capital:100000,holdings:[{code:'1101',shares:10}]}};
- const scope={document:{getElementById:$,createElement:make},localStorage:{getItem(){if(blockedStorage)throw Error('blocked');return stored;},setItem(k,v){if(blockedStorage)throw Error('blocked');stored=v;},removeItem(){stored=null;}},weeklyCapitalPlan(args){calls.push(args);if(!args.capital||!args.previousCapital)throw Error('兩個金額都必填');return result;},navigator:{clipboard:{writeText:async()=>{}}}};
+ const scope={document:{getElementById:$,createElement:make},localStorage:{getItem(){if(blockedStorage)throw Error('blocked');return stored;},setItem(k,v){if(blockedStorage)throw Error('blocked');stored=v;},removeItem(){stored=null;}},weeklyCapitalPlan(args){calls.push(args);if(!args.capital||!args.previousCapital)throw Error('兩個金額都必填');return result;},navigator:{clipboard:{writeText:async t=>{copied.push(t);}}},btoa,atob,open:url=>opened.push(url)};
  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../weekly_capital_ui.js'),'utf8'),scope);
  const api=scope.initWeeklyCapital({data:data||{sig_validated:true,previous_capital_signal:{rebalance_date:'2026-10-08'},capital_signal:{}},money:String,isReady:()=>ready});
- return {$,api,calls,result,created,setReady:v=>ready=v,stored:()=>stored,click:()=>$.call(null,'cap-apply').listeners.click()};
+ return {$,api,calls,result,created,copied,opened,setReady:v=>ready=v,stored:()=>stored,click:()=>$.call(null,'cap-apply').listeners.click()};
 }
 test('partial sells have a distinct visual marker while exits do not',()=>{const f=fixture();f.result.rows=[
  {code:'6214',name:'精誠',current:26,target:12,change:-14,side:'SELL',reason:'減碼'},
@@ -41,3 +41,29 @@ test('every amount tried for a week is kept so next week finds the one actually 
  assert.equal(next.calls[0].snapshot.holdings[0].shares,23);
 });
 test('a missing record is called out instead of silently estimated',()=>{const f=fixture();f.$('cap-previous').value=f.$('cap').value='100000';f.click();assert.equal(f.calls[0].snapshot,null);assert.match(f.$('weekly-capital-basis').textContent,/⚠ 注意/);});
+
+test('a backup code carries the exact record to a browser that has none',async()=>{
+ const week={rebalance_date:'2026-10-16',actions:[]},f=fixture({data:{sig_validated:true,previous_capital_signal:{rebalance_date:'2026-10-08'},capital_signal:week}});
+ f.result.snapshot={schema:1,rebalance_date:'2026-10-16',capital:100037,pendingHoldings:[],holdings:[{code:'2466',shares:23}]};
+ f.$('cap-previous').value='100000';f.$('cap').value='100037';f.click();
+ await f.$('weekly-capital-backup').listeners.click();
+ f.$('weekly-capital-tg').listeners.click();
+ assert.match(decodeURIComponent(f.opened[0]),/2466 .*23 股/);
+ assert.ok(decodeURIComponent(f.opened[0]).includes(f.copied[0]));
+ const next=fixture({data:{sig_validated:true,previous_capital_signal:week,capital_signal:{rebalance_date:'2026-10-23'}}});
+ next.$('weekly-capital-import-text').value='隨便的前文\n'+f.copied[0];next.$('weekly-capital-import').listeners.click();
+ assert.match(next.$('weekly-capital-import-note').textContent,/已匯入 2026-10-16/);
+ next.$('cap-previous').value='100037';next.$('cap').value='100810';next.click();
+ assert.equal(next.calls[0].snapshot.holdings[0].shares,23);
+ assert.equal(JSON.stringify(next.calls[0].snapshot.pendingHoldings),"[]");
+});
+test('a backup code from a different week or changed data is refused',async()=>{
+ const week={rebalance_date:'2026-10-16',actions:[]},f=fixture({data:{sig_validated:true,previous_capital_signal:{rebalance_date:'2026-10-08'},capital_signal:week}});
+ f.result.snapshot={schema:1,rebalance_date:'2026-10-16',capital:100037,holdings:[{code:'2466',shares:23}]};
+ f.$('cap-previous').value='100000';f.$('cap').value='100037';f.click();await f.$('weekly-capital-backup').listeners.click();
+ const changed=fixture({data:{sig_validated:true,previous_capital_signal:{...week,receivables:5},capital_signal:{rebalance_date:'2026-10-23'}}});
+ changed.$('weekly-capital-import-text').value=f.copied[0];changed.$('weekly-capital-import').listeners.click();
+ assert.match(changed.$('weekly-capital-import-note').textContent,/對不上/);assert.equal(changed.stored(),null);
+ changed.$('weekly-capital-import-text').value='沒有備份碼';changed.$('weekly-capital-import').listeners.click();
+ assert.match(changed.$('weekly-capital-import-note').textContent,/找不到備份碼/);
+});

@@ -76,6 +76,13 @@ jobs:
       # Recovery imports the same pandas/numpy modules as the main pipeline.
       - name: 安裝依賴
         run: pip install -q -r requirements.txt
+      - name: 12 月每週一提醒補明年休市表
+        if: github.event.schedule == '0 22 * * 0-4'
+        continue-on-error: true
+        env:
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: python holiday_check.py
       - name: 晚間發布及06:00／07:00核對本週完成狀態
         id: recovery
         if: github.event_name == 'schedule'

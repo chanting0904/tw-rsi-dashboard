@@ -13,12 +13,38 @@
     return Object.fromEntries((signal.actions||[]).map(a=>[a.stock_code,{price:a.price,date:a.price_date||signal.price_basis_date,
       tradable:a.trading_status===undefined||['TRADABLE','OUTSIDE_TARGET'].includes(a.trading_status),buyable:a.buy_allowed!==false,sellable:a.sell_allowed!==false}]));
   }
+  const backupPrefix='V5備份1:',siteUrl='https://chanting0904.github.io/tw-rsi-dashboard/';
+  function hashText(text){let h=0x811c9dc5;for(let i=0;i<text.length;i++){h^=text.charCodeAt(i);h=Math.imul(h,0x01000193)>>>0;}return h.toString(16).padStart(8,'0');}
+  // A short code carries one saved record to another device; the signal hash ties it to the exact week it was made for.
+  function backupCode(record){
+    const json=JSON.stringify({d:record.rebalance_date,c:record.capital,h:record.holdings.map(x=>[x.code,x.shares]),p:record.pendingHoldings??null,k:hashText(record.signal_basis)})
+      .replace(/[\u0080-￿]/g,c=>'\\u'+c.charCodeAt(0).toString(16).padStart(4,'0'));
+    return backupPrefix+root.btoa(json).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  }
+  function readBackup(text,signals){
+    const match=new RegExp(backupPrefix+'([A-Za-z0-9_-]+)').exec(text||'');
+    if(!match)throw Error('找不到備份碼，請貼上含有「'+backupPrefix+'」的整段文字。');
+    let body;
+    try{const s=match[1].replace(/-/g,'+').replace(/_/g,'/');body=JSON.parse(root.atob(s+'==='.slice((s.length+3)%4)));}catch(_){throw Error('備份碼不完整，請重新複製整段。');}
+    if(typeof body?.d!=='string'||!Number.isFinite(body.c)||!Array.isArray(body.h)||!(Array.isArray(body.p)||body.p===null)||typeof body.k!=='string'
+      ||!body.h.every(x=>Array.isArray(x)&&typeof x[0]==='string'&&Number.isSafeInteger(x[1])&&x[1]>=0))throw Error('備份碼格式不正確。');
+    const signal=signals.find(s=>s?.rebalance_date===body.d&&hashText(snapshotBasis(s))===body.k);
+    if(!signal)throw Error('這組備份碼是 '+body.d+' 的紀錄，和網頁目前的上週或本週資料對不上，無法使用。');
+    const record={schema:1,rebalance_date:body.d,capital:body.c,holdings:body.h.map(([code,shares])=>({code,shares})),price_policy:pricePolicy,signal_basis:snapshotBasis(signal)};
+    if(body.p!==null)record.pendingHoldings=body.p;
+    return record;
+  }
   root.initWeeklyCapital=function({data,money,isReady=()=>true,onChange=()=>{}}){
     const $=id=>document.getElementById(id),key='v4_weekly_capital_snapshots_v1';
-    let plan=null,saved={};
+    let plan=null,record=null,saved={};
     try{saved=JSON.parse(localStorage.getItem(key)||'{}');if(!saved||Array.isArray(saved)||typeof saved!=='object')saved={};}catch(_){saved={};}
     // One week may be tried with several amounts; keep each so the amount actually used can be carried.
     const savedEntries=date=>{const e=saved[date];return !e?[]:Array.isArray(e.byCapital)?e.byCapital:[e];};
+    function store(entry){
+      saved[entry.rebalance_date]={byCapital:[...savedEntries(entry.rebalance_date).filter(x=>x.capital!==entry.capital),entry].slice(-5)};
+      saved=Object.fromEntries(Object.entries(saved).sort(([a],[b])=>a.localeCompare(b)).slice(-6));
+      try{localStorage.setItem(key,JSON.stringify(saved));return true;}catch(_){return false;}
+    }
 
     function resetSummary(){
       for(const id of ['preview-buy-count','preview-sell-count','preview-exposure','preview-cash'])$(id).textContent='—';
@@ -47,9 +73,9 @@
         box.appendChild(table);rootTable.appendChild(box);
       }
     }
-    function invalidate(){plan=null;resetSummary();$('weekly-capital-copy-note').textContent='';$('weekly-capital-results').hidden=true;$('weekly-capital-error').textContent='請確認兩週總資金後，按「計算本週買賣」。';onChange();}
+    function invalidate(){plan=null;record=null;resetSummary();$('weekly-capital-copy-note').textContent='';$('weekly-capital-results').hidden=true;$('weekly-capital-error').textContent='請確認兩週總資金後，按「計算本週買賣」。';onChange();}
     function calculate(){
-      plan=null;resetSummary();$('weekly-capital-results').hidden=true;$('weekly-capital-copy-note').textContent='';
+      plan=null;record=null;resetSummary();$('weekly-capital-results').hidden=true;$('weekly-capital-copy-note').textContent='';
       try{
         if(!data.sig_validated||!isReady())throw Error('本週訊號尚未確認完成，暫不產生買賣清單；請先確認頁首狀態。');
         const previous=data.previous_capital_signal,current=data.capital_signal;
@@ -66,12 +92,10 @@
         const rows=[...plan.rows].filter(r=>r.current||r.target).sort((a,b)=>a.code.localeCompare(b.code));
         renderGroupedRows(rows);
         renderOverview(plan,rows);$('weekly-capital-summary').textContent='';
-        $('weekly-capital-basis').textContent='上週基準 '+plan.previousDate+' → 本週 '+plan.date+'；'+(plan.source==='saved'?'原有股數沿用本瀏覽器上週用 '+money(plan.previousCapital)+' 算出的清單，與上週畫面相同。':'⚠ 注意：這台瀏覽器找不到上週用 '+money(plan.previousCapital)+' 算出的清單'+(entry?'（上週資料已更新）':'')+'，原有股數改依上週模型推算，可能與上週畫面差幾股；請先對照券商庫存，不同時在下方輸入實際持股核對。')+' 本週清單一律用訊號基準價計算，之後股價漲跌不會改變清單或原有股數，下週會原樣承接。這是理論持股，未連接券商庫存；有未成交或實際股數不同，請在下方輸入完整實際持股，重新核對下單股數。';
+        $('weekly-capital-basis').textContent='上週基準 '+plan.previousDate+' → 本週 '+plan.date+'；'+(plan.source==='saved'?'原有股數沿用本瀏覽器上週用 '+money(plan.previousCapital)+' 算出的清單，與上週畫面相同。':'⚠ 注意：這台瀏覽器找不到上週用 '+money(plan.previousCapital)+' 算出的清單'+(entry?'（上週資料已更新）':'')+'，原有股數改依上週模型推算，可能與上週畫面差幾股。有上週的備份碼，請先在下方「貼上備份碼」匯入再重算；沒有的話請對照券商庫存，不同時在下方輸入實際持股核對。')+' 本週清單一律用訊號基準價計算，之後股價漲跌不會改變清單或原有股數，下週會原樣承接。這是理論持股，未連接券商庫存；有未成交或實際股數不同，請在下方輸入完整實際持股，重新核對下單股數。';
         $('weekly-capital-error').textContent='';$('weekly-capital-results').hidden=false;
-        const record={...anchor.snapshot,price_policy:pricePolicy,signal_basis:snapshotBasis(current)};
-        saved[plan.date]={byCapital:[...savedEntries(plan.date).filter(x=>x.capital!==record.capital),record].slice(-5)};
-        saved=Object.fromEntries(Object.entries(saved).sort(([a],[b])=>a.localeCompare(b)).slice(-6));
-        try{localStorage.setItem(key,JSON.stringify(saved));}catch(_){$('weekly-capital-error').textContent='本次計算有效，但瀏覽器無法儲存股數；下次將依模型推算。';}
+        record={...anchor.snapshot,price_policy:pricePolicy,signal_basis:snapshotBasis(current)};
+        if(!store(record))$('weekly-capital-error').textContent='本次計算有效，但瀏覽器無法儲存股數；請按「存到 Telegram」或「複製備份碼」保存，下週貼回。';
         onChange();
       }catch(error){plan=null;resetSummary();$('weekly-capital-error').textContent=error.message;onChange();}
     }
@@ -83,6 +107,27 @@
       if(!plan)return;
       const lines=plan.rows.filter(r=>r.change).sort((a,b)=>(a.side==='SELL'?0:1)-(b.side==='SELL'?0:1)||a.code.localeCompare(b.code)).map(r=>r.code+' '+r.name+' '+(r.side==='BUY'?'買進':r.target>0?'減碼':'賣出')+' '+Math.abs(r.change)+' 股');
       try{await navigator.clipboard.writeText('理論調倉 '+plan.date+'｜上週 '+plan.previousCapital+' 元｜本週 '+plan.capital+' 元\n'+(lines.join('\n')||'本週不用買賣'));$('weekly-capital-copy-note').textContent='已複製';}catch(_){$('weekly-capital-copy-note').textContent='無法複製，請參考下表。';}
+    });
+    $('weekly-capital-backup').addEventListener('click',async()=>{
+      if(!record)return;
+      try{await navigator.clipboard.writeText(backupCode(record));$('weekly-capital-copy-note').textContent='已複製備份碼，請存在記事本或 Telegram。';}catch(_){$('weekly-capital-copy-note').textContent='無法複製，請改用「存到 Telegram」。';}
+    });
+    $('weekly-capital-tg').addEventListener('click',()=>{
+      if(!record||!plan)return;
+      const names=Object.fromEntries(plan.rows.map(r=>[r.code,r.name]));
+      const lines=record.holdings.map(h=>h.code+' '+(names[h.code]||'')+' '+h.shares+' 股');
+      const text='V5 理論持股 '+record.rebalance_date+'｜本週總資金 '+record.capital+' 元\n'+(lines.join('\n')||'本週無持股')+
+        '\n\n下週換電腦或手機時，把整段訊息貼回網頁「貼上備份碼」：\n'+backupCode(record);
+      root.open('https://t.me/share/url?url='+encodeURIComponent(siteUrl)+'&text='+encodeURIComponent(text),'_blank','noopener');
+      $('weekly-capital-copy-note').textContent='已開啟 Telegram，請選「儲存的訊息」或自己的聊天室送出。';
+    });
+    $('weekly-capital-import').addEventListener('click',()=>{
+      try{
+        const entry=readBackup($('weekly-capital-import-text').value,[data.previous_capital_signal,data.capital_signal]);
+        if(!store(entry))throw Error('瀏覽器無法儲存，請改用一般（非無痕）視窗。');
+        $('weekly-capital-import-note').textContent='已匯入 '+entry.rebalance_date+' 用 '+money(entry.capital)+' 算出的紀錄，請按「計算本週買賣」。';
+        invalidate();
+      }catch(error){$('weekly-capital-import-note').textContent=error.message;}
     });
     return {validateFreshness:()=>{if(plan&&!isReady()){invalidate();$('weekly-capital-error').textContent='本週訊號狀態已改變，舊清單已隱藏；請等待確認後重新計算。';}},getTargets:()=>plan?plan.rows.map(r=>({code:r.code,name:r.name,quantity:r.target})):null};
   };
