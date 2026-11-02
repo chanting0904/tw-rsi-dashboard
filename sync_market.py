@@ -100,7 +100,10 @@ def refresh(root=ROOT, through=None, *, getter=fetch):
             found = store.db.execute('SELECT COUNT(*) FROM bars WHERE day=?', (through,)).fetchone()[0]
             if found < 1000:
                 raise ValueError('缺少訊號日完整行情：' + through)
-        if through in batches and not batches[through]['TWSE']:
+        # 兩個市場都正式回覆「當日無資料」：收盤資料通常 15:00 前公布，17:00 後或隔天仍無資料即為臨時休市（颱風）。
+        closed = (through in batches and not batches[through]['TWSE']
+                  and (through < today.isoformat() or now.hour >= 17))
+        if through in batches and not batches[through]['TWSE'] and not closed:
             raise ValueError('訊號日尚無官方收盤行情：' + through)
 
         begin = (pd.Timestamp(cutoff) + pd.Timedelta(days=1)).strftime('%Y%m%d')
@@ -157,7 +160,8 @@ def refresh(root=ROOT, through=None, *, getter=fetch):
                 else:
                     save_references(store, json.loads(body), identity, source, cutoff, through)
             update_financials(store, root, through, checked_at, getter, receipt)
-            receipt.update(status='PASS', latest_price_date=through,
+            receipt.update(status='PASS', latest_price_date=store.db.execute(
+                    'SELECT MAX(day) FROM bars WHERE day<=?', (through,)).fetchone()[0] if closed else through,
                 no_quote_days=sorted(no_quote_days),
                 market_rows=store.db.execute('SELECT COUNT(*) FROM bars WHERE day=?', (through,)).fetchone()[0])
             store.db.execute('INSERT OR REPLACE INTO receipts VALUES(?,?)', (through, json.dumps(receipt, ensure_ascii=False)))

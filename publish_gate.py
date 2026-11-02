@@ -35,6 +35,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 SIG_FILE = os.path.join(HERE, "output", "latest_signals.json")
 VAL_FILE = os.path.join(HERE, "output", "validation_log.json")
 HOL_FILE = os.path.join(HERE, "holidays.json")
+CLOSURE_FILE = os.path.join(HERE, "market_closures.json")
+DATA_STATUS_FILE = os.path.join(HERE, "output", "data_status.json")
 TW = ZoneInfo("Asia/Taipei")
 
 VALID_ACTIONS = {"BUY", "SELL", "REBALANCE_BUY", "REBALANCE_SELL", "HOLD"}
@@ -96,6 +98,18 @@ def prev_trading_day_str(d, hols):
         if is_trading(dt, hols):
             return dt.strftime("%Y-%m-%d")
     return d
+
+
+def confirmed_closures():
+    """颱風等臨時休市：已核對清單，加上官方行情確認當日無交易的日期。"""
+    days = set(_load_json(CLOSURE_FILE).get("closures", {}))
+    days.update(_load_json(DATA_STATUS_FILE).get("no_quote_days", []))
+    return days
+
+
+def prev_session_str(d, hols):
+    """訊號基準日：前一個實際有交易的日子。週四臨時休市時，週五計畫改用週三收盤。"""
+    return prev_trading_day_str(d, set(hols) | confirmed_closures())
 
 
 def fingerprint(sig):
@@ -232,7 +246,7 @@ def evaluate(force=False, today=None, output_dir=None, notify=True):
         if not sigd:
             reasons.append("canonical 缺訊號基準日")
         elif rebal:
-            expect_sig = prev_trading_day_str(rebal, hols)
+            expect_sig = prev_session_str(rebal, hols)
             if sigd != expect_sig:
                 reasons.append(f"資料不連續：sig_date={sigd}，應 = {rebal} 的前一交易日 {expect_sig}")
 

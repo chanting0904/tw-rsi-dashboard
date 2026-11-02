@@ -44,6 +44,14 @@ class RequiredFeedTests(unittest.TestCase):
         self.assertEqual(str(day.date()),'2026-10-23');self.assertEqual(str(basis.date()),'2026-10-22')
         self.assertTrue(all(f.loc[day,'2400']==103. for f in frames));self.assertEqual(source.iloc[-1,0],9999.)
 
+    def test_thursday_typhoon_closure_uses_wednesday_close(self):
+        source=self.frame().iloc[:-1]
+        with patch('publish_gate.confirmed_closures',return_value={'2026-10-22'}):
+            *frames,day,basis=prepare_prices(*[source]*5,'2026-10-23',set())
+            self.assertEqual(gate.prev_session_str('2026-10-23',set()),'2026-10-21')
+        self.assertEqual(str(basis.date()),'2026-10-21');self.assertEqual(frames[0].loc[day,'2400'],102.)
+        self.assertEqual(gate.prev_trading_day_str('2026-10-23',set()),'2026-10-22')
+
 class BindingTests(unittest.TestCase):
     def test_old_pass_cannot_validate_altered_shares_cash_or_metadata(self):
         helper=fixtures.PublishTests();original=helper.signal()

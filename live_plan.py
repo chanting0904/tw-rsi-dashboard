@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 import pandas as pd
 import numpy as np
-from publish_gate import prev_trading_day_str, last_trading_day_of_week
+from publish_gate import prev_session_str, last_trading_day_of_week
 
 
 CLOSURES_FILE = Path(__file__).with_name('market_closures.json')
@@ -47,7 +47,7 @@ def prepare_prices(close, open_, high, low, turnover, rebalance_date, holidays):
     day = pd.Timestamp(rebalance_date)
     if day.date() != last_trading_day_of_week(day.date(), holidays):
         raise ValueError("調倉日必須是該週最後交易日")
-    signal_day = pd.Timestamp(prev_trading_day_str(day.date(), holidays))
+    signal_day = pd.Timestamp(prev_session_str(day.date(), holidays))
     frames = [frame.loc[frame.index <= signal_day].copy()
               for frame in (close, open_, high, low, turnover)]
     for name,frame in zip(['收盤價','開盤價','最高價','最低價','成交金額'],frames):
