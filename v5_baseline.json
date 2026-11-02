@@ -1,7 +1,7 @@
 {
   "date": "2026-10-16",
-  "cagr": 0.47008609848412597,
-  "mdd": -0.3140062075362031,
+  "cagr": 0.4389408321118975,
+  "mdd": -0.301993436708198,
   "parameters": {
     "threshold": 1,
     "buy_fee": 0.000399,
@@ -17,5 +17,5 @@
     "a_retention_rank": 20
   },
   "execution_policy": "guarded_weekly_capital_v1",
-  "release_version": "V5.0.0"
+  "release_version": "V5.1.7"
 }

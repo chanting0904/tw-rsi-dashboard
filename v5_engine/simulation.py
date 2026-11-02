@@ -15,6 +15,9 @@ def run_reference(ctx, weekday=5, mode='close', coefs=(1.5, 1.0, .5), start=None
     dates = dates[dates >= pd.Timestamp(ctx.config.start_date)]
     first_day = pd.Timestamp(seed['date']) if seed is not None else pd.Timestamp(start or ctx.config.start_date)
     dates = dates[dates >= first_day]
+    if seed is not None and ctx.closure_moves:
+        # 原定調倉日臨時休市而延後成交時，已發布快照即代表該週計畫，不再重算延後的那一天。
+        dates = dates[[not (day in ctx.closure_moves and ctx.closure_moves[day] <= first_day) for day in dates]]
     if end is not None:
         dates = dates[dates <= pd.Timestamp(end)]
     price_frame = ctx.open_ if mode == 'open' else ctx.close

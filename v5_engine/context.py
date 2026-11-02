@@ -31,6 +31,7 @@ class MarketContext:
     security_types: Any = None
     share_entitlements: Any = None
     share_delivery_events: Any = None
+    closure_moves: Any = None
 
     def pick_days(self, weekday=5):
         import pandas as pd

@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import pandas as pd
 import publish_gate as gate
-from live_plan import prepare_prices, completed_week_days
+from live_plan import prepare_prices, completed_week_days, unscheduled_closures
 from market_dates import quote_date
 from tg_push_v5 import build_message, message_chunks
 from s5_live import recalc_weekly as recalc
@@ -53,6 +53,21 @@ class LivePlanTests(unittest.TestCase):
         ends = pd.to_datetime(["2026-02-13", "2026-02-20", "2026-02-27"])
         holidays = {"2026-02-12", "2026-02-13", "2026-02-16", "2026-02-17", "2026-02-18", "2026-02-19", "2026-02-20", "2026-02-27"}
         self.assertEqual(list(completed_week_days(index, ends, holidays)), [pd.Timestamp("2026-02-11")])
+
+    def test_unscheduled_friday_closure_moves_to_next_session(self):
+        # 10/23 颱風休市、10/26 國定假日：前一晚才公布，不能提前在 10/22 收盤調倉。
+        index = pd.to_datetime(["2026-10-21", "2026-10-22", "2026-10-27", "2026-10-28", "2026-10-29", "2026-10-30"])
+        ends = pd.to_datetime(["2026-10-23", "2026-10-30"])
+        holidays = {"2026-10-26"}
+        closures = unscheduled_closures(index, holidays)
+        self.assertIn("2026-10-23", closures)
+        self.assertEqual(list(completed_week_days(index, ends, holidays, closures)),
+                         [pd.Timestamp("2026-10-27"), pd.Timestamp("2026-10-30")])
+
+    def test_unscheduled_thursday_closure_keeps_friday_rebalance(self):
+        index = pd.to_datetime(["2024-10-30", "2024-11-01"])
+        ends = pd.to_datetime(["2024-11-01"])
+        self.assertEqual(list(completed_week_days(index, ends, set(), {"2024-10-31"})), [pd.Timestamp("2024-11-01")])
 
     def frame(self, end="2026-10-07"):
         index = pd.date_range("2026-10-05", end, freq="B")

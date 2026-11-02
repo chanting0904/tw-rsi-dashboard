@@ -1,19 +1,46 @@
 """Prepare an indicative close-rebalance plan from the previous trading day's data."""
+import json
+from pathlib import Path
 import pandas as pd
 import numpy as np
 from publish_gate import prev_trading_day_str, last_trading_day_of_week
 
 
-def completed_week_days(index, week_ends, holidays):
+CLOSURES_FILE = Path(__file__).with_name('market_closures.json')
+
+
+def unscheduled_closures(index, holidays):
+    """颱風等臨時休市日：已核對的歷史清單，加上休市表涵蓋年份中沒有行情的平日。"""
+    days = set(json.loads(CLOSURES_FILE.read_text(encoding='utf-8'))['closures'])
+    sessions = {day.date().isoformat() for day in index}
+    years = {day[:4] for day in holidays}
+    if years:
+        for day in pd.bdate_range(f'{min(years)}-01-01', index.max()):
+            text = day.date().isoformat()
+            if text[:4] in years and text not in holidays and text not in sessions:
+                days.add(text)
+    return days
+
+
+def completed_week_days(index, week_ends, holidays, closures=(), moves=None):
     latest = index.max()
     result = []
     for end in week_ends:
         start = end - pd.Timedelta(days=4)
         sessions = index[(index >= start) & (index <= end)]
         expected = last_trading_day_of_week(end.date(), holidays)
+        if expected is not None and expected.isoformat() in closures:
+            # 原定調倉日臨時休市：前一晚才公布，來不及提前在前一天收盤調倉；
+            # 照實際規則延到之後第一個交易日收盤。
+            later = index[index > pd.Timestamp(expected)]
+            if len(later):
+                result.append(later[0])
+                if moves is not None:
+                    moves[later[0]] = pd.Timestamp(expected)
+            continue
         if len(sessions) and expected is not None and latest.date() >= expected:
             result.append(sessions[-1])
-    return pd.DatetimeIndex(result)
+    return pd.DatetimeIndex(sorted(set(result)))
 
 
 def prepare_prices(close, open_, high, low, turnover, rebalance_date, holidays):

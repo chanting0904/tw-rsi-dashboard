@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 import pandas as pd
 import numpy as np
-from live_plan import prepare_prices, completed_week_days
+from live_plan import prepare_prices, completed_week_days, unscheduled_closures
 from publish_gate import load_holidays
 from .context import MarketContext
 
@@ -103,7 +103,9 @@ def load_market(config, root, *, live_rebalance=None, data_root=None, token=None
     days_all = close.index
     weeks = close.resample("W-FRI").last().index
     weeks = weeks[weeks >= pd.Timestamp(config.start_date)]
-    days = completed_week_days(days_all, weeks, load_holidays())
+    holidays = load_holidays()
+    closure_moves = {}
+    days = completed_week_days(days_all, weeks, holidays, unscheduled_closures(days_all, holidays), closure_moves)
 
     name_map = {}
     try:
@@ -129,6 +131,7 @@ def load_market(config, root, *, live_rebalance=None, data_root=None, token=None
     events = build_events(announcements, raw_close, adjusted, cash_fallback, stock_grants, splits, reductions, as_of=SIGNAL_DAY)
     context = MarketContext(config, raw_close, raw_open, raw_high, raw_low, targetA, targetB, r20s, tv20,
                          ma60, cap_ok, sw_tsm, days, days_all, weeks, LIVE_DAY, SIGNAL_DAY, name_map)
+    context.closure_moves = closure_moves
     context.tv20_previous = tv20.shift(1)
     # r20s already ends at the previous actual session. Ranking alone uses
     # its trailing mean; entry/exit eligibility remains unchanged.
