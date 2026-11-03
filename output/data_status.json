@@ -1,32 +1,32 @@
 {
- "through": "2026-11-02",
+ "through": "2026-11-03",
  "historical_through": "2026-10-22",
- "checked_at": "2026-11-03T11:22:43.501425+08:00",
+ "checked_at": "2026-11-04T03:54:42.908906+08:00",
  "sources": [
   {
-   "name": "2026-11-02:TWSE",
+   "name": "2026-11-03:TWSE",
    "source": "https://www.twse.com.tw/exchangeReport/MI_INDEX",
-   "sha256": "7c86c74034f8742c56e616c6a79c652f3141e85460bccc9e28a4fa1116542b0b"
+   "sha256": "dfed7df2532fded4814c1066f72d9decdcb89a67ed10e34c82fa868ceaf4ae1e"
   },
   {
-   "name": "2026-11-02:TPEx",
+   "name": "2026-11-03:TPEx",
    "source": "https://www.tpex.org.tw/www/zh-tw/afterTrading/dailyQuotes",
-   "sha256": "31d42b1b626b4f3252d04a138882680b6d83ab3715c4554226ea96290c04cec4"
+   "sha256": "4b8c433d085b61b7e4cb36a8cfaefe1a9ffe9b75255703961ec02ae99995400a"
   },
   {
    "name": "ex:TWSE",
    "source": "https://www.twse.com.tw/exchangeReport/TWT49U",
-   "sha256": "92b1a43e3143d5656463fb5a425928e1da0c2b17b59d89127bd79213c35e4cfd"
+   "sha256": "43186394398142b09875bb4ff04852f7c821065b9488730aca8ce66f125b11fa"
   },
   {
    "name": "reduction:TWSE",
    "source": "https://www.twse.com.tw/exchangeReport/TWTAUU",
-   "sha256": "776e877a1d0fbdd99074aa0022db843d03a2e46098387c58df7cfa2e0a8b7004"
+   "sha256": "8aae3e22fd349da50ea488b2ff3f17a6f892987d124aabbc52be1dbe4b40064b"
   },
   {
    "name": "ex:TPEx",
    "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/exDailyQ",
-   "sha256": "8f6628066674f7c1481c33f5d098146cf4b3aad2eb94d9b6240ea35abf4a9c1a"
+   "sha256": "b4642c23b9e4f71c0f0db731b623f71ada425705a3d4f937aaffdbc95e5de9a2"
   },
   {
    "name": "reduction:TPEx",
@@ -36,19 +36,19 @@
   {
    "name": "ann:sii",
    "source": "https://mopsov.twse.com.tw/mops/web/ajax_t108sb27",
-   "sha256": "b6fcf5997e425b4c958e4aabc6cec5a05c0aa4bebac72d4c492ab18ceec97e6b"
+   "sha256": "6f350ac97d55b8a86ee28b82810580773acdcd23abfe755743fa53e2436f0353"
   },
   {
    "name": "ann:otc",
    "source": "https://mopsov.twse.com.tw/mops/web/ajax_t108sb27",
-   "sha256": "40f36a224c909cda83b8e5c490648f387d5e96600615a9c1f2650d366acc832f"
+   "sha256": "f2fbe2df6bcc4c229330611ef62997309f96abf7781e12085383658939653301"
   }
  ],
  "financial_period": "2026Q3",
  "status": "PASS",
- "latest_price_date": "2026-11-02",
+ "latest_price_date": "2026-11-03",
  "no_quote_days": [
   "2026-10-23"
  ],
- "market_rows": 1950
+ "market_rows": 1959
 }
