@@ -1,7 +1,7 @@
 {
  "through": "2026-11-04",
  "historical_through": "2026-10-22",
- "checked_at": "2026-11-05T04:34:39.109361+08:00",
+ "checked_at": "2026-11-05T10:02:37.023593+08:00",
  "sources": [
   {
    "name": "2026-11-04:TWSE",
@@ -31,17 +31,17 @@
   {
    "name": "reduction:TPEx",
    "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/decap",
-   "sha256": "fe0c356fa883436dea93b37086fc801c72fcdaa297b478d77887e92016d6f812"
+   "sha256": "cd697e4acffb623d9e993610fb0ab6bc267e83320d6e03725bd1f477e75caf24"
   },
   {
    "name": "ann:sii",
    "source": "https://mopsov.twse.com.tw/mops/web/ajax_t108sb27",
-   "sha256": "aabd9413bdba89fd29eea0f13fc468ebac836f6ef3633a65ef3a79beced16932"
+   "sha256": "607063a2c44811436e203d956aa367ab5d0a95f31537b28df923b9a01f028293"
   },
   {
    "name": "ann:otc",
    "source": "https://mopsov.twse.com.tw/mops/web/ajax_t108sb27",
-   "sha256": "ca60114a34b2dd0bb2a1f23b1da6e63fa7b9766e8c26d7aef3d318e1c0ce9349"
+   "sha256": "04a6c55825c4cfe9cb1643b391b25b75c1cd957bb054be0e3384c29bd95c6582"
   }
  ],
  "financial_period": "2026Q3",
