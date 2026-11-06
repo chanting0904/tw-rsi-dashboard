@@ -42,6 +42,9 @@ def main():
                     shutil.copy2(source, staged / name)
             if (Path(ROOT)/'output/history').exists():
                 shutil.copytree(Path(ROOT)/'output/history',staged/'history',dirs_exist_ok=True)
+            # 上週已發布的持股快照必須一起帶入，否則會誤判上週持股不符而停止產生計畫。
+            if (Path(ROOT)/'output/live_checkpoints').exists():
+                shutil.copytree(Path(ROOT)/'output/live_checkpoints',staged/'live_checkpoints',dirs_exist_ok=True)
             env = dict(os.environ, V5_OUTPUT_DIR=str(staged))
             r0 = subprocess.run([sys.executable, os.path.join(ROOT, "v5_canonical.py"),
                                  "--live-rebalance", execution_day.isoformat()], env=env)

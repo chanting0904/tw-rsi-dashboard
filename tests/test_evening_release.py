@@ -52,6 +52,19 @@ class EveningReleaseTests(unittest.TestCase):
         self.assertEqual(self.mode(dt.date(2026, 10, 7), holidays=holidays, evening=True), 'full')
         self.assertEqual(self.mode(dt.date(2026, 10, 8), holidays=holidays, evening=True), 'skip')
 
+    def test_evening_run_delayed_past_midnight_still_publishes(self):
+        # 週四 21:00 的排程被 GitHub 延到週五 04:22 才開始，仍要補發週五計畫。
+        friday = dt.date(2026, 10, 30)
+        self.assertEqual(self.mode(friday, evening=True, daily=True, now=dt.datetime(2026, 10, 30, 4, 22)), 'full')
+        self.assertEqual(self.mode(friday, evening=True, now=dt.datetime(2026, 10, 30, 4, 50)), 'full')
+        self.assertEqual(self.mode(friday, evening=True, complete=True, now=dt.datetime(2026, 10, 30, 4, 50)), 'skip')
+
+    def test_delayed_wednesday_evening_run_does_not_publish_thursday_early(self):
+        # 週三 21:45 的排程被延到週四 04:33，不可在週四收盤前提早發布。
+        thursday = dt.date(2026, 10, 29)
+        self.assertEqual(self.mode(thursday, evening=True, now=dt.datetime(2026, 10, 29, 4, 33)), 'skip')
+        self.assertEqual(self.mode(thursday, evening=True, daily=True, now=dt.datetime(2026, 10, 29, 4, 33)), 'daily')
+
     def test_fully_closed_week_does_not_publish(self):
         holidays = {f'2026-10-{day}' for day in range(26, 31)}
         self.assertEqual(self.mode(dt.date(2026, 10, 29), holidays=holidays, evening=True), 'skip')
@@ -82,6 +95,33 @@ class EveningReleaseTests(unittest.TestCase):
                 check_and_run.main()
             self.assertEqual(end.exception.code, 0)
             self.assertEqual(run.call_args_list[0].args[0][-2:], ['--live-rebalance', '2026-10-30'])
+
+    def test_staged_engine_receives_published_holdings_checkpoints(self):
+        class Clock(dt.datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return cls(2026, 11, 5, 21, 0, tzinfo=tz)
+
+        seen = []
+
+        def engine(command, env=None, **_):
+            if env and 'V5_OUTPUT_DIR' in env:
+                seen.append((Path(env['V5_OUTPUT_DIR']) / 'live_checkpoints/2026-10-30.json').exists())
+            return SimpleNamespace(returncode=0)
+
+        with tempfile.TemporaryDirectory() as folder:
+            (Path(folder) / 'output/live_checkpoints').mkdir(parents=True)
+            (Path(folder) / 'output/live_checkpoints/2026-10-30.json').write_text('{}')
+            with patch.object(check_and_run, 'ROOT', folder), \
+                 patch.object(check_and_run, 'HOLS', set()), \
+                 patch.object(check_and_run, 'FORCE', False), \
+                 patch.object(check_and_run.datetime, 'datetime', Clock), \
+                 patch.object(check_and_run.subprocess, 'run', side_effect=engine), \
+                 patch('publish_gate.evaluate', return_value={'ok': True, 'rebalance_date': '2026-11-06', 'canonical_hash': 'fixture'}), \
+                 patch('weekly_status.write_status'):
+                with self.assertRaises(SystemExit):
+                    check_and_run.main()
+        self.assertEqual(seen, [True])
 
 
 if __name__ == '__main__':
