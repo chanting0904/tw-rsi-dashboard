@@ -1,9 +1,9 @@
 {
   "state": "failed",
   "rebalance_date": "2026-11-06",
-  "updated_at": "2026-11-05T04:43:08.823068+08:00",
+  "updated_at": "2026-11-06T08:16:15.541162+08:00",
   "stage": "pipeline",
   "attempt": 1,
   "max_attempts": 3,
-  "run_id": "41907805621"
+  "run_id": "42134133702"
 }
