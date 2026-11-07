@@ -324,6 +324,7 @@ __DASHBOARD_CSS__
 </style>
 </head>
 <body>
+<script>__INTRO_UI_JS__</script>
 <div class="wrap">
   <header>
     <h1>🌩️ 天穹紅蓮三重脈衝時空追擊者<small>V5.0.0 模擬 Dashboard｜RSI 單一選股策略</small></h1>
@@ -915,7 +916,7 @@ $("delivery-check-note").textContent=deliveryCheck.as_of?'配股公告核對基�
 
 HTML = HTML.replace("V5.0.0", RELEASE_VERSION)
 HTML = HTML.replace("__DATA_JSON__", DATA_JSON)
-for _name,_placeholder in [('performance_ui.js','__PERFORMANCE_UI_JS__'),('weekly_status.js','__WEEKLY_STATUS_JS__'),('capital_preview.js','__CAPITAL_PREVIEW_JS__'),('dashboard_ui.css','__DASHBOARD_CSS__'),('dashboard_ui.js','__DASHBOARD_UI_JS__'),('monthly_details.js','__MONTHLY_DETAILS_JS__'),('weekly_capital.js','__WEEKLY_CAPITAL_JS__'),('weekly_capital_ui.js','__WEEKLY_CAPITAL_UI_JS__'),('order_planner.js','__ORDER_PLANNER_JS__'),('order_planner_ui.js','__ORDER_PLANNER_UI_JS__')]:
+for _name,_placeholder in [('performance_ui.js','__PERFORMANCE_UI_JS__'),('weekly_status.js','__WEEKLY_STATUS_JS__'),('capital_preview.js','__CAPITAL_PREVIEW_JS__'),('dashboard_ui.css','__DASHBOARD_CSS__'),('dashboard_ui.js','__DASHBOARD_UI_JS__'),('monthly_details.js','__MONTHLY_DETAILS_JS__'),('weekly_capital.js','__WEEKLY_CAPITAL_JS__'),('weekly_capital_ui.js','__WEEKLY_CAPITAL_UI_JS__'),('order_planner.js','__ORDER_PLANNER_JS__'),('order_planner_ui.js','__ORDER_PLANNER_UI_JS__'),('intro_ui.js','__INTRO_UI_JS__')]:
     with open(os.path.join(HERE,_name),encoding='utf-8') as _source:
         HTML=HTML.replace(_placeholder,_source.read())
 

@@ -40,6 +40,7 @@ on:
       - 'weekly_capital_ui.js'
       - 'dashboard_ui.js'
       - 'dashboard_ui.css'
+      - 'intro_ui.js'
       - 'monthly_details.js'
       - 'performance_ui.js'
       - 'version.py'

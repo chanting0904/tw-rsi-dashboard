@@ -69,7 +69,7 @@ class CapitalSignalArchiveTests(unittest.TestCase):
         temp = self.output
         assets = ['update_data.py', 'dashboard_ui.css', 'dashboard_ui.js', 'monthly_details.js',
                   'performance_ui.js', 'capital_preview.js', 'weekly_status.js', 'order_planner.js',
-                  'order_planner_ui.js', 'weekly_capital.js', 'weekly_capital_ui.js', 'holidays.json']
+                  'order_planner_ui.js', 'weekly_capital.js', 'weekly_capital_ui.js', 'intro_ui.js', 'holidays.json']
         for name in assets:
             (temp / name).write_bytes((ROOT / name).read_bytes())
         for name in ['latest_signals.json', 'perf.json', 'validation_log.json']:
