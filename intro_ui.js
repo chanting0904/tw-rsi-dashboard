@@ -1,15 +1,14 @@
 /* Opening animation: a crowd of cursors works at the same time, each sketching boxes, text lines and buttons
    over the real page sections, then the real page fades in.
-   Plays once per day, can be skipped, and never runs for reduced-motion users. */
+   Plays once per day on desktop and can be skipped. */
 (function(){
  'use strict';
  const key='v5_intro_seen',today=new Date().toISOString().slice(0,10);
  const forced=/[?&]intro=1\b/.test(location.search);
  let seen=null;try{seen=localStorage.getItem(key);}catch(_){}
- const reduced=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
  // 只在電腦版播放：手機、平板或窄視窗直接略過。
  const desktop=innerWidth>=1024&&!(window.matchMedia&&matchMedia('(pointer: coarse)').matches);
- if(!forced&&(seen===today||reduced||!desktop||!document.body||!Element.prototype.animate))return;
+ if(!forced&&(seen===today||!desktop||!document.body||!Element.prototype.animate))return;
  try{localStorage.setItem(key,today);}catch(_){}
 
  const css=`
