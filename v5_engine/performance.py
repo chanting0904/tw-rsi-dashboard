@@ -97,7 +97,8 @@ def perf_document(result, config, anchor=None, *, ctx=None):
     details = monthly_contributions(ctx,result) if ctx is not None else None
     nav = result['nav']
     series = nav['nav']
-    annual = annual_performance(nav, config.start_capital)
+    # 年度報酬用公布出去的整數淨值計算，網頁重算時才會得到完全相同的數字。
+    annual = annual_performance(nav.assign(nav=series.round(0)), config.start_capital)
     return {'final_nav': round(float(result['final']), 0), 'cagr': round(float(result['cagr']), 4),
             'mdd': round(float(result['mdd']), 4), 'sharpe': round(float(result['sharpe']), 2),
             'sortino': round(float(result['sortino']), 2), 'calmar': round(float(result['calmar']), 2),
