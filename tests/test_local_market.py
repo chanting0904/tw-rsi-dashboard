@@ -8,7 +8,7 @@ import unittest
 import zlib
 import hashlib
 from unittest.mock import patch
-from sync_market import update_financials
+from sync_market import save_references, update_financials
 
 import pandas as pd
 
@@ -108,6 +108,16 @@ class OfficialInputTests(unittest.TestCase):
             result = store.adjusted()
             self.assertAlmostEqual(result.loc['2026-10-27', '2330'], 200)
             self.assertEqual(result.loc['2026-10-22', '2330'], 200)
+            store.close()
+
+    def test_otc_reduction_uses_last_close_before_halt(self):
+        fields = ['代號', '名稱', '停止買賣日期', '減資換股率', '每股退還股款(元)', '減資原因', '恢復買賣日期', '恢復買賣參考價']
+        row = ['4207', '環泰', '1151029', '0.95', '0.5', '現金減資', '1151109', '19.74']
+        with tempfile.TemporaryDirectory() as folder:
+            store = MarketStore(folder)
+            store.db.execute('INSERT INTO bars VALUES(?,?,?,?,?,?,?,?)', ('2026-10-28', '4207', 19, 19, 19, 19.25, 1000, 'TPEx'))
+            save_references(store, {'stat': 'ok', 'tables': [{'fields': fields, 'data': [row]}]}, 'reduction:TPEx', 'test', '2026-11-06', '2026-11-09')
+            self.assertEqual(store.db.execute('SELECT before,reference FROM references_by_date').fetchall(), [(19.25, 19.74)])
             store.close()
 
     def test_official_quotes_reject_wrong_date_partial_data_and_malformed_ohlc(self):

@@ -183,10 +183,16 @@ def save_references(store, document, identity, source, cutoff, through):
                 continue
             before = next((number(v) for k, v in row.items() if ('前收盤' in k or '最後交易' in k)), None)
             reference = next((number(v) for k, v in row.items() if '參考價' in k and ('恢復' in k or '除權息' in k)), None)
+            market = 'tse' if identity.endswith('TWSE') else 'otc'
+            if before is None and identity == 'reduction:TPEx':
+                # 櫃買減資表沒有前收盤欄位：用停止買賣日前最後一個交易日的官方收盤價。
+                halt = date_string(row.get('停止買賣日期'))
+                last = store.db.execute('SELECT close FROM bars WHERE code=? AND day<? ORDER BY day DESC LIMIT 1',
+                    (code, halt)).fetchone() if halt else None
+                before = last[0] if last else None
             if before is None or reference is None or min(before, reference) <= 0:
                 raise ValueError('公司行動缺少有效參考價：' + code)
             store.db.execute('INSERT OR REPLACE INTO references_by_date VALUES(?,?,?,?,?)', (day, code, before, reference, source))
-            market = 'tse' if identity.endswith('TWSE') else 'otc'
             if identity.startswith('ex:'):
                 if market == 'tse':
                     kind = str(row.get('權/息', row.get('權息', '')))
