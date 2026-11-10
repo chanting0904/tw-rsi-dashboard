@@ -41,11 +41,10 @@ class PagesTests(unittest.TestCase):
                 patch.object(pages_publish, "contains", side_effect=lambda expected, built: built == "newer"):
             self.assertEqual(pages_publish.publish("unused", "owner/repo", "new", attempts=1)["commit"], "newer")
 
-    def test_failed_pages_build_stops_notification_pipeline(self):
+    def test_unreliable_build_status_defers_to_public_page_check(self):
         replies = [{"status": "queued"}, {"status": "errored", "commit": "new", "error": {"message": "build failed"}}]
-        with patch.object(pages_publish, "request_json", side_effect=replies):
-            with self.assertRaises(RuntimeError):
-                pages_publish.publish("unused", "owner/repo", "new", attempts=1)
+        with patch.object(pages_publish, "request_json", side_effect=replies), patch.object(pages_publish.time, "sleep"):
+            self.assertIsNone(pages_publish.publish("unused", "owner/repo", "new", attempts=1))
 
 
 class LivePlanTests(unittest.TestCase):

@@ -26,7 +26,9 @@ def contains(expected_commit, built_commit):
                           stderr=subprocess.DEVNULL).returncode == 0
 
 
-def publish(token, repository, expected_commit, attempts=30, pause=10):
+def publish(token, repository, expected_commit, attempts=12, pause=10):
+    """要求重建並短暫等待。舊版 builds API 的狀態常與實際部署不符（已上線仍顯示 building／errored），
+    所以這裡不據此判定失敗；是否真的上線一律由 verify_public_index 讀回公開網頁比對。"""
     base = f"https://api.github.com/repos/{repository}/pages/builds"
     request_json(base, token, method="POST")
     checked = {}
@@ -35,20 +37,17 @@ def publish(token, repository, expected_commit, attempts=30, pause=10):
         commit = build.get("commit")
         if commit not in checked:
             checked[commit] = contains(expected_commit, commit)
-        if checked[commit]:
-            if build.get("status") == "built":
-                return build
-            if build.get("status") == "errored":
-                raise RuntimeError("Pages 建置失敗：" + str(build.get("error", {}).get("message")))
+        if checked[commit] and build.get("status") == "built":
+            return build
         time.sleep(pause)
-    raise RuntimeError("Pages 尚未完成本次版本建置，不發送調倉訊息")
+    return None
 
 
 def main():
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
     result = publish(os.environ["GH_TOKEN"], os.environ["GITHUB_REPOSITORY"], commit)
-    print("Pages 已上線：", result["commit"])
-    verify_public_index()
+    print("Pages 建置回報：", result["commit"] if result else "未回報完成，改以公開網頁核對")
+    verify_public_index(attempts=36)
 
 
 if __name__ == "__main__":
