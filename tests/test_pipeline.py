@@ -35,6 +35,12 @@ class PagesTests(unittest.TestCase):
         with patch.object(pages_publish, "request_json", side_effect=replies), patch.object(pages_publish.time, "sleep"):
             self.assertEqual(pages_publish.publish("unused", "owner/repo", "new", attempts=2)["commit"], "new")
 
+    def test_newer_commit_containing_this_one_counts_as_built(self):
+        replies = [{"status": "queued"}, {"status": "built", "commit": "newer"}]
+        with patch.object(pages_publish, "request_json", side_effect=replies), \
+                patch.object(pages_publish, "contains", side_effect=lambda expected, built: built == "newer"):
+            self.assertEqual(pages_publish.publish("unused", "owner/repo", "new", attempts=1)["commit"], "newer")
+
     def test_failed_pages_build_stops_notification_pipeline(self):
         replies = [{"status": "queued"}, {"status": "errored", "commit": "new", "error": {"message": "build failed"}}]
         with patch.object(pages_publish, "request_json", side_effect=replies):
