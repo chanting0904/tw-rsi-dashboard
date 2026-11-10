@@ -23,5 +23,7 @@ if __name__=='__main__':
     import json
     info=json.loads(Path(event).read_text()) if event else {}
     base=info.get('pull_request',{}).get('base',{}).get('sha') or info.get('before')
-    if base and set(base)!={'0'}:check(base)
+    if info.get('pull_request',{}).get('user',{}).get('login')=='dependabot[bot]':
+        print('Dependabot 版本更新請求：合併時再寫更新日誌')   # 自動開的 PR 不寫日誌
+    elif base and set(base)!={'0'}:check(base)
     else:print('Version format valid:',RELEASE_VERSION)

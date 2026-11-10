@@ -1,0 +1,19 @@
+# 每月檢查 GitHub 元件與 Python 套件是否有新版或即將淘汰；只開更新請求（PR），不會自動套用。
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ['*']
+    commit-message:
+      prefix: 'deps'
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: 'deps'
