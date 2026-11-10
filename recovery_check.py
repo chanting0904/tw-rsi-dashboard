@@ -33,10 +33,6 @@ def recovery_mode(today=None, *, evening=False, daily=False, now=None):
         return "full", "本週訊號尚未完成或驗證未通過，補跑資料與選股"
     signal = json.loads((ROOT / "output/latest_signals.json").read_text(encoding="utf-8"))
     try:
-        state = json.loads((ROOT / "state.json").read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        state = {}
-    try:
         status = json.loads((ROOT / "output/weekly_status.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):
         status = {}
@@ -46,10 +42,8 @@ def recovery_mode(today=None, *, evening=False, daily=False, now=None):
     try:
         verify_public_index(attempts=1, write_receipt=False)
     except (OSError, ValueError, RuntimeError):
-        return "publish", "訊號已完成，補做公開網站發布與通知"
-    if state.get("last_pushed_key") != fingerprint(signal):
-        return "publish", "網站已完成，補做尚未完成的 Telegram 通知"
-    return "skip", "本週訊號、公開網頁與 Telegram 均已完成"
+        return "publish", "訊號已完成，補做公開網站發布"
+    return "skip", "本週訊號與公開網頁均已完成"
 
 
 if __name__ == "__main__":

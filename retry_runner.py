@@ -1,4 +1,4 @@
-"""Retry one pre-delivery command. Never wraps Telegram delivery."""
+"""Retry one pipeline command; keep the last error line for the failure alert."""
 import argparse
 from pathlib import Path
 import subprocess

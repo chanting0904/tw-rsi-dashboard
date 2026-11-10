@@ -11,7 +11,6 @@ import pandas as pd
 import publish_gate as gate
 from live_plan import prepare_prices, completed_week_days, unscheduled_closures
 from market_dates import quote_date
-from tg_push_v5 import build_message, message_chunks
 from s5_live import recalc_weekly as recalc
 from local_db_updater import merge_amt
 import pages_publish
@@ -185,24 +184,11 @@ class PublishTests(unittest.TestCase):
         signal['actions'].append({'stock_code': '2409', 'post_shares': 1})
         self.assertFalse(gate.documented_upper_trade_block(signal, validation))
 
-    def test_changed_quantity_changes_notification_key(self):
+    def test_changed_quantity_changes_plan_key(self):
         signal = self.signal()
         changed = copy.deepcopy(signal)
         changed["actions"][0]["buy_shares"] = 3
         self.assertNotEqual(gate.fingerprint(signal), gate.fingerprint(changed))
-
-    def test_telegram_has_no_fabricated_account_holdings(self):
-        message = build_message(self.signal())
-        self.assertIn("A&amp;B", message)
-        self.assertIn("92.5%", message)
-        self.assertNotIn("本金固定", message)
-        self.assertNotIn("目前 925", message)
-
-    def test_long_telegram_is_split_under_limit(self):
-        text = "\n".join(["<b>訊號</b>" * 20] * 50)
-        chunks = list(message_chunks(text))
-        self.assertGreater(len(chunks), 1)
-        self.assertTrue(all(len(chunk) <= 3500 for chunk in chunks))
 
 
 class PriceDateTests(unittest.TestCase):

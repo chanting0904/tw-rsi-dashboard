@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """V5 發布閘門（管線安全層；不計算策略、不修改 v5_canonical.py）。
 
-在「產生網頁 (update_data.py)」與「發送 TG (tg_push_v5.py)」之前執行，
+在「產生網頁 (update_data.py)」之前執行，
 確保只會發布「本週最新、validation PASS、結構正確」的同一份 canonical：
 
   1) output/validation_log.json：verdict == PASS、strategy_version == V5、
@@ -11,23 +11,20 @@
   3) 結構：counts 合計 == actions 筆數、無重複 code、action 合法、
      target_weight 合計 <= 0.953、非 SELL 持股不得缺 price。
 
-FAIL：回傳 ok=False，並在有 TG env 時發一筆警報；呼叫端應中止，
-不更新 Web、不發送一般調倉訊息。
+FAIL：回傳 ok=False，並在有 TG env 時發一筆警報；呼叫端應中止，不更新 Web。
 
 環境變數：
   FORCE_FULL=1  手動 full：放寬「新鮮度」（補跑/測試用），但仍要求 validation PASS 與結構正確。
-  DRY_RUN=1     不實際發送 TG（本地測試用）。
+  DRY_RUN=1     不實際發送警報（本地測試用）。
 """
 import os
 import sys
 import json
-import ssl
 import hashlib
 import datetime
 import math
 from types import SimpleNamespace
 from collections import Counter
-import urllib.request
 from zoneinfo import ZoneInfo
 from version import STRATEGY_VERSION
 
@@ -115,7 +112,7 @@ def prev_session_str(d, hols):
 def fingerprint(sig):
     """canonical 內容指紋：rebalance_date + 每檔 code/action/channel/rank/權重。
 
-    用於 TG 推播去重；同一週同一組合只發一次。
+    用於辨識同一份週計畫（網頁狀態與公開核對比對用）。
     """
     rows = []
     for a in sorted(sig.get("actions", []),
@@ -128,31 +125,18 @@ def fingerprint(sig):
             a.get("buy_shares"), a.get("sell_shares"), a.get("price"),
         ]))
     raw = str(sig.get("release_version", sig.get("strategy_version", "?"))) + "#" + str(sig.get("rebalance_date", "?")) + "#" + ";".join(rows)
-    # Delivery changes must reach Web/TG even when this week's orders are unchanged.
+    # Delivery changes must reach the Web even when this week's orders are unchanged.
     pending=sorted(sig.get('pending_assets',[]),key=lambda row:(str(row.get('code')),str(row.get('ex_date'))))
     raw += '#' + json.dumps(pending,ensure_ascii=False,sort_keys=True,separators=(',',':'))
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
 
 
 def _tg_alert(text):
-    tok = os.environ.get("TG_TOKEN")
-    cid = os.environ.get("TG_CHAT_ID")
-    if not tok or not cid:
-        print("[gate] 無 TG env，僅記錄：", text)
-        return
     if os.environ.get("DRY_RUN") == "1":
-        print("[gate][DRY_RUN] TG 警報：\n", text)
+        print("[gate][DRY_RUN] 通知：", text)
         return
-    try:
-        payload = {"chat_id": str(cid), "text": text, "parse_mode": "HTML",
-                   "disable_web_page_preview": True}
-        req = urllib.request.Request(
-            f"https://api.telegram.org/bot{tok}/sendMessage",
-            data=json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json"})
-        urllib.request.urlopen(req, timeout=30, context=ssl.create_default_context())
-    except Exception as e:
-        print("[gate] TG 警報發送失敗：", e)
+    from notify import alert
+    alert(text)
 
 
 def documented_upper_trade_block(signal, validation):
@@ -373,9 +357,9 @@ def evaluate(force=False, today=None, output_dir=None, notify=True):
     }
     if not ok and notify:
         _tg_alert(
-            "❌ <b>V5 調倉資料未通過發布檢查</b>\n"
+            "❌ V5 調倉資料未通過發布檢查\n"
             + result["reason"]
-            + "\n\n本次<b>不更新網頁、不發送一般調倉訊號</b>，請人工確認後再以 full 補跑。")
+            + "\n\n本次不更新網頁，請人工確認後再以 full 補跑。")
     elif ok:
         # 全部通過 → 固化/更新基準（regression_history.json + baseline.json），供下次同週重跑比對
         try:

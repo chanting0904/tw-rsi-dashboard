@@ -11,7 +11,6 @@ def write_report(ctx, result, destination, root):
     from v5_engine.jsonio import write_json
     from v5_engine.performance import perf_document
     from v5_engine.pipeline import commit_sha
-    from tg_push_v5 import build_message
     destination = Path(destination)
     if destination.resolve() == (Path(root) / 'output').resolve():
         raise ValueError('研究報表不得覆蓋正式output')
@@ -40,14 +39,12 @@ def write_report(ctx, result, destination, root):
     lines = [f"V5 completed simulation through {result['nav'].index[-1].date()}",
              f"CAGR {result['cagr']:.2%} | MDD {result['mdd']:.2%} | PF {result['pf']:.2f} | Win rate {result['winrate']:.1f}%",
              'All fills and fees included in completed cycles; yearly returns use the prior-year closing NAV.',
-             'Below are simulated historical message examples; nothing is sent.']
-    for plan in recent[-5:]:
-        lines.append(build_message(canonical_for(ctx, plan, result['trades_df'], commit_sha(root))))
+             'Recent weekly orders are in daily_trade_plan.csv.']
     (destination / '_final_candidate_report.txt').write_text('\n\n'.join(lines), encoding='utf-8')
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description='V5 research reports; no public signal writes or Telegram delivery')
+    parser = argparse.ArgumentParser(description='V5 research reports; no public signal writes')
     parser.add_argument('--capital', type=float, default=100_000)
     parser.add_argument('--output-dir')
     args = parser.parse_args(argv)

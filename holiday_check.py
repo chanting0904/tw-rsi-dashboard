@@ -25,8 +25,8 @@ def main():
     year = missing_next_year(today, calendar)
     if not year:
         return
-    from tg_push_v5 import tg_send
-    tg_send(f"⚠️ 休市表還沒有 {year} 年。請在證交所公布「開休市日期」後補進 holidays.json；"
+    from notify import alert
+    alert(f"⚠️ 休市表還沒有 {year} 年。請在證交所公布「開休市日期」後補進 holidays.json；"
             f"沒補的話，{year}-01-01 起會停止產生調倉計畫。")
 
 

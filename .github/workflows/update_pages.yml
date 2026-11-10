@@ -47,10 +47,8 @@ on:
       - 'VERSION_HISTORY.txt'
       - 'v5_baseline.json'
       - 'live_model_seed.json'
-      - 'tg_push_v5.py'
       - 'publication_check.py'
       - 'recovery_check.py'
-      - 'delivery_state.py'
       - 'pages_publish.py'
       - 'output/perf.json'
 permissions:
@@ -132,8 +130,6 @@ jobs:
           && steps.recovery.outputs.mode != 'skip' && steps.recovery.outputs.mode != 'publish'
           && steps.recovery.outputs.mode != 'daily'
         env:
-          TG_TOKEN: ${{ secrets.TG_TOKEN }}
-          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
           FORCE_FULL: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
         run: |
           python retry_runner.py --weekly -- python check_and_run.py
@@ -158,7 +154,7 @@ jobs:
           fi
           git config user.name "rsi-bot"
           git config user.email "bot@rsi.local"
-          git add state.json index.html holidays.json check_and_run.py publish_gate.py update_data.py tg_push_v5.py v5_canonical.py local_db_updater.py daily_update.py output/
+          git add index.html holidays.json check_and_run.py publish_gate.py update_data.py v5_canonical.py local_db_updater.py daily_update.py output/
           if ! git diff --cached --quiet; then
             git commit -m "auto update page [skip ci]"
             python retry_runner.py -- git pull --rebase
@@ -169,24 +165,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python retry_runner.py -- python pages_publish.py
-      - name: 網站上線後發送同一份 Telegram 訊號
-        if: >
-          env.V5_SKIP_DEPLOY != '1' && steps.recovery.outputs.mode != 'skip'
-          && steps.recovery.outputs.mode != 'daily' && (github.event_name == 'schedule'
-          || github.event_name == 'push'
-          || (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'full'))
-        env:
-          TG_TOKEN: ${{ secrets.TG_TOKEN }}
-          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
-          FORCE_FULL: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
-          TG_PROGRESS_GIT: '1'
-        run: python tg_push_v5.py
-      - name: 保存公開核對結果及已確認的推播進度（失敗時也保留）
+      - name: 保存公開核對結果（失敗時也保留）
         if: always() && env.V5_SKIP_DEPLOY != '1' && steps.recovery.outputs.mode != 'skip'
         run: |
           git config user.name "rsi-bot"
           git config user.email "bot@rsi.local"
-          git add state.json
           for file in output/data_status.json; do
             if [ -f "$file" ]; then git add -- "$file"; fi
           done
@@ -195,7 +178,7 @@ jobs:
             if [ -f "$file" ]; then git add -- "$file"; fi
           done
           if ! git diff --cached --quiet; then
-            git commit -m "record publication and telegram delivery [skip ci]"
+            git commit -m "record publication [skip ci]"
             python retry_runner.py -- git pull --rebase
             python retry_runner.py -- git push
           fi

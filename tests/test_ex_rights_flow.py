@@ -18,7 +18,6 @@ from v5_engine.execution import execute_week
 from v5_engine.selection import select_universe
 from v5_engine.validation import validate_plans
 from unittest.mock import patch
-from tg_push_v5 import build_message
 from daily_update import update_file,read_data
 from test_accounting import sample_context
 
@@ -142,12 +141,9 @@ class ExRightsFlowTests(unittest.TestCase):
             self.assertEqual(parsed['holdings_a'][0]['px'],91.)
             self.assertEqual(parsed['holdings_a'][0]['price_kind'],'CLOSE')
 
-    def test_web_and_telegram_show_original_sale_and_separate_pending_rights(self):
+    def test_web_shows_original_sale_and_separate_pending_rights(self):
         ctx=live_context(False);result=run(ctx,end=ctx.live_day)
         signal=canonical_for(ctx,result['weekly_plans'][-1],result['trades_df'],'test')
-        text=build_message(signal)
-        self.assertIn('原有股票可照策略賣出',text)
-        self.assertIn('2400',text)
         action=next(a for a in signal['actions'] if a['stock_code']=='2400')
         self.assertEqual(action['price_kind'],'EX_RIGHTS_REFERENCE')
         self.assertEqual(action['price_valid_from'],'2026-01-09')

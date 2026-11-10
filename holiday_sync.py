@@ -71,11 +71,8 @@ def main():
     HOLIDAYS.write_text(dump(updated), encoding="utf-8")
     text = "、".join(f"{year} 年（{len(updated[str(year)])} 天）" for year in changed)
     print("休市表已依證交所公告更新：", text)
-    try:
-        from tg_push_v5 import tg_send
-        tg_send(f"📅 已自動依證交所公告更新休市表：{text}")
-    except Exception as error:   # 通知失敗不影響寫入
-        print("TG 通知失敗：", error)
+    from notify import alert
+    alert(f"📅 已自動依證交所公告更新休市表：{text}")
 
 
 if __name__ == "__main__":

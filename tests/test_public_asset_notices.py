@@ -1,7 +1,6 @@
 import copy
 import unittest
 
-from tg_push_v5 import build_message
 from v5_engine.recommendations import hidden_zero_asset_codes, public_warnings
 
 
@@ -12,12 +11,10 @@ def sample():
 
 
 class PublicAssetNoticesTests(unittest.TestCase):
-    def test_zero_history_and_its_repeated_warning_are_hidden_from_telegram(self):
+    def test_zero_history_and_its_repeated_warning_are_hidden(self):
         signal = sample()
         before = copy.deepcopy(signal)
-        message = build_message(signal)
-        self.assertNotIn('3089', message)
-        self.assertNotIn('歷史受限資產', message)
+        self.assertEqual(hidden_zero_asset_codes(signal), {'3089'})
         self.assertEqual(public_warnings(signal), [])
         self.assertEqual(signal, before)
 
@@ -34,7 +31,6 @@ class PublicAssetNoticesTests(unittest.TestCase):
         signal = sample()
         signal['restricted_assets'][0]['book_value'] = 100
         self.assertEqual(hidden_zero_asset_codes(signal), set())
-        self.assertIn('3089', build_message(signal))
         self.assertEqual(public_warnings(signal), signal['warnings'])
 
     def test_unknown_or_nonzero_policy_is_not_treated_as_written_off(self):
@@ -55,10 +51,8 @@ class PublicAssetNoticesTests(unittest.TestCase):
         signal = sample()
         signal['warnings'].append('待領配股尚未入帳，請勿賣出未入帳股數。')
         signal['pending_assets'] = [{'code': '1101', 'shares': 10}]
-        message = build_message(signal)
-        self.assertIn('待領配股', message)
-        self.assertIn('尚未入帳', message)
-        self.assertNotIn('3089', message)
+        warnings = public_warnings(signal)
+        self.assertEqual(warnings, ['待領配股尚未入帳，請勿賣出未入帳股數。'])
 
 
 if __name__ == '__main__':

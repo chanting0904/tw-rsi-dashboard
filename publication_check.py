@@ -1,4 +1,4 @@
-"""Read the public HTML back before delivering its matching Telegram plan."""
+"""Read the public HTML back to confirm this week's plan is actually live."""
 import argparse
 import datetime as dt
 import hashlib

@@ -122,19 +122,18 @@ class NextFridayPipelineTests(unittest.TestCase):
             self.assertFalse(gate.evaluate(today=dt.date(2026,10,30),output_dir=output_dir,notify=False)['ok'])
 
 class RecoveryTests(unittest.TestCase):
-    def mode(self,gate_ok=True,status_ready=True,delivered=True,public_ok=True,today=dt.date(2026,10,23)):
+    def mode(self,gate_ok=True,status_ready=True,public_ok=True,today=dt.date(2026,10,23)):
         signal={'rebalance_date':'2026-10-23','actions':[]};key=gate.fingerprint(signal)
         with tempfile.TemporaryDirectory() as d:
             root=Path(d);(root/'output').mkdir();(root/'output/latest_signals.json').write_text(json.dumps(signal),encoding='utf-8')
             (root/'output/weekly_status.json').write_text(json.dumps({'state':'ready' if status_ready else 'failed','rebalance_date':'2026-10-23','canonical_hash':key}),encoding='utf-8')
-            (root/'state.json').write_text(json.dumps({'last_pushed_key':key if delivered else 'old'}),encoding='utf-8')
             with patch.object(recovery_check,'ROOT',root),patch.object(recovery_check,'evaluate',return_value={'ok':gate_ok}),patch.object(recovery_check,'verify_public_index',side_effect=None if public_ok else RuntimeError('offline failure')):
                 return recovery_check.recovery_mode(today)[0]
     def test_complete_week_is_not_repeated(self):self.assertEqual(self.mode(),'skip')
     def test_missing_weekly_signal_triggers_full_recovery(self):self.assertEqual(self.mode(gate_ok=False),'full')
     def test_failed_ready_state_triggers_publication_recovery(self):self.assertEqual(self.mode(status_ready=False),'publish')
-    def test_missing_delivery_or_publication_only_retries_unfinished_stage(self):
-        self.assertEqual(self.mode(delivered=False),'publish');self.assertEqual(self.mode(public_ok=False),'publish')
+    def test_missing_publication_only_retries_unfinished_stage(self):
+        self.assertEqual(self.mode(public_ok=False),'publish')
     def test_ordinary_thursday_does_not_run_weekly_rebalance(self):self.assertEqual(self.mode(today=dt.date(2026,10,22)),'skip')
 
 class RemainderCalendarTests(unittest.TestCase):
@@ -167,7 +166,7 @@ class PreviewRangeTests(unittest.TestCase):
 class PublicationPersistenceTests(unittest.TestCase):
     def test_final_receipt_commit_stages_gate_generated_baselines(self):
         source=(ROOT/'.github/workflows/update_pages.yml').read_text(encoding='utf-8')
-        stage=source.split('保存公開核對結果及已確認的推播進度',1)[1].split('- name:',1)[0]
+        stage=source.split('保存公開核對結果',1)[1].split('- name:',1)[0]
         for name in ['output/publication_verified.json','output/regression_history.json','output/baseline.json']:
             self.assertIn(name,stage)
         self.assertIn('git add -- "$file"',stage)
