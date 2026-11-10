@@ -64,14 +64,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 1   # 只需最新版本；完整歷史約 311MB
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
           cache: 'pip'
@@ -83,7 +83,22 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python retry_runner.py -- python db_release.py download
-      - name: 12 月每週一提醒補明年休市表
+      - name: 依證交所公告自動更新休市表（每天 06:00）
+        if: github.event.schedule == '0 22 * * 0-4'
+        continue-on-error: true
+        env:
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          python holiday_sync.py
+          if ! git diff --quiet -- holidays.json; then
+            git config user.name "rsi-bot"
+            git config user.email "bot@rsi.local"
+            git commit -m "auto update holidays from TWSE [skip ci]" -- holidays.json
+            python retry_runner.py -- git pull --rebase
+            python retry_runner.py -- git push
+          fi
+      - name: 12 月每週一提醒補明年休市表（自動更新仍未取得時）
         if: github.event.schedule == '0 22 * * 0-4'
         continue-on-error: true
         env:
@@ -215,7 +230,8 @@ jobs:
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         run: |
+          reason=""
+          if [ -f output/last_error.txt ]; then reason="原因：$(cat output/last_error.txt)"$'\n'; fi
           curl -s -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
-            -d chat_id="${TG_CHAT_ID}" \
-            -d "text=❌ V5 自動化流程失敗：${GITHUB_WORKFLOW} #${GITHUB_RUN_NUMBER} 請查 ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
-            -d parse_mode=HTML || true
+            --data-urlencode chat_id="${TG_CHAT_ID}" \
+            --data-urlencode "text=❌ V5 自動化流程失敗：${GITHUB_WORKFLOW} #${GITHUB_RUN_NUMBER}"$'\n'"${reason}詳細：${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" || true

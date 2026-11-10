@@ -8,7 +8,7 @@ import unittest
 import zlib
 import hashlib
 from unittest.mock import patch
-from sync_market import save_references, update_financials
+from sync_market import apply_manual_actions, save_references, unexplained_jumps, update_financials
 
 import pandas as pd
 
@@ -118,6 +118,32 @@ class OfficialInputTests(unittest.TestCase):
             store.db.execute('INSERT INTO bars VALUES(?,?,?,?,?,?,?,?)', ('2026-10-28', '4207', 19, 19, 19, 19.25, 1000, 'TPEx'))
             save_references(store, {'stat': 'ok', 'tables': [{'fields': fields, 'data': [row]}]}, 'reduction:TPEx', 'test', '2026-11-06', '2026-11-09')
             self.assertEqual(store.db.execute('SELECT before,reference FROM references_by_date').fetchall(), [(19.25, 19.74)])
+            store.close()
+
+    def test_twse_par_value_change_is_an_adjustment_reference(self):
+        fields = ['恢復買賣日期', '股票代號', '名稱', '停止買賣前收盤價格', '恢復買賣參考價']
+        with tempfile.TemporaryDirectory() as folder:
+            store = MarketStore(folder)
+            save_references(store, {'stat': 'OK', 'fields': fields, 'data': [['115/11/09', '1234', 'test', '500', '50']]},
+                            'parvalue:TWSE', 'test', '2026-11-06', '2026-11-09')
+            self.assertEqual(store.db.execute('SELECT before,reference FROM references_by_date').fetchall(), [(500, 50)])
+            self.assertEqual(store.db.execute('SELECT COUNT(*) FROM values_by_date').fetchone()[0], 0)
+            store.close()
+
+    def test_unexplained_jump_is_caught_until_a_reference_explains_it(self):
+        with tempfile.TemporaryDirectory() as folder:
+            store = MarketStore(folder)
+            rows = [(f'2026-10-{d}', code, 1, 1, 1, close, 1, 'test')
+                    for d, closes in ((27, (100, 50, 10)), (28, (100, 50, 10)), (29, (10, 54, 20)))
+                    for code, close in zip(('1101', '2330', '6999'), closes)]
+            store.db.executemany('INSERT INTO bars VALUES(?,?,?,?,?,?,?,?)', rows)
+            listed = pd.DataFrame(columns=['1101', '2330'])           # 6999 是新上市（前 5 日無漲跌幅）
+            with patch.object(MarketStore, 'base', return_value=listed):
+                self.assertEqual(unexplained_jumps(store, ['2026-10-29']), [('1101', '2026-10-28', 100, '2026-10-29', 10)])
+                path = Path(folder) / 'manual.json'
+                path.write_text(json.dumps([{'day': '2026-10-29', 'code': '1101', 'before': 100, 'reference': 10}]), encoding='utf-8')
+                apply_manual_actions(store, path, '2026-10-22', '2026-10-29')
+                self.assertEqual(unexplained_jumps(store, ['2026-10-29']), [])
             store.close()
 
     def test_official_quotes_reject_wrong_date_partial_data_and_malformed_ohlc(self):

@@ -116,9 +116,12 @@ def refresh(root=ROOT, through=None, *, getter=fetch):
             ('ex:TPEx', 'https://www.tpex.org.tw/www/zh-tw/bulletin/exDailyQ',
                 {'startDate': begin[:4] + '/' + begin[4:6] + '/' + begin[6:],
                  'endDate': through.replace('-', '/'), 'response': 'json'}, False),
-            ('reduction:TPEx', 'https://www.tpex.org.tw/www/zh-tw/bulletin/decap',
+            # 櫃買用「減資恢復買賣參考價」歷史表（含最後交易日收盤價）；decap 只是預告表。
+            ('reduction:TPEx', 'https://www.tpex.org.tw/www/zh-tw/bulletin/revivt',
                 {'startDate': begin[:4] + '/' + begin[4:6] + '/' + begin[6:],
                  'endDate': through.replace('-', '/'), 'response': 'json'}, False),
+            ('parvalue:TWSE', 'https://www.twse.com.tw/exchangeReport/TWTB8U',
+                {'response': 'json', 'startDate': begin, 'endDate': end}, False),
         ]
         for market in ['sii', 'otc']:
             jobs.append(('ann:' + market, MOPS + 't108sb27', {'step': '1', 'firstin': 'true',
@@ -159,6 +162,13 @@ def refresh(root=ROOT, through=None, *, getter=fetch):
                         store.db.execute('INSERT OR REPLACE INTO announcements VALUES(?,?,?)', (key, json.dumps(row, ensure_ascii=False), source))
                 else:
                     save_references(store, json.loads(body), identity, source, cutoff, through)
+            apply_manual_actions(store, Path(root) / MANUAL_ACTIONS, cutoff, through)
+            jumps = unexplained_jumps(store, [day for day, markets in batches.items() if markets['TWSE']])
+            if jumps:
+                raise ValueError('股價跳動超過漲跌停且查無官方公司行動資料，暫停更新以免選股算錯：'
+                    + '；'.join(f'{code} {prev_day} {prev:g}→{day} {close:g}（{close / prev - 1:+.0%}）'
+                                for code, prev_day, prev, day, close in jumps)
+                    + '。可能是面額變更等公司行動，查證後填入 ' + MANUAL_ACTIONS + ' 即可恢復。')
             update_financials(store, root, through, checked_at, getter, receipt)
             receipt.update(status='PASS', latest_price_date=store.db.execute(
                     'SELECT MAX(day) FROM bars WHERE day<=?', (through,)).fetchone()[0] if closed else through,
@@ -170,6 +180,45 @@ def refresh(root=ROOT, through=None, *, getter=fetch):
         return receipt
     finally:
         store.close()
+
+
+MANUAL_ACTIONS = 'corporate_actions_manual.json'
+JUMP_LIMIT = 0.105   # 台股漲跌幅上限 10%；超過只可能來自公司行動（新上市前 5 日除外）
+
+
+def apply_manual_actions(store, path, cutoff, through):
+    """官方來源沒有、經人工查證的公司行動：[{"day", "code", "before", "reference", "note"}]。"""
+    if not path.exists():
+        return
+    for item in json.loads(path.read_text(encoding='utf-8')):
+        if cutoff < item['day'] <= through:
+            store.db.execute('INSERT OR REPLACE INTO references_by_date VALUES(?,?,?,?,?)',
+                (item['day'], str(item['code']), float(item['before']), float(item['reference']),
+                 'manual:' + str(item.get('note', ''))))
+
+
+def unexplained_jumps(store, days):
+    """回傳超過漲跌停、又沒有任何公司行動參考價可解釋的跳價。"""
+    wanted = set(days)
+    if not wanted:
+        return []
+    rows = store.db.execute('''
+        SELECT code, day, close, LAG(close) OVER w, LAG(day) OVER w, ROW_NUMBER() OVER w
+        FROM bars WINDOW w AS (PARTITION BY code ORDER BY day)''').fetchall()
+    listed = set(map(str, store.base('price:收盤價').columns))   # 歷史快照已有的股票
+    found = []
+    for code, day, close, prev, prev_day, count in rows:
+        if day not in wanted or not prev or not close or (code not in listed and count <= 5):
+            continue
+        if not (code.isdigit() and len(code) == 4 and not code.startswith('0')):
+            continue
+        if abs(close / prev - 1) <= JUMP_LIMIT:
+            continue
+        if store.db.execute('SELECT 1 FROM references_by_date WHERE code=? AND day>? AND day<=?',
+                            (code, prev_day, day)).fetchone():
+            continue
+        found.append((code, prev_day, prev, day, close))
+    return found
 
 
 def save_references(store, document, identity, source, cutoff, through):
@@ -184,11 +233,10 @@ def save_references(store, document, identity, source, cutoff, through):
             before = next((number(v) for k, v in row.items() if ('前收盤' in k or '最後交易' in k)), None)
             reference = next((number(v) for k, v in row.items() if '參考價' in k and ('恢復' in k or '除權息' in k)), None)
             market = 'tse' if identity.endswith('TWSE') else 'otc'
-            if before is None and identity == 'reduction:TPEx':
-                # 櫃買減資表沒有前收盤欄位：用停止買賣日前最後一個交易日的官方收盤價。
-                halt = date_string(row.get('停止買賣日期'))
+            if before is None and not identity.startswith('ex:'):
+                # 來源沒附前收盤時：停止買賣期間沒有成交，恢復日前最後一筆官方收盤即為停止前收盤。
                 last = store.db.execute('SELECT close FROM bars WHERE code=? AND day<? ORDER BY day DESC LIMIT 1',
-                    (code, halt)).fetchone() if halt else None
+                    (code, day)).fetchone()
                 before = last[0] if last else None
             if before is None or reference is None or min(before, reference) <= 0:
                 raise ValueError('公司行動缺少有效參考價：' + code)
@@ -201,6 +249,8 @@ def save_references(store, document, identity, source, cutoff, through):
                     cash = next((number(v) for k, v in row.items() if k in ('現金股利', '息值')), None)
                     stock = next((number(v) for k, v in row.items() if '無償配股' in k), None)
                     updates = [('dividend_otc:現金股利', cash), ('dividend_otc:每千股無償配股', stock)]
+            elif identity.startswith('parvalue:'):
+                updates = []    # 面額變更只影響還原股價（references_by_date），沒有對應的歷史欄位
             else:
                 reason = next((str(v) for k, v in row.items() if '減資原因' in k), '')
                 names = ('停止買賣前收盤價格', '恢復買賣參考價') if market == 'tse' else ('最後交易之收盤價格', '減資恢復買賣開始日參考價格')

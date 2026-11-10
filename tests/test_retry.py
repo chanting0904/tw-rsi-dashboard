@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock
-from retry_runner import run_with_retries
+from retry_runner import run_with_retries, save_reason
 from weekly_status import write_status
 
 
@@ -28,6 +28,14 @@ class RetryTests(unittest.TestCase):
         self.assertEqual(run_with_retries(['offline'], weekly=True, run=run, sleep=sleep, report=report), 2)
         self.assertEqual(run.call_count, 3)
         self.assertEqual(report.call_args.args[0], 'failed')
+
+    def test_final_error_line_is_kept_for_the_alert(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / 'last_error.txt'
+            save_reason('Traceback (most recent call last):\n  File "x"\nValueError: 公司行動缺少有效參考價：4207\n', path)
+            self.assertEqual(path.read_text(encoding='utf-8'), 'ValueError: 公司行動缺少有效參考價：4207')
+            save_reason(None, Path(folder) / 'none.txt')
+            self.assertFalse((Path(folder) / 'none.txt').exists())
 
     def test_midweek_failure_does_not_write_weekly_failure(self):
         with tempfile.TemporaryDirectory() as folder:
