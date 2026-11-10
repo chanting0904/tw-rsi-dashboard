@@ -1,0 +1,11 @@
+# GitHub Pages 只需要 index.html 與 output/；排除資料庫與程式，避免每次上傳 230MB 導致部署逾時。
+exclude:
+  - local_db
+  - finlab_db
+  - v5_engine
+  - tests
+  - research_notes
+  - s5_live
+  - _封存
+  - optimization_b3
+  - _restore_tmp
