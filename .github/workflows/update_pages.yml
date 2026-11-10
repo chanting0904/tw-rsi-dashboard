@@ -26,7 +26,7 @@ on:
       - 'update_data.py'               # 推送 Web 產生器 → 重建 Web
       - 'daily_update.py'
       - 'sync_market.py'
-      - 'local_db/*.sqlite3'
+      - 'db_release.py'
       - '.github/workflows/update_pages.yml'
       - 'weekly_status.js'
       - 'weekly_status.py'
@@ -79,6 +79,10 @@ jobs:
       # Recovery imports the same pandas/numpy modules as the main pipeline.
       - name: 安裝依賴
         run: pip install -q -r requirements.txt
+      - name: 從 Release 下載資料庫（不放 git，避免倉庫變大）
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python retry_runner.py -- python db_release.py download
       - name: 12 月每週一提醒補明年休市表
         if: github.event.schedule == '0 22 * * 0-4'
         continue-on-error: true
@@ -139,7 +143,7 @@ jobs:
           fi
           git config user.name "rsi-bot"
           git config user.email "bot@rsi.local"
-          git add state.json index.html holidays.json check_and_run.py publish_gate.py update_data.py tg_push_v5.py v5_canonical.py local_db_updater.py daily_update.py local_db/ output/
+          git add state.json index.html holidays.json check_and_run.py publish_gate.py update_data.py tg_push_v5.py v5_canonical.py local_db_updater.py daily_update.py output/
           if ! git diff --cached --quiet; then
             git commit -m "auto update page [skip ci]"
             python retry_runner.py -- git pull --rebase
@@ -168,7 +172,7 @@ jobs:
           git config user.name "rsi-bot"
           git config user.email "bot@rsi.local"
           git add state.json
-          for file in local_db/official.sqlite3 output/data_status.json; do
+          for file in output/data_status.json; do
             if [ -f "$file" ]; then git add -- "$file"; fi
           done
           # The publication gate can also persist regression and fee baselines.
@@ -180,6 +184,11 @@ jobs:
             python retry_runner.py -- git pull --rebase
             python retry_runner.py -- git push
           fi
+      - name: 有變動的資料庫上傳回 Release（失敗時也保留已更新的資料）
+        if: always() && steps.recovery.outputs.mode != 'skip'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python retry_runner.py -- python db_release.py upload
       - name: 失敗狀態上網（保留上一份訊號）
         if: failure()
         env:
