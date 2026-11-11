@@ -5,7 +5,9 @@ from .execution import execute_week
 from .performance import summarize_simulation
 
 
-def run_reference(ctx, weekday=5, mode='close', coefs=(1.5, 1.0, .5), start=None, end=None, record=True, executor=None, seed=None):
+def run_reference(ctx, weekday=5, mode='close', coefs=(1.5, 1.0, .5), start=None, end=None, record=True, executor=None, seed=None,
+                  monthly_contribution=0.0):
+    """monthly_contribution：研究用，每月第一個交易日把這筆現金加進帳戶（下次調倉才買進）；正式流程為 0。"""
     if mode not in ('close', 'open'):
         raise ValueError('Unsupported execution mode')
     from .live_actions import prepare_live_actions
@@ -46,7 +48,13 @@ def run_reference(ctx, weekday=5, mode='close', coefs=(1.5, 1.0, .5), start=None
     if end is not None:
         sessions = sessions[sessions <= pd.Timestamp(end)]
     rebalance_days = set(dates)
+    previous_month = None
     for day in sessions:
+        added = 0.0
+        if monthly_contribution and previous_month is not None and (day.year, day.month) != previous_month:
+            added = float(monthly_contribution)
+            cash += added
+        previous_month = (day.year, day.month)
         if ctx.live_day is None or day <= ctx.signal_day:
             cash, corporate_records = ledger.advance(day, positions, cash, ctx.close.loc[day])
             trades.extend(corporate_records)
@@ -71,7 +79,8 @@ def run_reference(ctx, weekday=5, mode='close', coefs=(1.5, 1.0, .5), start=None
                            if pd.notna(prices[code]) and float(prices[code]) > 0)
         nav_hist.append({'date': day, 'nav': cash + market_value + ctx.receivable_total,
                          'cash': cash, 'stocks': market_value, 'receivables': ctx.receivable_total,
-                         'pending_stock_value': sum(asset['book_value'] for asset in pending)})
+                         'pending_stock_value': sum(asset['book_value'] for asset in pending),
+                         **({'contribution': added} if added else {})})
     if not nav_hist:
         raise ValueError('沒有可模擬的已完成交易週')
     summary_config=ctx.config
@@ -89,13 +98,15 @@ def run_reference(ctx, weekday=5, mode='close', coefs=(1.5, 1.0, .5), start=None
     return result
 
 
-def run(ctx, weekday=5, mode='close', coefs=(1.5, 1.0, .5), start=None, end=None, record=True, *, reference=None):
+def run(ctx, weekday=5, mode='close', coefs=(1.5, 1.0, .5), start=None, end=None, record=True, *, reference=None,
+        monthly_contribution=0.0):
     """Use the same guarded share planner as Web/TG, with actual market blocks."""
     from .guarded_execution import GuardedExecution
     if reference is None:
-        reference = run_reference(ctx, weekday, mode, coefs, start, end, True)
+        reference = run_reference(ctx, weekday, mode, coefs, start, end, True, monthly_contribution=monthly_contribution)
     with GuardedExecution(ctx, reference) as executor:
-        result = run_reference(ctx, weekday, mode, coefs, start, end, record, executor)
+        result = run_reference(ctx, weekday, mode, coefs, start, end, record, executor,
+                               monthly_contribution=monthly_contribution)
     result['execution_policy'] = 'guarded_weekly_capital_v1'
     return result
 
