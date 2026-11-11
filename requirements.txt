@@ -2,4 +2,4 @@
 finlab==2.2.11
 pandas==3.0.6
 numpy==2.2.6
-yfinance==1.7.0
+yfinance==1.8.0
