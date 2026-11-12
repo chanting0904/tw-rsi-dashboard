@@ -1,6 +1,6 @@
 {
- "checked_for": "2026-11-06",
- "quote_day": "2026-11-05",
+ "checked_for": "2026-11-13",
+ "quote_day": "2026-11-12",
  "listed": {
   "1101": {
    "name": "台泥",
@@ -7964,8 +7964,8 @@
   }
  },
  "source_dates": {
-  "twse_listed": "2026-11-05",
-  "tpex_listed": "2026-11-05"
+  "twse_listed": "2026-11-11",
+  "tpex_listed": "2026-11-12"
  },
  "events": [
   {
@@ -8167,26 +8167,6 @@
    "label": "上市櫃",
    "observed_on": null,
    "effective_time": "000000"
-  },
-  {
-   "code": "1218",
-   "effective_date": "2026-08-13",
-   "status": "SUSPENDED",
-   "name": "泰山",
-   "source": "https://openapi.twse.com.tw/v1/exchangeReport/TWTAWU",
-   "label": "暫停交易",
-   "observed_on": null,
-   "effective_time": "080000"
-  },
-  {
-   "code": "1218",
-   "effective_date": "2026-08-14",
-   "status": "TRADABLE",
-   "name": "泰山",
-   "source": "https://openapi.twse.com.tw/v1/exchangeReport/TWTAWU",
-   "label": "恢復交易",
-   "observed_on": null,
-   "effective_time": "080000"
   },
   {
    "code": "1219",
@@ -11777,6 +11757,26 @@
    "label": "上市櫃",
    "observed_on": null,
    "effective_time": "000000"
+  },
+  {
+   "code": "2314",
+   "effective_date": "2026-11-10",
+   "status": "SUSPENDED",
+   "name": "台揚",
+   "source": "https://openapi.twse.com.tw/v1/exchangeReport/TWTAWU",
+   "label": "暫停交易",
+   "observed_on": null,
+   "effective_time": "080000"
+  },
+  {
+   "code": "2314",
+   "effective_date": "2026-11-11",
+   "status": "TRADABLE",
+   "name": "台揚",
+   "source": "https://openapi.twse.com.tw/v1/exchangeReport/TWTAWU",
+   "label": "恢復交易",
+   "observed_on": null,
+   "effective_time": "080000"
   },
   {
    "code": "2315",
@@ -19929,16 +19929,6 @@
    "effective_time": "000000"
   },
   {
-   "code": "4207",
-   "effective_date": "2026-11-06",
-   "status": "SUSPENDED",
-   "name": "環泰",
-   "source": "https://www.tpex.org.tw/openapi/v1/tpex_cmode",
-   "label": "停止交易（本次官方狀態）",
-   "observed_on": "2026-11-06",
-   "effective_time": "000000"
-  },
-  {
    "code": "4303",
    "effective_date": "1999-03-10",
    "status": "TRADABLE",
@@ -20340,12 +20330,12 @@
   },
   {
    "code": "4534",
-   "effective_date": "2026-11-06",
+   "effective_date": "2026-11-13",
    "status": "SUSPENDED",
    "name": "慶騰",
    "source": "https://www.tpex.org.tw/openapi/v1/tpex_cmode",
    "label": "停止交易（本次官方狀態）",
-   "observed_on": "2026-11-06",
+   "observed_on": "2026-11-13",
    "effective_time": "000000"
   },
   {
@@ -21170,12 +21160,12 @@
   },
   {
    "code": "4804",
-   "effective_date": "2026-11-06",
+   "effective_date": "2026-11-13",
    "status": "SUSPENDED",
    "name": "大略-KY",
    "source": "https://www.tpex.org.tw/openapi/v1/tpex_cmode",
    "label": "停止交易（本次官方狀態）",
-   "observed_on": "2026-11-06",
+   "observed_on": "2026-11-13",
    "effective_time": "000000"
   },
   {
@@ -22626,16 +22616,6 @@
    "source": "https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap03_O",
    "label": "上市櫃",
    "observed_on": null,
-   "effective_time": "000000"
-  },
-  {
-   "code": "5355",
-   "effective_date": "2026-11-06",
-   "status": "SUSPENDED",
-   "name": "佳總",
-   "source": "https://www.tpex.org.tw/openapi/v1/tpex_cmode",
-   "label": "停止交易（本次官方狀態）",
-   "observed_on": "2026-11-06",
    "effective_time": "000000"
   },
   {
@@ -30019,16 +29999,6 @@
    "effective_time": "000000"
   },
   {
-   "code": "8176",
-   "effective_date": "2026-11-06",
-   "status": "SUSPENDED",
-   "name": "智捷",
-   "source": "https://www.tpex.org.tw/openapi/v1/tpex_cmode",
-   "label": "停止交易（本次官方狀態）",
-   "observed_on": "2026-11-06",
-   "effective_time": "000000"
-  },
-  {
    "code": "8182",
    "effective_date": "2006-05-25",
    "status": "TRADABLE",
@@ -30517,6 +30487,16 @@
    "label": "上市櫃",
    "observed_on": null,
    "effective_time": "000000"
+  },
+  {
+   "code": "8426",
+   "effective_date": "2026-11-12",
+   "status": "SUSPENDED",
+   "name": "紅木-KY",
+   "source": "https://www.tpex.org.tw/openapi/v1/tpex_spendi_history",
+   "label": "暫停交易",
+   "observed_on": null,
+   "effective_time": "080000"
   },
   {
    "code": "8427",
@@ -31810,5 +31790,5 @@
   "tpex_delisted_2025": "https://www.tpex.org.tw/www/zh-tw/company/deListed?date=2025&paging-table=0&paging-size=10000&paging-offset=0&response=json",
   "tpex_delisted_2026": "https://www.tpex.org.tw/www/zh-tw/company/deListed?date=2026&paging-table=0&paging-size=10000&paging-offset=0&response=json"
  },
- "observed_at": "2026-11-06T08:26:21.811043+08:00"
+ "observed_at": "2026-11-13T04:32:50.282609+08:00"
 }
