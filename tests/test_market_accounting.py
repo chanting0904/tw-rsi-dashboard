@@ -19,22 +19,22 @@ import test_pipeline
 
 class FeeTests(unittest.TestCase):
     def test_user_rates_and_taxes(self):
-        self.assertAlmostEqual(order_cost(10000,'BUY')['fee'],3.99)
-        self.assertAlmostEqual(order_cost(10000,'SELL')['fee'],33.99)
-        self.assertAlmostEqual(order_cost(10000,'SELL',instrument='etf')['fee'],13.99)
-        self.assertAlmostEqual(order_cost(10000,'SELL',eligible_day_trade=True)['fee'],18.99)
+        self.assertAlmostEqual(order_cost(10000,'BUY')['fee'],3)
+        self.assertAlmostEqual(order_cost(10000,'SELL')['fee'],33)
+        self.assertAlmostEqual(order_cost(10000,'SELL',instrument='etf')['fee'],13)
+        self.assertAlmostEqual(order_cost(10000,'SELL',eligible_day_trade=True)['fee'],18)
 
     def test_minimum_one_dollar_and_zero_order(self):
         self.assertEqual(order_cost(100,'BUY'),dict(commission=1,tax=0,fee=1))
         self.assertEqual(order_cost(0,'BUY')['fee'],0)
-        self.assertAlmostEqual(order_cost(100,'SELL')['fee'],1.3)
+        self.assertAlmostEqual(order_cost(100,'SELL')['fee'],1)
 
     def test_internal_passes_charge_one_minimum_per_order(self):
         costs=OrderFees(StrategyConfig())
         self.assertEqual(costs.charge('2330','BUY',100)['fee'],1)
         self.assertEqual(costs.charge('2330','BUY',200)['fee'],0)
-        self.assertAlmostEqual(costs.charge('2330','BUY',9700)['fee'],2.99)
-        self.assertAlmostEqual(costs.charge('2330','SELL',10000)['fee'],33.99)
+        self.assertAlmostEqual(costs.charge('2330','BUY',9700)['fee'],2)
+        self.assertAlmostEqual(costs.charge('2330','SELL',10000)['fee'],33)
         self.assertEqual(costs.charge('2409','BUY',100)['fee'],1)
 
     def test_invalid_costs_rejected(self):
@@ -100,7 +100,7 @@ class StockDeliveryTests(unittest.TestCase):
         self.assertEqual(pos['2400']['locked_shares'],10)
         self.assertEqual(plan['receivables'],1000)
         self.assertEqual(plan['stock_exposure'],0)
-        self.assertAlmostEqual(cash,1000+10000-33.99)
+        self.assertAlmostEqual(cash,1000+10000-33)
 
     def test_future_cash_dividends_do_not_pay_on_unissued_rights(self):
         ledger,pos,cash,ex,release,records=self.sample(False)

@@ -54,8 +54,8 @@
       }
       const amount=side==='HOLD'||issues.length?0:Math.abs(change)*price;
       if (!Number.isFinite(amount)) throw new Error('交易金額過大。');
-      const commission=amount?Math.max(minimum,amount*commissionRate):0;
-      const tax=side==='SELL'?amount*saleTax:0,fee=commission+tax;
+      const commission=amount?Math.max(minimum,Math.floor(amount*commissionRate+1e-9)):0;
+      const tax=side==='SELL'?Math.floor(amount*saleTax+1e-9):0,fee=commission+tax;
       if (side==='BUY') buyCost+=amount+fee;
       if (side==='SELL') sellNet+=amount-fee;
       fees+=fee;

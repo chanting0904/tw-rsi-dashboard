@@ -17,13 +17,14 @@ def order_cost(amount, side, commission_rate=COMMISSION_RATE, minimum=MIN_COMMIS
         raise ValueError('Unknown security tax category')
     if not amount:
         return {'commission': 0., 'tax': 0., 'fee': 0.}
-    commission = max(minimum, amount * commission_rate)
+    # 口袋證券：手續費與證交稅皆元以下捨去；手續費每筆最低1元。
+    commission = max(minimum, float(math.floor(amount * commission_rate + 1e-9)))
     tax_rate = TAX_RATES[instrument] if sale_rate is None else sale_rate
     if eligible_day_trade and instrument == 'stock':
         tax_rate = .0015
     if not math.isfinite(tax_rate) or not 0 <= tax_rate < 1:
         raise ValueError('Invalid sale tax rate')
-    tax = amount * tax_rate if side == 'SELL' else 0.
+    tax = float(math.floor(amount * tax_rate + 1e-9)) if side == 'SELL' else 0.
     return {'commission': commission, 'tax': tax, 'fee': commission + tax}
 
 

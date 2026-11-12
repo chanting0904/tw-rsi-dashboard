@@ -24,7 +24,7 @@ test('a full exit uses all eight actual shares even when the model held seven',(
 });
 test('one commission minimum per actual delta; sales include stock tax',()=>{
  const r=planOrders({targets:[{code:'2033',quantity:2}],holdings:parseHoldings('2033 1\n2892 1'),quotes,stress:false});
- assert.equal(r.buyCost,60.8);assert.equal(r.sellNet,41.4-1-41.4*.003);
+ assert.equal(r.buyCost,60.8);assert.equal(r.sellNet,41.4-1-Math.floor(41.4*.003));
 });
 test('unfilled sale proceeds never make current buys affordable',()=>{
  const r=planOrders({targets:[{code:'2033',quantity:100}],holdings:parseHoldings('1303 30'),quotes,cash:0,stress:false});

@@ -9,7 +9,7 @@
     if(!Number.isFinite(reservedAssets)||reservedAssets<0||reservedAssets>capital)throw Error('不可動用權益資料無效。');
     const rate=current.buy_fee??.000399,min=current.minimum_commission??1,tax=current.fee_model?.stock_sale_tax??.003;
     if(![rate,min,tax].every(x=>Number.isFinite(x)&&x>=0)||rate>=1||tax>=1)throw Error('費用資料無效。');
-    const fee=(amount,sell=false)=>amount>0?Math.max(min,amount*rate)+(sell?amount*tax:0):0;
+    const fee=(amount,sell=false)=>amount>0?Math.max(min,Math.floor(amount*rate+1e-9))+(sell?Math.floor(amount*tax+1e-9):0):0;
     const before=(previous.actions||[]).filter(a=>a.allocation_eligible!==false&&a.action!=='SELL'&&a.post_shares>0);
     let source='reconstructed',held={};
     if(snapshot){
