@@ -1,7 +1,7 @@
 {
  "through": "2026-11-11",
  "historical_through": "2026-10-22",
- "checked_at": "2026-11-12T03:55:02.693388+08:00",
+ "checked_at": "2026-11-12T10:45:19.381740+08:00",
  "sources": [
   {
    "name": "2026-11-11:TWSE",
@@ -41,12 +41,12 @@
   {
    "name": "ann:sii",
    "source": "https://mopsov.twse.com.tw/mops/web/ajax_t108sb27",
-   "sha256": "b68986a52981f1104d5bd7701fc21dd68e7e02ce3d705287604afc5dadfada0e"
+   "sha256": "0b02f8be4d8b71fabfb70e3382c9f66e6be61d71270659b14c5ba1b09b180a46"
   },
   {
    "name": "ann:otc",
    "source": "https://mopsov.twse.com.tw/mops/web/ajax_t108sb27",
-   "sha256": "a41d0d6e723c90ef32e498b4c4609a27f04ea4883a81534c906a182fc33608c6"
+   "sha256": "293dba705751e54cb56735a5e53edef4f4a0d342e7e3d31d3fba7a316c12cbec"
   }
  ],
  "financial_period": "2026Q3",
