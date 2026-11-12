@@ -75,6 +75,8 @@ class MarketStore:
             CREATE TABLE IF NOT EXISTS documents(identity TEXT PRIMARY KEY,checked_at TEXT,source TEXT,sha TEXT,body BLOB);
             CREATE TABLE IF NOT EXISTS receipts(day TEXT PRIMARY KEY,body TEXT);
             ''')
+        # 快照之後新上市櫃公司的基本資料（舊資料庫也自動補表）。
+        self.db.execute('CREATE TABLE IF NOT EXISTS companies(code TEXT PRIMARY KEY,body TEXT,source TEXT)')
         self._frames = {}
 
     def close(self):
@@ -142,6 +144,12 @@ class MarketStore:
                 field = dict(zip(PRICE_NAMES, ('close', 'open', 'high', 'low', 'amount')))[name[6:]]
                 rows = self.db.execute(f'SELECT day,code,{field} FROM bars ORDER BY day,code').fetchall()
                 frame = overlay(frame, rows)
+            elif name == 'company_basic_info':
+                known = set(frame['stock_id'].astype(str))
+                additions = [row for row in (json.loads(body) for (body,) in self.db.execute('SELECT body FROM companies ORDER BY code'))
+                             if row['stock_id'] not in known]
+                if additions:
+                    frame = pd.concat([frame, pd.DataFrame(additions)], ignore_index=True)
             elif name == 'dividend_announcement':
                 frame['symbol'] = frame['stock_id'].astype(str)
                 additions = [json.loads(row[0]) for row in self.db.execute('SELECT body FROM announcements')]

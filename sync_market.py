@@ -170,6 +170,7 @@ def refresh(root=ROOT, through=None, *, getter=fetch):
                                 for code, prev_day, prev, day, close in jumps)
                     + '。可能是面額變更等公司行動，查證後填入 ' + MANUAL_ACTIONS + ' 即可恢復。')
             update_financials(store, root, through, checked_at, getter, receipt)
+            update_companies(store, getter, receipt)
             receipt.update(status='PASS', latest_price_date=store.db.execute(
                     'SELECT MAX(day) FROM bars WHERE day<=?', (through,)).fetchone()[0] if closed else through,
                 no_quote_days=sorted(no_quote_days),
@@ -180,6 +181,50 @@ def refresh(root=ROOT, through=None, *, getter=fetch):
         return receipt
     finally:
         store.close()
+
+
+COMPANY_SOURCES = {
+    'TWSE': 'https://openapi.twse.com.tw/v1/opendata/t187ap03_L',
+    'TPEx': 'https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap03_O'}
+INDUSTRIES = {'01': '水泥工業', '02': '食品工業', '03': '塑膠工業', '04': '紡織纖維', '05': '電機機械',
+    '06': '電器電纜', '08': '玻璃陶瓷', '09': '造紙工業', '10': '鋼鐵工業', '11': '橡膠工業', '12': '汽車工業',
+    '14': '建材營造', '15': '航運業', '16': '觀光餐旅', '17': '金融保險業', '18': '貿易百貨', '19': '綜合',
+    '20': '其他', '21': '化學工業', '22': '生技醫療業', '23': '油電燃氣業', '24': '半導體業',
+    '25': '電腦及週邊設備業', '26': '光電業', '27': '通信網路業', '28': '電子零組件業', '29': '電子通路業',
+    '30': '資訊服務業', '31': '其他電子業', '32': '文化創意業', '33': '農業科技', '34': '電子商務',
+    '35': '綠能環保', '36': '數位雲端', '37': '運動休閒', '38': '居家生活', '91': '存託憑證'}
+
+
+def company_rows(market, body):
+    """官方公司基本資料 → 與歷史快照相同欄位（代號、簡稱、名稱、產業類別）。"""
+    rows = []
+    for item in json.loads(body):
+        if market == 'TWSE':
+            code, short, name, industry = item.get('公司代號'), item.get('公司簡稱'), item.get('公司名稱'), item.get('產業別')
+        else:
+            code, short, name, industry = (item.get('SecuritiesCompanyCode'), item.get('CompanyAbbreviation'),
+                                           item.get('CompanyName'), item.get('SecuritiesIndustryCode'))
+        code, short, industry = str(code or '').strip(), str(short or '').strip(), str(industry or '').strip()
+        if len(code) == 4 and code.isdigit() and short:
+            rows.append({'stock_id': code, '公司簡稱': short, '公司名稱': str(name or '').strip(),
+                         '產業類別': INDUSTRIES.get(industry, industry), '市場': market})
+    return rows
+
+
+def update_companies(store, getter, receipt):
+    """補上歷史快照之後才上市櫃的公司（名稱、創新板「-創」、產業別）；既有公司不改，失敗不擋更新。"""
+    known = set(store.base('company_basic_info')['stock_id'].astype(str))
+    added = 0
+    try:
+        for market, url in COMPANY_SOURCES.items():
+            for row in company_rows(market, getter(url, None, post=False)):
+                if row['stock_id'] not in known:
+                    store.db.execute('INSERT OR REPLACE INTO companies VALUES(?,?,?)',
+                                     (row['stock_id'], json.dumps(row, ensure_ascii=False), url))
+                    added += 1
+        receipt['companies'] = dict(status='PASS', new_listings=added)
+    except Exception as error:  # 基本資料只影響顯示名稱與創新板排除，不應擋下行情更新
+        receipt['companies'] = dict(status='SKIPPED', reason=str(error)[:200])
 
 
 MANUAL_ACTIONS = 'corporate_actions_manual.json'
@@ -266,7 +311,7 @@ def update_financials(store, root, through, checked_at, getter, receipt):
     prior_year, prior_quarter = quarter_before(year, quarter)
     periods = [(year, quarter), (prior_year, prior_quarter)]
     frames = {}
-    companies = {str(r['stock_id']): r for r in store.base('company_basic_info').to_dict('records')}
+    companies = {str(r['stock_id']): r for r in pd.DataFrame(store.get('company_basic_info')).to_dict('records')}
     latest_values = {(name, code): value for name, code, value in store.db.execute('SELECT dataset,code,value FROM values_by_date ORDER BY day')}
     baseline_values = {name: store.financial(name).ffill().iloc[-1] for name in ('fundamental_features:ROE稅後', 'financial_statement:股本')}
     for market in ['sii', 'otc']:

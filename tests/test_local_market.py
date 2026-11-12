@@ -167,3 +167,44 @@ class OfficialInputTests(unittest.TestCase):
                     raise RuntimeError('second exchange missing')
             self.assertEqual(store.db.execute('SELECT COUNT(*) FROM bars').fetchone()[0], 0)
             store.close()
+
+
+class CompanyListingTests(unittest.TestCase):
+    def test_new_listings_are_added_without_touching_snapshot_companies(self):
+        from sync_market import update_companies, COMPANY_SOURCES
+        twse = json.dumps([{'公司代號': '2330', '公司簡稱': '改名', '公司名稱': 'x', '產業別': '24'},
+                           {'公司代號': '7777', '公司簡稱': '新創股-創', '公司名稱': '新創股份有限公司', '產業別': '24'}],
+                          ensure_ascii=False).encode()
+        tpex = json.dumps([{'SecuritiesCompanyCode': '8888', 'CompanyAbbreviation': '新櫃', 'CompanyName': '新櫃公司',
+                            'SecuritiesIndustryCode': '17'}, {'SecuritiesCompanyCode': '00999', 'CompanyAbbreviation': 'ETF'}],
+                          ensure_ascii=False).encode()
+        bodies = {COMPANY_SOURCES['TWSE']: twse, COMPANY_SOURCES['TPEx']: tpex}
+        with tempfile.TemporaryDirectory() as folder:
+            store = MarketStore(folder)
+            store._frames['company_basic_info'] = pd.DataFrame([{'stock_id': '2330', '公司簡稱': '台積電', '產業類別': '半導體業'}])
+            receipt = {}
+            update_companies(store, lambda url, params, post: bodies[url], receipt)
+            self.assertEqual(receipt['companies'], {'status': 'PASS', 'new_listings': 2})
+            info = pd.DataFrame(store.get('company_basic_info')).set_index('stock_id')
+            self.assertEqual(info.at['2330', '公司簡稱'], '台積電')
+            self.assertEqual(info.at['7777', '公司簡稱'], '新創股-創')
+            self.assertEqual(info.at['8888', '產業類別'], '金融保險業')
+            self.assertNotIn('00999', info.index)
+            store.close()
+
+    def test_source_failure_does_not_stop_market_update(self):
+        from sync_market import update_companies
+        with tempfile.TemporaryDirectory() as folder:
+            store = MarketStore(folder)
+            store._frames['company_basic_info'] = pd.DataFrame([{'stock_id': '2330', '公司簡稱': '台積電'}])
+            receipt = {}
+            def broken(url, params, post):
+                raise ValueError('timeout')
+            update_companies(store, broken, receipt)
+            self.assertEqual(receipt['companies']['status'], 'SKIPPED')
+            self.assertEqual(len(pd.DataFrame(store.get('company_basic_info'))), 1)
+            store.close()
+
+
+if __name__ == '__main__':
+    unittest.main()
