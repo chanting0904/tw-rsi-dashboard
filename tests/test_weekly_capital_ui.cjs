@@ -13,7 +13,7 @@ test('partial sells have a distinct visual marker while exits do not',()=>{const
  {code:'6672',name:'騰輝電子',current:7,target:0,change:-7,side:'SELL',reason:'退出'}];
  f.$('cap-previous').value=f.$('cap').value='100000';f.click();
  const marked=f.created.filter(n=>n.className==='is-reduction');assert.equal(marked.length,1);
- assert.equal(marked[0].children[0].children[0].textContent,'6214');
+ assert.equal(marked[0].children[0].children[1].textContent,'6214');
 });
 test('both manual fields are required without falling back to a hidden default',()=>{const f=fixture();f.$('cap-previous').value='100000';f.click();assert.equal(f.api.getTargets(),null);assert.match(f.$('weekly-capital-error').textContent,/必填/);assert.equal(f.stored(),null);});
 test('valid manual fields produce targets and save only the theoretical snapshot',()=>{const f=fixture();f.$('cap-previous').value='100000';f.$('cap').value='150000';f.click();assert.equal(f.calls[0].previousCapital,100000);assert.equal(f.calls[0].capital,150000);assert.equal(f.api.getTargets()[0].quantity,10);assert.ok(f.stored());});
@@ -80,4 +80,12 @@ test('nothing remembered leaves both fields blank, and a calculation remembers l
  const f=fixture();assert.equal(f.$('cap-previous').value,'');assert.equal(f.$('cap').value,'');
  f.$('cap-previous').value='110115';f.$('cap').value='118660';f.click();
  assert.equal(JSON.parse(f.stored())['2026-10-16'].byCapital[0].previous_capital,110115);
+});
+test('rows show weekly rank badges and are ordered by rank',()=>{const f=fixture();f.result.rows=[
+ {code:'5465',name:'富驊',current:10,target:10,change:0,side:'HOLD',rank:17,reason:'續抱不動'},
+ {code:'1416',name:'廣豐',current:10,target:10,change:0,side:'HOLD',rank:1,reason:'續抱不動'},
+ {code:'6756',name:'退出',current:5,target:0,change:-5,side:'SELL',rank:null,reason:'退出'}];
+ f.$('cap-previous').value=f.$('cap').value='100000';f.click();
+ const badges=f.created.filter(n=>/^stock-rank/.test(n.className)).map(n=>[n.textContent,n.className]);
+ assert.deepEqual(badges,[['未入榜','stock-rank rank-none'],['第 1 名','stock-rank rank-top'],['第 17 名','stock-rank rank-keep']]);
 });

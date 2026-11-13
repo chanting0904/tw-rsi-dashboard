@@ -57,6 +57,15 @@
       $('preview-cash').textContent=money(value.cash);
       $('preview-result-note').textContent='依本週 '+money(value.capital)+' 試算 · 不用動 '+rows.filter(r=>r.side==='HOLD').length+' 檔 · 預估費稅 '+money(value.fees)+(value.reservedAssets>0?' · 待領權益 '+money(value.reservedAssets):'')+(!value.bandReached?' · 配置未達90%，差額保留現金':'');
     }
+    // 本週強弱排名：前5／6-10／11-15 為買進區，16-20 為續抱保留區，其餘未入榜。
+    function rankBadge(rank){
+      const badge=document.createElement('span'),n=Number(rank);
+      const ranked=Number.isInteger(n)&&n>0;
+      badge.className='stock-rank '+(!ranked?'rank-none':n<=5?'rank-top':n<=10?'rank-high':n<=15?'rank-mid':'rank-keep');
+      badge.textContent=ranked?'第 '+n+' 名':'未入榜';
+      return badge;
+    }
+    const byRank=(a,b)=>{const x=Number.isInteger(a.rank)?a.rank:1e9,y=Number.isInteger(b.rank)?b.rank:1e9;return x-y||a.code.localeCompare(b.code);};
     function renderGroupedRows(rows){
       const rootTable=$('weekly-capital-table');rootTable.replaceChildren();
       for(const group of [{side:'SELL',label:'賣出／減碼',cls:'sell'},{side:'BUY',label:'買進／加碼',cls:'buy'},{side:'HOLD',label:'續抱不用動',cls:'hold'}]){
@@ -65,7 +74,7 @@
         if(!list.length){const empty=document.createElement('p');empty.className='group-empty';empty.textContent='本週沒有這類操作';box.appendChild(empty);rootTable.appendChild(box);continue;}
         const table=document.createElement('table'),head=table.createTHead().insertRow();for(const text of ['股票','本次下單','原有 → 調整後','原因']){const th=document.createElement('th');th.textContent=text;head.appendChild(th);}
         const body=table.createTBody();
-        for(const r of list){const tr=body.insertRow(),stock=tr.insertCell(),code=document.createElement('span'),name=document.createElement('strong');if(r.side==='SELL'&&r.target>0)tr.className='is-reduction';code.className='stock-code';code.textContent=r.code;name.className='stock-name';name.textContent=r.name;stock.append(code,name);
+        for(const r of list){const tr=body.insertRow(),stock=tr.insertCell(),code=document.createElement('span'),name=document.createElement('strong');if(r.side==='SELL'&&r.target>0)tr.className='is-reduction';code.className='stock-code';code.textContent=r.code;name.className='stock-name';name.textContent=r.name;stock.append(rankBadge(r.rank),code,name);
           const quantity=tr.insertCell(),number=document.createElement('strong'),label=document.createElement('small');quantity.className='order-quantity';number.textContent=r.side==='HOLD'?'—':Math.abs(r.change)+' 股';label.textContent=r.side==='BUY'?(r.current?'加碼':'新買'):r.side==='SELL'?(r.target?'減碼':'賣出'):'不用動';quantity.append(number,label);
           const bridge=tr.insertCell();bridge.className='share-bridge';bridge.textContent=r.current+' → '+r.target+' 股';
           const reason=tr.insertCell(),details=document.createElement('details'),summary=document.createElement('summary'),text=document.createElement('p');details.className='row-reason';summary.textContent='查看';text.textContent=r.reason;details.append(summary,text);reason.appendChild(details);
@@ -89,7 +98,7 @@
         if(!anchor.withinBudget)throw Error('訊號基準配置超出資金／95%上限，暫不產生可承接的清單。');
         // Show the signal-basis plan: the list on screen is exactly what next week carries.
         plan=anchor;
-        const rows=[...plan.rows].filter(r=>r.current||r.target).sort((a,b)=>a.code.localeCompare(b.code));
+        const rows=[...plan.rows].filter(r=>r.current||r.target).sort(byRank);
         renderGroupedRows(rows);
         renderOverview(plan,rows);$('weekly-capital-summary').textContent='';
         $('weekly-capital-basis').textContent='上週基準 '+plan.previousDate+' → 本週 '+plan.date+'；'+(plan.source==='saved'?'原有股數沿用本瀏覽器上週用 '+money(plan.previousCapital)+' 算出的清單，與上週畫面相同。':'⚠ 注意：這台瀏覽器找不到上週用 '+money(plan.previousCapital)+' 算出的清單'+(entry?'（上週資料已更新）':'')+'，原有股數改依上週模型推算，可能與上週畫面差幾股。有上週的備份碼，請先在下方「貼上備份碼」匯入再重算；沒有的話請對照券商庫存，不同時在下方輸入實際持股核對。')+' 本週清單一律用訊號基準價計算，之後股價漲跌不會改變清單或原有股數，下週會原樣承接。這是理論持股，未連接券商庫存；有未成交或實際股數不同，請在下方輸入完整實際持股，重新核對下單股數。';
