@@ -94,10 +94,21 @@
         renderOverview(plan,rows);$('weekly-capital-summary').textContent='';
         $('weekly-capital-basis').textContent='上週基準 '+plan.previousDate+' → 本週 '+plan.date+'；'+(plan.source==='saved'?'原有股數沿用本瀏覽器上週用 '+money(plan.previousCapital)+' 算出的清單，與上週畫面相同。':'⚠ 注意：這台瀏覽器找不到上週用 '+money(plan.previousCapital)+' 算出的清單'+(entry?'（上週資料已更新）':'')+'，原有股數改依上週模型推算，可能與上週畫面差幾股。有上週的備份碼，請先在下方「貼上備份碼」匯入再重算；沒有的話請對照券商庫存，不同時在下方輸入實際持股核對。')+' 本週清單一律用訊號基準價計算，之後股價漲跌不會改變清單或原有股數，下週會原樣承接。這是理論持股，未連接券商庫存；有未成交或實際股數不同，請在下方輸入完整實際持股，重新核對下單股數。';
         $('weekly-capital-error').textContent='';$('weekly-capital-results').hidden=false;
-        record={...anchor.snapshot,price_policy:pricePolicy,signal_basis:snapshotBasis(current)};
+        record={...anchor.snapshot,previous_capital:previousCapital,price_policy:pricePolicy,signal_basis:snapshotBasis(current)};
         if(!store(record))$('weekly-capital-error').textContent='本次計算有效，但瀏覽器無法儲存股數；請按「存到 Telegram」或「複製備份碼」保存，下週貼回。';
         onChange();
       }catch(error){plan=null;resetSummary();$('weekly-capital-error').textContent=error.message;onChange();}
+    }
+    // 帶入這台瀏覽器記住的金額：本週算過→兩格都帶；新的一週→上週帶上次的本週金額、本週留白。
+    function prefill(){
+      const last=date=>{const e=savedEntries(date);return e.length?e[e.length-1]:null;};
+      const now=last(data.capital_signal?.rebalance_date),before=last(data.previous_capital_signal?.rebalance_date);
+      const previousValue=now?now.previous_capital:before?.capital,currentValue=now?now.capital:null;
+      let filled=false;
+      if(Number.isFinite(previousValue)&&!$('cap-previous').value){$('cap-previous').value=String(previousValue);filled=true;}
+      if(Number.isFinite(currentValue)&&!$('cap').value){$('cap').value=String(currentValue);filled=true;if(typeof Event==='function')$('cap').dispatchEvent?.(new Event('input'));}
+      if(filled)$('weekly-capital-error').textContent='已帶入這台瀏覽器記住的金額，請確認後按「計算本週買賣」。';
+      return filled;
     }
     $('cap-previous').addEventListener('input',invalidate);$('cap').addEventListener('input',invalidate);
     $('cap-apply').addEventListener('click',calculate);
@@ -126,9 +137,10 @@
         const entry=readBackup($('weekly-capital-import-text').value,[data.previous_capital_signal,data.capital_signal]);
         if(!store(entry))throw Error('瀏覽器無法儲存，請改用一般（非無痕）視窗。');
         $('weekly-capital-import-note').textContent='已匯入 '+entry.rebalance_date+' 用 '+money(entry.capital)+' 算出的紀錄，請按「計算本週買賣」。';
-        invalidate();
+        invalidate();prefill();
       }catch(error){$('weekly-capital-import-note').textContent=error.message;}
     });
+    prefill();
     return {validateFreshness:()=>{if(plan&&!isReady()){invalidate();$('weekly-capital-error').textContent='本週訊號狀態已改變，舊清單已隱藏；請等待確認後重新計算。';}},getTargets:()=>plan?plan.rows.map(r=>({code:r.code,name:r.name,quantity:r.target})):null};
   };
 })(typeof globalThis!=='undefined'?globalThis:this);

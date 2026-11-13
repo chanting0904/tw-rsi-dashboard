@@ -67,3 +67,17 @@ test('a backup code from a different week or changed data is refused',async()=>{
  changed.$('weekly-capital-import-text').value='沒有備份碼';changed.$('weekly-capital-import').listeners.click();
  assert.match(changed.$('weekly-capital-import-note').textContent,/找不到備份碼/);
 });
+const weekData=()=>({sig_validated:true,previous_capital_signal:{rebalance_date:'2026-10-08'},capital_signal:{rebalance_date:'2026-10-16'}});
+test('same week reopens with both remembered amounts',()=>{
+ const f=fixture({data:weekData(),stored:JSON.stringify({'2026-10-16':{byCapital:[{rebalance_date:'2026-10-16',capital:118660,previous_capital:110115,holdings:[]}]}})});
+ assert.equal(f.$('cap-previous').value,'110115');assert.equal(f.$('cap').value,'118660');assert.match(f.$('weekly-capital-error').textContent,/已帶入/);
+});
+test('new week carries last week amount and leaves this week blank',()=>{
+ const f=fixture({data:weekData(),stored:JSON.stringify({'2026-10-08':{byCapital:[{rebalance_date:'2026-10-08',capital:100000,holdings:[]},{rebalance_date:'2026-10-08',capital:118660,holdings:[]}]}})});
+ assert.equal(f.$('cap-previous').value,'118660');assert.equal(f.$('cap').value,'');
+});
+test('nothing remembered leaves both fields blank, and a calculation remembers last week amount',()=>{
+ const f=fixture();assert.equal(f.$('cap-previous').value,'');assert.equal(f.$('cap').value,'');
+ f.$('cap-previous').value='110115';f.$('cap').value='118660';f.click();
+ assert.equal(JSON.parse(f.stored())['2026-10-16'].byCapital[0].previous_capital,110115);
+});
