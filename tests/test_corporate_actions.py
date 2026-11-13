@@ -66,5 +66,27 @@ class CorporateActionTests(unittest.TestCase):
         self.assertEqual(events[days[1]]['2330']['cash'],10)
         self.assertNotIn('unresolved_factor',events[days[1]]['2330'])
 
+    def test_official_rights_record_resolves_missing_announcement(self):
+        # 4733 2015-07-09：公告缺漏；還原股價只含現金 7 元，股票部分由官方參考價補足。
+        days=pd.to_datetime(['2015-07-08','2015-07-09'])
+        raw=pd.DataFrame({'4733':[279.,268.5],'2025':[14.,13.]},index=days)
+        adjusted=pd.DataFrame({'4733':[279.,268.5*279/272],'2025':[14.,13.*14/13.24]},index=days)
+        ann=pd.DataFrame(columns=['symbol','公告日期'])
+        kinds=pd.DataFrame({'4733':[None,'權息'],'2025':[None,'權']},index=days)
+        before=pd.DataFrame({'4733':[None,279.],'2025':[None,14.]},index=days)
+        reference=pd.DataFrame({'4733':[None,271.09],'2025':[None,13.24]},index=days)
+        events=build_events(ann,raw,adjusted,official_rights=(kinds,before,reference))[days[1]]
+        self.assertAlmostEqual(events['4733']['cash'],7.,6)
+        self.assertAlmostEqual(events['4733']['ratio'],272/271.09,6)
+        self.assertAlmostEqual(events['2025']['ratio'],14/13.24,6)
+        self.assertNotIn('cash',events['2025'])
+        for item in events.values():
+            self.assertEqual(item['kind'],'STOCK_DIVIDEND')
+            self.assertNotIn('unresolved_factor',item)
+        # 官方參考價與還原股價對不上時仍須停下，不可猜測。
+        bad=build_events(ann,raw,adjusted,official_rights=(kinds,before,reference*1.2))[days[1]]
+        self.assertIn('unresolved_factor',bad['4733'])
+        self.assertIn('unresolved_factor',bad['2025'])
+
 if __name__=='__main__':
     unittest.main()

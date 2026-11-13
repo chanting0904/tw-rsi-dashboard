@@ -15,7 +15,29 @@ def number(value):
     return float(value) if pd.notna(value) else 0.
 
 
-def build_events(announcements, close, adjusted, official_cash=None, stock_grants=None, splits=None, reductions=None, as_of=None):
+def official_rights_event(kind, before, reference, prev, change):
+    """Resolve a TWSE 權/權息 record that has no issuer announcement.
+
+    Returns (cash, ratio) only when the official reference price and the
+    adjusted-price factor agree; ambiguous splits stay unresolved (fail closed).
+    """
+    if prev <= 0 or before <= 0 or reference <= 0 or change <= 0:
+        return None
+    if kind == '權':
+        ratio = before / reference
+        return (0., ratio) if 1 < ratio < 3 and abs(change - ratio) < .005 else None
+    if kind == '權息':
+        # The adjusted series carried only the cash leg; the official reference
+        # supplies the remaining share leg: reference = (before - cash) / ratio.
+        cash = prev * (1 - 1 / change)
+        ratio = (before - cash) / reference
+        if cash > 0 and 1.001 < ratio < 3 and abs(change * (1 - cash / prev) - ratio) < .005:
+            return cash, ratio
+    return None
+
+
+def build_events(announcements, close, adjusted, official_cash=None, stock_grants=None, splits=None, reductions=None, as_of=None,
+                 official_rights=None):
     events = {}
     def event(day, code):
         return events.setdefault(pd.Timestamp(day).normalize(), {}).setdefault(str(code), {})
@@ -113,6 +135,17 @@ def build_events(announcements, close, adjusted, official_cash=None, stock_grant
         match=min(candidates,key=lambda x:abs(x-implied))
         if abs(implied-match) < .003 and 'ratio' not in item:
             item.update(ratio=match,kind='SPLIT_FACTOR')
+            continue
+        resolved=None
+        if official_rights is not None and 'ratio' not in item and 'cash' not in item:
+            kinds,befores,references=official_rights
+            if code in kinds.columns and date in kinds.index:
+                resolved=official_rights_event(str(kinds.at[date,code]),number(befores.at[date,code]) if code in befores.columns and date in befores.index else 0.,
+                    number(references.at[date,code]) if code in references.columns and date in references.index else 0.,prev,number(changes.at[date,code]))
+        if resolved:
+            cash,ratio=resolved
+            if cash:item.update(cash=cash,payment=None)
+            item.update(ratio=ratio,kind='STOCK_DIVIDEND')
         else:
             item['unresolved_factor']=implied
     return events
