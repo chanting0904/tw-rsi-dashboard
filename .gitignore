@@ -14,3 +14,6 @@ release_audit/
 _封存/
 local_db/
 output/last_error.txt
+
+# 舊版研究工作區（含大型試算表與中間結果），不進版控
+optimization_b3/
