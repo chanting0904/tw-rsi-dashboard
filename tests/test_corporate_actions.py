@@ -88,5 +88,30 @@ class CorporateActionTests(unittest.TestCase):
         self.assertIn('unresolved_factor',bad['4733'])
         self.assertIn('unresolved_factor',bad['2025'])
 
+    def test_reduction_reason_backfill_resolves_cash_reduction_without_overwriting(self):
+        # 4107 2015-09-02：快照缺減資原因；櫃買官方紀錄為現金減資（退還約 1.99 元）。
+        import json,tempfile
+        from pathlib import Path
+        from v5_engine.market import backfill_reduction_reasons
+        days=pd.to_datetime(['2015-08-19','2015-09-02'])
+        reasons=pd.DataFrame({'4107':[None,None],'3105':[None,'彌補虧損']},index=days,dtype=object)
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/'r.json'
+            path.write_text(json.dumps({'rows':[{'day':'2015-09-02','code':'4107','reason':'現金減資'},
+                {'day':'2015-09-02','code':'3105','reason':'現金減資'}]},ensure_ascii=False),encoding='utf-8')
+            filled=backfill_reduction_reasons(reasons,path)
+        self.assertEqual(filled.at[days[1],'4107'],'現金減資')
+        self.assertEqual(filled.at[days[1],'3105'],'彌補虧損')
+        raw=pd.DataFrame({'4107':[82.1,96.]},index=days)
+        adjusted=pd.DataFrame({'4107':[82.1*1.412138,96*1.412138*.82059]},index=days)
+        ann=pd.DataFrame(columns=['symbol','公告日期'])
+        before=pd.DataFrame({'4107':[None,82.1]},index=days);reference=pd.DataFrame({'4107':[None,100.05]},index=days)
+        item=build_events(ann,raw,adjusted,reductions=[(filled[['4107']],before,reference)])[days[1]]['4107']
+        self.assertEqual(item['kind'],'CASH_CAPITAL_REDUCTION')
+        self.assertAlmostEqual(item['ratio'],.801,6)
+        self.assertNotIn('unresolved_factor',item)
+        missing=build_events(ann,raw,adjusted,reductions=[(reasons[['4107']],before,reference)])[days[1]]['4107']
+        self.assertIn('unresolved_factor',missing)
+
 if __name__=='__main__':
     unittest.main()

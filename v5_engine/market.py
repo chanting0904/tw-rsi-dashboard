@@ -9,6 +9,23 @@ from publish_gate import load_holidays
 from .context import MarketContext
 
 
+def backfill_reduction_reasons(reasons, path):
+    """Fill reasons the historical snapshot lacks; never overwrite a recorded reason."""
+    if not path.exists():
+        return reasons
+    rows = json.loads(path.read_text(encoding='utf-8'))['rows']
+    reasons = reasons.copy()
+    for row in rows:
+        day, code = pd.Timestamp(row['day']), str(row['code'])
+        if code not in reasons.columns:
+            reasons[code] = pd.Series(index=reasons.index, dtype=object)
+        if day not in reasons.index:
+            reasons.loc[day] = None
+        if pd.isna(reasons.at[day, code]) or str(reasons.at[day, code]) == '':
+            reasons.at[day, code] = row['reason']
+    return reasons.sort_index()
+
+
 def load_market(config, root, *, live_rebalance=None, data_root=None, token=None):
     from .market_store import MarketStore
     data = MarketStore(data_root or root)
@@ -127,7 +144,10 @@ def load_market(config, root, *, live_rebalance=None, data_root=None, token=None
     reductions = []
     for exchange, before_name, reference_name in [('tse','停止買賣前收盤價格','恢復買賣參考價'),('otc','最後交易之收盤價格','減資恢復買賣開始日參考價格')]:
         prefix='capital_reduction_'+exchange+':'
-        reductions.append((data.get(prefix+'減資原因'),data.get(prefix+before_name),data.get(prefix+reference_name)))
+        reasons = data.get(prefix+'減資原因')
+        if exchange == 'otc':
+            reasons = backfill_reduction_reasons(reasons, Path(root) / 'capital_reduction_reasons_otc.json')
+        reductions.append((reasons,data.get(prefix+before_name),data.get(prefix+reference_name)))
     events = build_events(announcements, raw_close, adjusted, cash_fallback, stock_grants, splits, reductions, as_of=SIGNAL_DAY,
                           official_rights=(tse_type, tse_before, tse_reference))
     context = MarketContext(config, raw_close, raw_open, raw_high, raw_low, targetA, targetB, r20s, tv20,
