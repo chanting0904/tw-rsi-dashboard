@@ -136,7 +136,7 @@
       if(!record||!plan)return;
       const names=Object.fromEntries(plan.rows.map(r=>[r.code,r.name]));
       const lines=record.holdings.map(h=>h.code+' '+(names[h.code]||'')+' '+h.shares+' 股');
-      const text='V5 理論持股 '+record.rebalance_date+'｜本週總資金 '+record.capital+' 元\n'+(lines.join('\n')||'本週無持股')+
+      const text='V6 理論持股 '+record.rebalance_date+'｜本週總資金 '+record.capital+' 元\n'+(lines.join('\n')||'本週無持股')+
         '\n\n下週換電腦或手機時，把整段訊息貼回網頁「貼上備份碼」：\n'+backupCode(record);
       root.open('https://t.me/share/url?url='+encodeURIComponent(siteUrl)+'&text='+encodeURIComponent(text),'_blank','noopener');
       $('weekly-capital-copy-note').textContent='已開啟 Telegram，請選「儲存的訊息」或自己的聊天室送出。';

@@ -1,7 +1,7 @@
 {
   "date": "2026-10-16",
-  "cagr": 0.4538161558409357,
-  "mdd": -0.3050983258745281,
+  "cagr": 0.5081981101448945,
+  "mdd": -0.3066301749349204,
   "parameters": {
     "threshold": 1,
     "buy_fee": 0.000399,
@@ -12,10 +12,16 @@
   },
   "selection_rules": {
     "selection_mode": "single_ranked_pool",
-    "a_rank_days": 3,
+    "a_rank_method": "ewm",
+    "a_rank_span": 5,
+    "a_coefficients": [
+      2.5,
+      1.0,
+      0.5
+    ],
     "a_entry_rank": 15,
     "a_retention_rank": 20
   },
   "execution_policy": "guarded_weekly_capital_v1",
-  "release_version": "V5.1.19"
+  "release_version": "V6.0.0"
 }

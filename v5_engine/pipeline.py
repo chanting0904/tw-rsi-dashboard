@@ -8,7 +8,7 @@ import subprocess
 from zoneinfo import ZoneInfo
 import pandas as pd
 from .canonical import canonical_for
-from .config import V5_COEFFICIENTS
+from .config import STRATEGY_COEFFICIENTS
 from .jsonio import write_json, document_digest
 from .performance import perf_document
 from .simulation import run, run_seeded, run_reference
@@ -63,7 +63,7 @@ def fixed_anchor(result, config):
     parameters = {'threshold': config.threshold, 'buy_fee': config.buy_fee, 'sell_fee': config.sell_fee,
                   'minimum_commission': config.minimum_commission,
                   'delisted_valuation': config.delisted_valuation, 'nav_frequency': 'daily'}
-    selection_rules = {'selection_mode':'single_ranked_pool','a_rank_days': config.a_rank_days, 'a_entry_rank': config.max_hold_a,
+    selection_rules = {'selection_mode':'single_ranked_pool','a_rank_method': 'ewm', 'a_rank_span': config.a_rank_span, 'a_coefficients': list(STRATEGY_COEFFICIENTS), 'a_entry_rank': config.max_hold_a,
                        'a_retention_rank': config.a_retention_rank}
     ok = (result['nav'].index[-1] >= anchor_day and parameters == expected['parameters']
           and selection_rules == expected.get('selection_rules')
@@ -77,8 +77,8 @@ def publish(ctx, output_dir, root, *, end=None, report_only=False):
     output_dir = Path(output_dir)
     historical_end = ctx.live_day - pd.Timedelta(days=ctx.live_day.weekday() + 3) if ctx.live_day is not None else end
     # One dated reference serves both reports and the continued model in this call.
-    reference = None if report_only else run_reference(ctx, coefs=V5_COEFFICIENTS, end=end)
-    result = run(ctx, coefs=V5_COEFFICIENTS, end=historical_end, reference=reference)
+    reference = None if report_only else run_reference(ctx, coefs=STRATEGY_COEFFICIENTS, end=end)
+    result = run(ctx, coefs=STRATEGY_COEFFICIENTS, end=historical_end, reference=reference)
     anchor, anchor_ok = fixed_anchor(result, ctx.config)
     if report_only:
         if ctx.config.start_capital == 100_000 and not anchor_ok:
@@ -90,10 +90,10 @@ def publish(ctx, output_dir, root, *, end=None, report_only=False):
     cutoff = ctx.live_day if ctx.live_day is not None else ctx.close.index[-1]
     seed=load_checkpoint(root, output_dir, cutoff)
     if seed is None:
-        raise ValueError('缺少 V5 持倉銜接快照，停止發布，避免重建成不同持股')
+        raise ValueError('缺少持倉銜接快照，停止發布，避免重建成不同持股')
     check_predecessor(output_dir, seed, cutoff)
     seeded=seed is not None and ctx.close.index[-1]>pd.Timestamp(seed['date'])
-    live_result = run_seeded(ctx,seed,coefs=V5_COEFFICIENTS,end=end,reference=reference) if seeded else (run(ctx, coefs=V5_COEFFICIENTS,reference=reference) if ctx.live_day is not None else result)
+    live_result = run_seeded(ctx,seed,coefs=STRATEGY_COEFFICIENTS,end=end,reference=reference) if seeded else (run(ctx, coefs=STRATEGY_COEFFICIENTS,reference=reference) if ctx.live_day is not None else result)
     plans, trades = live_result['weekly_plans'], live_result['trades_df']
     if not plans:
         raise ValueError('沒有可以發布的調倉計畫')

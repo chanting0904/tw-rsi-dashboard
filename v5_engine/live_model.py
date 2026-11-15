@@ -4,6 +4,7 @@ import json
 import subprocess
 from pathlib import Path
 import pandas as pd
+from version import STRATEGY_VERSION, SUPPORTED_STRATEGY_VERSIONS
 from .jsonio import document_digest, clean_json
 
 
@@ -28,7 +29,8 @@ def checkpoint_document(result, signal, seed):
     state = result['closing_state']
     if state['date'] != signal['rebalance_date']:
         raise ValueError('持股快照必須對應調倉當日')
-    checkpoint = dict(schema=1, strategy_version='V5', from_strategy='V5',
+    # from_strategy 記錄上一份持股快照是由哪一版策略產生（V5→V6 升版時即為 V5）。
+    checkpoint = dict(schema=1, strategy_version=STRATEGY_VERSION, from_strategy=seed.get('strategy_version', 'V5'),
         from_release=signal['release_version'], effective_date=str((pd.Timestamp(state['date'])+pd.Timedelta(days=1)).date()),
         capital_basis=signal['capital_basis'], previous_signal=signal,
         previous_signal_digest=document_digest(signal), parent_digest=seed['previous_signal_digest'], **state)
@@ -67,7 +69,7 @@ def load_seed(root):
     if not path.exists():
         return None
     seed=json.loads(path.read_text(encoding='utf-8'))
-    if seed.get('schema')!=1 or seed.get('strategy_version')!='V5':
+    if seed.get('schema')!=1 or seed.get('strategy_version') not in SUPPORTED_STRATEGY_VERSIONS:
         raise ValueError('Unsupported live model seed')
     previous=seed['previous_signal']
     if previous['rebalance_date']!=seed['date'] or document_digest(previous)!=seed['previous_signal_digest']:

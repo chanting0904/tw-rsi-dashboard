@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-"""V5 發布閘門（管線安全層；不計算策略、不修改 v5_canonical.py）。
+"""發布閘門（管線安全層；不計算策略、不修改 v5_canonical.py）。
 
 在「產生網頁 (update_data.py)」之前執行，
 確保只會發布「本週最新、validation PASS、結構正確」的同一份 canonical：
 
-  1) output/validation_log.json：verdict == PASS、strategy_version == V5、
+  1) output/validation_log.json：verdict == PASS、strategy_version 與訊號一致、
      且 validation 的 rebalance_date 與 canonical 一致。
   2) 新鮮度（非 FORCE）：canonical.rebalance_date 必須等於「本週最後交易日」。
      → 引擎沒重跑（canonical 還是上週）時直接擋下，絕不發舊訊號。
@@ -26,7 +26,7 @@ import math
 from types import SimpleNamespace
 from collections import Counter
 from zoneinfo import ZoneInfo
-from version import STRATEGY_VERSION
+from version import SUPPORTED_STRATEGY_VERSIONS
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SIG_FILE = os.path.join(HERE, "output", "latest_signals.json")
@@ -207,14 +207,15 @@ def evaluate(force=False, today=None, output_dir=None, notify=True):
         if val is not None:
             if val.get("verdict") != "PASS":
                 reasons.append(f"validation verdict={val.get('verdict')}（非 PASS）")
-            if val.get("strategy_version") != STRATEGY_VERSION:
-                reasons.append("validation strategy_version 非 V5")
+            if val.get("strategy_version") != sig.get("strategy_version"):
+                reasons.append(f"validation strategy_version={val.get('strategy_version')} 與訊號 {sig.get('strategy_version')} 不一致")
             vr = val.get("rebalance_date")
             sr = sig.get("rebalance_date")
             if not vr or not sr or vr != sr:
                 reasons.append(f"validation rebalance_date={vr} 與 canonical={sr} 不一致")
-        if sig.get("strategy_version") != STRATEGY_VERSION:
-            reasons.append(f"canonical strategy_version={sig.get('strategy_version')} 非 V5")
+        # 已發布的舊策略訊號（升版前產生）在下次排程重算前仍可承接；新產生的訊號一律是現行策略。
+        if sig.get("strategy_version") not in SUPPORTED_STRATEGY_VERSIONS:
+            reasons.append(f"canonical strategy_version={sig.get('strategy_version')} 不受支援")
 
         # 已發布的週計畫以產生時的版本為準；之後升版不重算本週，下次排程才用新版產生。
         if not sig.get('release_version') or sig.get('release_version') != (val or {}).get('release_version'):

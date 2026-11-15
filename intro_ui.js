@@ -27,7 +27,7 @@
  #v5-intro .bar{position:absolute;left:0;bottom:0;height:3px;width:100%;background:linear-gradient(90deg,#ff4d4f,#f5c542,#4da3ff);transform-origin:left;transform:scaleX(0)}`;
  const style=document.createElement('style');style.textContent=css;document.head.appendChild(style);
  const root=document.createElement('div');root.id='v5-intro';root.setAttribute('aria-hidden','true');
- root.innerHTML='<div class="grid"></div><div class="core"><div class="logo">V5</div><div class="say">召集選股小幫手…</div></div><button class="skip" type="button">跳過 ›</button><div class="bar"></div>';
+ root.innerHTML='<div class="grid"></div><div class="core"><div class="logo">V6</div><div class="say">召集選股小幫手…</div></div><button class="skip" type="button">跳過 ›</button><div class="bar"></div>';
  document.body.appendChild(root);
  const say=root.querySelector('.say'),core=root.querySelector('.core'),anims=[];
  const play=(el,frames,opts)=>{const a=el.animate(frames,{fill:'forwards',easing:'cubic-bezier(.22,.8,.3,1)',...opts});anims.push(a);return a;};

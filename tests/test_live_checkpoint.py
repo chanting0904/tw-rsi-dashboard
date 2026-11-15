@@ -7,7 +7,7 @@ import unittest
 
 import pandas as pd
 from test_accounting import sample_context
-from v5_engine.live_model import load_checkpoint, check_predecessor, validate_published_carry
+from v5_engine.live_model import load_checkpoint, check_predecessor, validate_published_carry, checkpoint_document, load_seed
 from v5_engine.jsonio import write_json, document_digest
 from v5_engine.simulation import run_reference
 
@@ -39,6 +39,27 @@ class LiveCheckpointTests(unittest.TestCase):
         self.assertEqual(load_checkpoint(ROOT,self.output,'2026-10-30')['date'],'2026-10-23')
         with self.assertRaises(ValueError):
             load_checkpoint(ROOT,self.output,'2026-11-06')
+
+    def test_v5_snapshot_continues_into_current_strategy_without_rebuild(self):
+        # V5 已發布的持股快照必須能直接接續 V6，持股與現金原封不動，並記錄來源策略。
+        from version import STRATEGY_VERSION, RELEASE_VERSION
+        seed = load_checkpoint(ROOT, self.output, '2026-10-30')
+        self.assertEqual(seed['strategy_version'], 'V5')
+        self.assertEqual(load_seed(ROOT)['strategy_version'], 'V5')
+        signal = dict(copy.deepcopy(seed['previous_signal']), rebalance_date='2026-10-30', release_version=RELEASE_VERSION,
+                      strategy_version=STRATEGY_VERSION, capital_basis=seed['nav'])
+        state = dict(date='2026-10-30', nav=seed['nav'], cash=seed['cash'], positions=copy.deepcopy(seed['positions']),
+                     receivables=seed['receivables'], pending=seed['pending'], valuation_prices=seed['valuation_prices'])
+        checkpoint = checkpoint_document({'closing_state': state}, signal, seed)
+        self.assertEqual((checkpoint['strategy_version'], checkpoint['from_strategy']), (STRATEGY_VERSION, 'V5'))
+        self.assertEqual(checkpoint['parent_digest'], seed['previous_signal_digest'])
+        self.assertEqual(checkpoint['positions'], seed['positions'])
+        write_json(self.output/'live_checkpoints/2026-10-30.json', checkpoint)
+        again = load_checkpoint(ROOT, self.output, '2026-11-06')
+        self.assertEqual((again['strategy_version'], again['from_strategy']), (STRATEGY_VERSION, 'V5'))
+        nxt = checkpoint_document({'closing_state': dict(state, date='2026-11-06')},
+                                  dict(signal, rebalance_date='2026-11-06'), again)
+        self.assertEqual(nxt['from_strategy'], STRATEGY_VERSION)
 
     def test_damaged_or_missing_predecessor_is_not_silently_recomputed(self):
         previous = copy.deepcopy(self.checkpoint['previous_signal'])

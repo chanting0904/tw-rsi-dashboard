@@ -4,6 +4,7 @@ import datetime
 import pandas as pd
 from zoneinfo import ZoneInfo
 from .recommendations import recommendation_metadata
+from .config import STRATEGY_COEFFICIENTS
 from .security_status import snapshot_hash, can_trade
 
 def classify_day(wp, trades_df):
@@ -184,7 +185,7 @@ def canonical_for(ctx, wp, trades_df, commit_sha):
         "security_status_hash": snapshot_hash(ctx.security_status) if getattr(ctx,'security_status',None) else None,
         "execution_policy": wp.get("execution_policy", "legacy_v4"),
         "selection_mode": "single_ranked_pool",
-        "selection_rules": {"a_rank_days": cfg.a_rank_days, "a_entry_rank": cfg.max_hold_a,
+        "selection_rules": {"a_rank_method": "ewm", "a_rank_span": cfg.a_rank_span, "a_coefficients": list(STRATEGY_COEFFICIENTS), "a_entry_rank": cfg.max_hold_a,
                             "a_retention_rank": cfg.a_retention_rank},
         "start_capital": cfg.start_capital, "buy_fee": cfg.buy_fee, "sell_fee": cfg.sell_fee,
         "minimum_commission": cfg.minimum_commission,

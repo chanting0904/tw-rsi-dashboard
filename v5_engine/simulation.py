@@ -3,9 +3,10 @@ import copy
 import pandas as pd
 from .execution import execute_week
 from .performance import summarize_simulation
+from .config import STRATEGY_COEFFICIENTS
 
 
-def run_reference(ctx, weekday=5, mode='close', coefs=(1.5, 1.0, .5), start=None, end=None, record=True, executor=None, seed=None,
+def run_reference(ctx, weekday=5, mode='close', coefs=STRATEGY_COEFFICIENTS, start=None, end=None, record=True, executor=None, seed=None,
                   monthly_contribution=0.0):
     """monthly_contribution：研究用，每月第一個交易日把這筆現金加進帳戶（下次調倉才買進）；正式流程為 0。"""
     if mode not in ('close', 'open'):
@@ -98,7 +99,7 @@ def run_reference(ctx, weekday=5, mode='close', coefs=(1.5, 1.0, .5), start=None
     return result
 
 
-def run(ctx, weekday=5, mode='close', coefs=(1.5, 1.0, .5), start=None, end=None, record=True, *, reference=None,
+def run(ctx, weekday=5, mode='close', coefs=STRATEGY_COEFFICIENTS, start=None, end=None, record=True, *, reference=None,
         monthly_contribution=0.0):
     """Use the same guarded share planner as Web/TG, with actual market blocks."""
     from .guarded_execution import GuardedExecution
@@ -111,12 +112,12 @@ def run(ctx, weekday=5, mode='close', coefs=(1.5, 1.0, .5), start=None, end=None
     return result
 
 
-def run_seeded(ctx,seed,weekday=5,mode='close',coefs=(1.5,1.,.5),end=None,*,reference=None):
+def run_seeded(ctx,seed,weekday=5,mode='close',coefs=STRATEGY_COEFFICIENTS,end=None,*,reference=None):
     from .guarded_execution import GuardedExecution
     if reference is None:
         reference=run_reference(ctx,weekday,mode,coefs,end=end)
     with GuardedExecution(ctx,reference,seed=seed) as executor:
         result=run_reference(ctx,weekday,mode,coefs,end=end,executor=executor,seed=seed)
     result['execution_policy']='guarded_weekly_capital_v1'
-    result['live_model_origin']=dict(from_strategy=seed['from_strategy'],seed_date=seed['date'],effective_date=seed['effective_date'],previous_signal_digest=seed['previous_signal_digest'],reference_policy='full_history_v5')
+    result['live_model_origin']=dict(from_strategy=seed['from_strategy'],seed_date=seed['date'],effective_date=seed['effective_date'],previous_signal_digest=seed['previous_signal_digest'],reference_policy='full_history_v6')
     return result

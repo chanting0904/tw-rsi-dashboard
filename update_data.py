@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Web 資料產生器（V5 canonical 版）
+"""Web 資料產生器（canonical 版）
 - 不再自行計算策略：策略唯一來源 = V5 引擎（v5_canonical.py）產出的 output/latest_signals.json
 - 本檔職責：①更新本地庫（TWSE/TPEx 官方源，零 FinLab 流量）②讀 canonical + prices → 組 DATA
           ③生成 index.html（內嵌 DATA，file:// 與 GitHub Pages 皆可開）
@@ -19,7 +19,7 @@ os.chdir(HERE)
 
 # Database refresh belongs to sync_market.py; rendering only reads saved outputs.
 
-# ---------- 1. 讀 canonical（V5 唯一策略結果）----------
+# ---------- 1. 讀 canonical（唯一策略結果）----------
 sig_path = "output/latest_signals.json"
 if not os.path.exists(sig_path):
     print(f"❌ 找不到 {sig_path} — 請先執行 v5_canonical.py 產生策略結果")
@@ -155,7 +155,7 @@ DATA = {
     "calendar_years": list(_calendar),
     "holidays": sorted({day for days in _calendar.values() for day in days}),
     "weekly_status": _weekly_status,
-    "sig_validated": validation_matches(SIG,_validation,perf) and _validation.get('verdict') == 'PASS' and _validation.get('strategy_version') == STRATEGY_VERSION and _validation.get('rebalance_date') == SIG.get('rebalance_date') and _validation.get('release_version') == SIG.get('release_version'),
+    "sig_validated": validation_matches(SIG,_validation,perf) and _validation.get('verdict') == 'PASS' and _validation.get('strategy_version') == SIG.get('strategy_version', STRATEGY_VERSION) and _validation.get('rebalance_date') == SIG.get('rebalance_date') and _validation.get('release_version') == SIG.get('release_version'),
     "signal_mode": SIG.get("signal_mode", "CLOSE_SIMULATION"),
     "price_basis_date": SIG.get("price_basis_date") or SIG.get("rebalance_date"),
     "strategy_version": SIG.get("strategy_version", STRATEGY_VERSION),
@@ -191,7 +191,7 @@ HTML = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>V5.0.0｜天穹紅蓮三重脈衝時空追擊者 V5（RSI 單一選股策略）</title>
+<title>V5.0.0｜天穹紅蓮三重脈衝時空追擊者 V6（RSI 單一選股策略）</title>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
 <style>
   :root{
@@ -387,7 +387,7 @@ __DASHBOARD_CSS__
   </section>
 
   <section>
-    <h2>💼 持股與買賣明細 <span class="tag">V5 策略係數（入場排名分檔，整股權重依本金調整）</span></h2>
+    <h2>💼 持股與買賣明細 <span class="tag">V6 策略係數（入場排名分檔，整股權重依本金調整）</span></h2>
     <div style="overflow-x:auto">
     <table id="holdtbl">
       <thead><tr>
@@ -400,7 +400,7 @@ __DASHBOARD_CSS__
     <div id="sellnote" class="note"></div>
     <div class="note">🔸 動作說明：BUY=買入｜SELL=賣出｜REBALANCE_BUY=加碼｜REBALANCE_SELL=減碼｜HOLD=不動（買紅賣綠＝台股習慣）。<br>
     🔸 此處權重屬於共用模型帳戶，不會隨你輸入的本金改變。個人資金試算另在上方計算。<br>
-    🔸 <b style="color:var(--warn)">🟡 加碼／減碼（REBALANCE）= 該檔持倉權重偏離目標超過 V5 的一般 100% 差距門檻，或整體倉位需要修復，才需要調</b>。舊持股減少一般加減碼；退出、新股加入、90～95% 倉位修復仍執行。<br>
+    🔸 <b style="color:var(--warn)">🟡 加碼／減碼（REBALANCE）= 該檔持倉權重偏離目標超過策略的一般 100% 差距門檻，或整體倉位需要修復，才需要調</b>。舊持股減少一般加減碼；退出、新股加入、90～95% 倉位修復仍執行。<br>
     🔸 系統未連接券商庫存；若有未成交，請在當次持股區填入完整實際持股，核對與上方目標的差額。</div>
   </section>
 
@@ -416,7 +416,7 @@ __DASHBOARD_CSS__
   </details>
 
   <section id="performance-section">
-    <h2>📊 V5 歷史績效互動計算器 <span class="tag">策略 V5｜全期 CAGR <span id="p-cagr" class="up"></span>｜全期 MDD <span id="p-mdd" class="down"></span></span></h2>
+    <h2>📊 V6 歷史績效互動計算器 <span class="tag">策略 V6｜全期 CAGR <span id="p-cagr" class="up"></span>｜全期 MDD <span id="p-mdd" class="down"></span></span></h2>
     <p class="note perf-intro">輸入假設投入的本金、選擇年份，數字與下方圖表立即同步；此處與上方調倉資金分開。</p>
     <div class="capbar perf-controls">
       <label for="pc-cap">回測本金</label><input type="number" id="pc-cap" min="1" step="10000" placeholder="例如：100000">
@@ -447,7 +447,7 @@ __DASHBOARD_CSS__
     <div class="note">
       計算方式：以所選起始年前一交易日的資產為起點；回測第一年使用原始期初本金，包含第一天費用。讀取既有每日回測，不重新選股。金額依輸入本金等比例試算，不重算小額整股與最低手續費。<br>
       回測基準：初始本金 <span id="p-initial"></span>｜已完成期間 <span id="p-period"></span>｜最終資產 <span id="p-nav"></span>。<br>
-      <b style="color:var(--warn)">⚠️ 純 V5 歷史回測，不代表未來收益。V5 上線時接續既有 V4 模擬持倉，與2015年起的純 V5 回測分開。</b>
+      <b style="color:var(--warn)">⚠️ 純 V6 規則歷史回測，不代表未來收益。實際模擬持倉自 V4、V5 上線起逐週接續，升版時不重建持股，與2015年起的純 V6 回測分開。</b>
     </div>
   </section>
 
@@ -543,7 +543,9 @@ const SORTER = {
 /* ================= meta / 警告 ================= */
 $("m-rebal").textContent = DATA.rebal_date ? DATA.rebal_date + "（訊號基準 " + DATA.sig_date + "）｜版本 " + (DATA.sig_commit_sha || "—") + (DATA.signal_mode === "PRE_CLOSE_PLAN" ? "｜收盤調倉計畫，股數按基準日價格試算" : "｜收盤模擬結果") : "—";
 const selectionRules = DATA.selection_rules || {};
-$("selectionnote").textContent = selectionRules.a_rank_days ? '選股規則：最近' + selectionRules.a_rank_days + '個已收盤交易日的平均RSI排名；續抱股票符合資格且排名前' + selectionRules.a_retention_rank + '可保留，最多' + selectionRules.a_entry_rank + '檔。' : '';
+const rankRule = selectionRules.a_rank_method === 'ewm' && selectionRules.a_rank_span ? 'RSI以最近' + selectionRules.a_rank_span + '日指數加權平均（越近權重越高）排名' + (Array.isArray(selectionRules.a_coefficients) ? '，前5/6～10/11～15名資金比例 ' + selectionRules.a_coefficients.join(' : ') : '')
+  : (selectionRules.a_rank_days ? '最近' + selectionRules.a_rank_days + '個已收盤交易日的平均RSI排名' : '');
+$("selectionnote").textContent = rankRule ? '選股規則：' + rankRule + '；續抱股票符合資格且排名前' + selectionRules.a_retention_rank + '可保留，最多' + selectionRules.a_entry_rank + '檔。' : '';
 $("m-px").textContent = DATA.px_date || "—";
 
 if (DATA.review_only) {

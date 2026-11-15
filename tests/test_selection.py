@@ -9,9 +9,9 @@ from v5_engine.selection import select_universe
 
 
 def context():
-    days = pd.bdate_range('2026-10-12', periods=4)
+    days = pd.bdate_range('2026-10-12', periods=8)
     codes = [str(2000 + i) for i in range(25)]
-    scores = pd.DataFrame([[100-i for i in range(25)]]*4, index=days, columns=codes)
+    scores = pd.DataFrame([[100-i for i in range(25)]]*8, index=days, columns=codes)
     ctx = SimpleNamespace(config=StrategyConfig(), r20s=scores,
                           targetA=scores.notna(), targetB=scores < 0,
                           cap_ok=scores.notna(), tv20=scores*100,
@@ -46,12 +46,20 @@ class SelectionTests(unittest.TestCase):
         want, _, _, _, _ = select_universe(ctx, {codes[19]: {'pool':'B','shares':1}}, day)
         self.assertNotIn(codes[19], want['A'])
 
-    def test_ranking_uses_three_shifted_sessions_not_last_score_only(self):
+    def test_ranking_uses_ewm_of_shifted_sessions_not_last_score_only(self):
         ctx, day, codes = context()
-        ctx.r20s.loc[:, codes[0]] = [99, 20, 20, 100]
+        # V6：RSI 的 EWM（span 5）。單日跳到 100 不足以壓過一路維持高檔的股票。
+        ctx.r20s.loc[:, codes[0]] = [20, 20, 20, 20, 20, 20, 20, 100]
         want, ranks, _, _, _ = select_universe(ctx, {}, day)
         self.assertNotIn(codes[0], want['A'])
         self.assertEqual(ranks[codes[1]], 1)
+        # 越近的日子權重越高：最近兩日轉強的股票排在同樣平均、但較早轉強的股票之前。
+        ctx, day, codes = context()
+        ctx.r20s.loc[:, codes[20]] = [0, 0, 0, 0, 0, 0, 200, 200]
+        ctx.r20s.loc[:, codes[21]] = [0, 0, 0, 0, 200, 200, 0, 0]
+        want, _, _, _, _ = select_universe(ctx, {}, day)
+        self.assertIn(codes[20], want['A'])
+        self.assertNotIn(codes[21], want['A'])
         # Appending arbitrary future observations cannot affect today's ranking.
         original = want
         ctx.r20s.loc[day+pd.Timedelta(days=3)] = 999
@@ -79,7 +87,7 @@ class SelectionTests(unittest.TestCase):
 
     def test_legacy_config_explicitly_restores_single_day_top15(self):
         ctx, day, codes = context()
-        ctx.config = replace(ctx.config, a_rank_days=1, a_retention_rank=15)
+        ctx.config = replace(ctx.config, a_rank_span=1, a_retention_rank=15)
         ctx.r20s.loc[day, codes[24]] = 101
         want, _, _, _, _ = select_universe(ctx, {codes[19]:{'pool':'A','shares':1}}, day)
         self.assertEqual(want['A'], [codes[24]]+codes[:14])

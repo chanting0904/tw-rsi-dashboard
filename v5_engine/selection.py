@@ -20,7 +20,8 @@ def select_universe(ctx, positions, day):
     codesA = [c for c in tA[tA].index.tolist() if cap_pass(c) and can_trade(ctx, c, wk)]
     rank_scores = getattr(ctx, 'a_rank_scores', None)
     if rank_scores is None:
-        rank_scores = r20s.rolling(cfg.a_rank_days, min_periods=cfg.a_rank_days).mean()
+        from .config import rank_scores as score_of
+        rank_scores = score_of(r20s, cfg)
     scores = rank_scores.loc[wk]
     scoredA = sorted(codesA, key=lambda c: float(scores[c]) if pd.notna(scores[c]) else -1, reverse=True)
     ranks = {c: i + 1 for i, c in enumerate(scoredA)}

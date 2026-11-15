@@ -135,8 +135,9 @@ def load_market(config, root, *, live_rebalance=None, data_root=None, token=None
     context.closure_moves = closure_moves
     context.tv20_previous = tv20.shift(1)
     # r20s already ends at the previous actual session. Ranking alone uses
-    # its trailing mean; entry/exit eligibility remains unchanged.
-    context.a_rank_scores = r20s.rolling(config.a_rank_days, min_periods=config.a_rank_days).mean()
+    # its trailing EWM (V6); entry/exit eligibility remains unchanged.
+    from .config import rank_scores
+    context.a_rank_scores = rank_scores(r20s, config)
     context.adjusted_close = adjusted
     context.corporate_events = events
     delivery_path = Path(root)/'v5_engine/share_delivery_events.json'
