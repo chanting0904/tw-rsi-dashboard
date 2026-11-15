@@ -416,7 +416,7 @@ __DASHBOARD_CSS__
   </details>
 
   <section id="performance-section">
-    <h2>📊 V6 歷史績效互動計算器 <span class="tag">策略 V6｜全期 CAGR <span id="p-cagr" class="up"></span>｜全期 MDD <span id="p-mdd" class="down"></span></span></h2>
+    <h2>📊 <span class="perf-ver">V6</span> 歷史績效互動計算器 <span class="tag">策略 <span id="p-ver"></span>｜全期 CAGR <span id="p-cagr" class="up"></span>｜全期 MDD <span id="p-mdd" class="down"></span></span></h2>
     <p class="note perf-intro">輸入假設投入的本金、選擇年份，數字與下方圖表立即同步；此處與上方調倉資金分開。</p>
     <div class="capbar perf-controls">
       <label for="pc-cap">回測本金</label><input type="number" id="pc-cap" min="1" step="10000" placeholder="例如：100000">
@@ -447,7 +447,7 @@ __DASHBOARD_CSS__
     <div class="note">
       計算方式：以所選起始年前一交易日的資產為起點；回測第一年使用原始期初本金，包含第一天費用。讀取既有每日回測，不重新選股。金額依輸入本金等比例試算，不重算小額整股與最低手續費。<br>
       回測基準：初始本金 <span id="p-initial"></span>｜已完成期間 <span id="p-period"></span>｜最終資產 <span id="p-nav"></span>。<br>
-      <b style="color:var(--warn)">⚠️ 純 V6 規則歷史回測，不代表未來收益。實際模擬持倉自 V4、V5 上線起逐週接續，升版時不重建持股，與2015年起的純 V6 回測分開。</b>
+      <b style="color:var(--warn)">⚠️ 純 <span class="perf-ver">V6</span> 規則歷史回測，不代表未來收益。實際模擬持倉自 V4、V5 上線起逐週接續，升版時不重建持股，與2015年起的純規則回測分開。</b>
     </div>
   </section>
 
@@ -849,6 +849,10 @@ function renderMonthlyReturns(range) {
 }
 
 function renderCharts() {
+  // 績效檔與已發布計畫一起驗證，升版後要到下次週發布才換成新規則；標示以績效檔本身的版本為準。
+  const perfVersion = DATA.perf.strategy_version || 'V5';
+  document.querySelectorAll('.perf-ver').forEach(el => { el.textContent = perfVersion; });
+  $("p-ver").textContent = (DATA.perf.release_version || perfVersion) + (DATA.perf.strategy_version && DATA.perf.strategy_version !== '__STRATEGY_VERSION__' ? '（新版 __STRATEGY_VERSION__ 規則於下次週發布時更新）' : '');
   $("p-cagr").textContent = P(DATA.perf.cagr, 2);
   $("p-mdd").textContent = P(DATA.perf.mdd, 2);
   $("p-nav").textContent = M(DATA.perf.final_nav);
@@ -917,6 +921,7 @@ $("delivery-check-note").textContent=deliveryCheck.as_of?'配股公告核對基�
 """
 
 HTML = HTML.replace("V5.0.0", RELEASE_VERSION)
+HTML = HTML.replace("__STRATEGY_VERSION__", STRATEGY_VERSION)
 HTML = HTML.replace("__DATA_JSON__", DATA_JSON)
 for _name,_placeholder in [('performance_ui.js','__PERFORMANCE_UI_JS__'),('weekly_status.js','__WEEKLY_STATUS_JS__'),('capital_preview.js','__CAPITAL_PREVIEW_JS__'),('dashboard_ui.css','__DASHBOARD_CSS__'),('dashboard_ui.js','__DASHBOARD_UI_JS__'),('monthly_details.js','__MONTHLY_DETAILS_JS__'),('weekly_capital.js','__WEEKLY_CAPITAL_JS__'),('weekly_capital_ui.js','__WEEKLY_CAPITAL_UI_JS__'),('order_planner.js','__ORDER_PLANNER_JS__'),('order_planner_ui.js','__ORDER_PLANNER_UI_JS__'),('intro_ui.js','__INTRO_UI_JS__')]:
     with open(os.path.join(HERE,_name),encoding='utf-8') as _source:
