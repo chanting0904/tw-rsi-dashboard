@@ -146,6 +146,21 @@ class OfficialInputTests(unittest.TestCase):
                 self.assertEqual(unexplained_jumps(store, ['2026-10-29']), [])
             store.close()
 
+    def test_jump_over_untraded_sessions_allows_compounded_limits(self):
+        # 3593 力銘：11/16、11/17 無整股收盤，11/13 9.68 → 11/18 8.60（三個交易日累計 −11%）不是公司行動。
+        with tempfile.TemporaryDirectory() as folder:
+            store = MarketStore(folder)
+            days = ['2026-11-13', '2026-11-16', '2026-11-17', '2026-11-18']
+            rows = [(d, '2330', 1, 1, 1, 100, 1, 'test') for d in days]
+            rows += [('2026-11-13', '3593', 1, 1, 1, 9.68, 1, 'test'), ('2026-11-18', '3593', 1, 1, 1, 8.6, 1, 'test'),
+                     ('2026-11-13', '1101', 1, 1, 1, 100, 1, 'test'), ('2026-11-18', '1101', 1, 1, 1, 50, 1, 'test')]
+            store.db.executemany('INSERT INTO bars VALUES(?,?,?,?,?,?,?,?)', rows)
+            listed = pd.DataFrame(columns=['2330', '3593', '1101'])
+            with patch.object(MarketStore, 'base', return_value=listed):
+                # 3 個交易日最多約 −28%：−11% 放行；−50% 仍須公司行動資料。
+                self.assertEqual(unexplained_jumps(store, ['2026-11-18']), [('1101', '2026-11-13', 100, '2026-11-18', 50)])
+            store.close()
+
     def test_official_quotes_reject_wrong_date_partial_data_and_malformed_ohlc(self):
         row = ['2330', 'test', '100', '105', '95', '102', '10000']
         fields = ['證券代號', '證券名稱', '開盤價', '最高價', '最低價', '收盤價', '成交金額']

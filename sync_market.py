@@ -251,13 +251,16 @@ def unexplained_jumps(store, days):
         SELECT code, day, close, LAG(close) OVER w, LAG(day) OVER w, ROW_NUMBER() OVER w
         FROM bars WINDOW w AS (PARTITION BY code ORDER BY day)''').fetchall()
     listed = set(map(str, store.base('price:收盤價').columns))   # 歷史快照已有的股票
+    # 冷門股中間幾天沒有整股收盤價時，前後收盤相隔 n 個交易日，合理範圍是 n 天漲跌停的累積。
+    sessions = {d: i for i, (d,) in enumerate(store.db.execute('SELECT DISTINCT day FROM bars ORDER BY day'))}
     found = []
     for code, day, close, prev, prev_day, count in rows:
         if day not in wanted or not prev or not close or (code not in listed and count <= 5):
             continue
         if not (code.isdigit() and len(code) == 4 and not code.startswith('0')):
             continue
-        if abs(close / prev - 1) <= JUMP_LIMIT:
+        gap = max(1, sessions.get(day, 0) - sessions.get(prev_day, 0))
+        if (1 - JUMP_LIMIT) ** gap <= close / prev <= (1 + JUMP_LIMIT) ** gap:
             continue
         if store.db.execute('SELECT 1 FROM references_by_date WHERE code=? AND day>? AND day<=?',
                             (code, prev_day, day)).fetchone():
