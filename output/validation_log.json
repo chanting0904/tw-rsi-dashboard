@@ -1,19 +1,25 @@
 {
- "strategy_version": "V5",
- "release_version": "V5.1.14",
- "generated_at": "2026-11-13T04:33:06.718852+08:00",
- "rebalance_date": "2026-11-13",
+ "strategy_version": "V6",
+ "release_version": "V6.0.4",
+ "generated_at": "2026-11-19T22:06:56.397571+08:00",
+ "rebalance_date": "2026-11-20",
  "v5_consistency": true,
  "fixed_anchor": {
   "pass": true,
   "values": {
    "date": "2026-10-16",
-   "cagr": 0.4389408321118975,
-   "mdd": -0.301993436708198,
-   "release_version": "V5.1.14",
+   "cagr": 0.5081981101448945,
+   "mdd": -0.3066301749349204,
+   "release_version": "V6.0.4",
    "selection_rules": {
     "selection_mode": "single_ranked_pool",
-    "a_rank_days": 3,
+    "a_rank_method": "ewm",
+    "a_rank_span": 5,
+    "a_coefficients": [
+     2.5,
+     1.0,
+     0.5
+    ],
     "a_entry_rank": 15,
     "a_retention_rank": 20
    }
@@ -46,8 +52,8 @@
    "fail": 0,
    "detail": [
     [
-     "2026-11-13",
-     6.6
+     "2026-11-20",
+     7.4
     ]
    ]
   },
@@ -98,6 +104,6 @@
   }
  },
  "verdict": "PASS",
- "signal_digest": "483f6afb2dda002365cf7c10de96c7ee10b6c8d8746325f11e78ebb1c09a810f",
- "performance_digest": "5ccf73e53e26cb95c1160a5549c7f9ae3590eaa438a8fca001a7667dfb4fb3e0"
+ "signal_digest": "84544730b7869bd919c9d4e172a68d1edc340e56a79c6b6bde769984fbe48771",
+ "performance_digest": "4589f43356147ecf6b09fd8b6af24f22269df51e8d93f30a1b44d39a2aca1f79"
 }

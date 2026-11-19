@@ -1,6 +1,6 @@
 {
- "checked_for": "2026-11-13",
- "quote_day": "2026-11-12",
+ "checked_for": "2026-11-20",
+ "quote_day": "2026-11-19",
  "listed": {
   "1101": {
    "name": "台泥",
@@ -548,10 +548,6 @@
   },
   "1587": {
    "name": "吉茂",
-   "exchange": "TWSE"
-  },
-  "1589": {
-   "name": "永冠-KY",
    "exchange": "TWSE"
   },
   "1590": {
@@ -6751,7 +6747,7 @@
    "exchange": "TPEX"
   },
   "6474": {
-   "name": "華豫寧",
+   "name": "維夫拉克控股",
    "exchange": "TPEX"
   },
   "6482": {
@@ -7502,6 +7498,10 @@
    "name": "天能綠電",
    "exchange": "TPEX"
   },
+  "7848": {
+   "name": "騏億鑫",
+   "exchange": "TPEX"
+  },
   "7856": {
    "name": "漢測",
    "exchange": "TPEX"
@@ -7964,8 +7964,8 @@
   }
  },
  "source_dates": {
-  "twse_listed": "2026-11-11",
-  "tpex_listed": "2026-11-12"
+  "twse_listed": "2026-11-18",
+  "tpex_listed": "2026-11-19"
  },
  "events": [
   {
@@ -9810,21 +9810,11 @@
   },
   {
    "code": "1589",
-   "effective_date": "2012-04-27",
-   "status": "TRADABLE",
+   "effective_date": "2026-11-18",
+   "status": "DELISTED",
    "name": "永冠-KY",
-   "source": "https://openapi.twse.com.tw/v1/opendata/t187ap03_L",
-   "label": "上市櫃",
-   "observed_on": null,
-   "effective_time": "000000"
-  },
-  {
-   "code": "1589",
-   "effective_date": "2026-04-07",
-   "status": "SUSPENDED",
-   "name": "永冠-KY",
-   "source": "https://www.twse.com.tw/rwd/zh/violation/stop?response=json",
-   "label": "停止買賣",
+   "source": "https://openapi.twse.com.tw/v1/company/suspendListingCsvAndHtml",
+   "label": "終止上市",
    "observed_on": null,
    "effective_time": "000000"
   },
@@ -19819,6 +19809,26 @@
    "effective_time": "000000"
   },
   {
+   "code": "4174",
+   "effective_date": "2026-11-13",
+   "status": "SUSPENDED",
+   "name": "浩鼎",
+   "source": "https://www.tpex.org.tw/openapi/v1/tpex_spendi_history",
+   "label": "暫停交易",
+   "observed_on": null,
+   "effective_time": "080000"
+  },
+  {
+   "code": "4174",
+   "effective_date": "2026-11-16",
+   "status": "TRADABLE",
+   "name": "浩鼎",
+   "source": "https://www.tpex.org.tw/openapi/v1/tpex_spendi_history",
+   "label": "恢復交易",
+   "observed_on": null,
+   "effective_time": "080000"
+  },
+  {
    "code": "4175",
    "effective_date": "2014-04-23",
    "status": "TRADABLE",
@@ -20326,16 +20336,6 @@
    "source": "https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap03_O",
    "label": "上市櫃",
    "observed_on": null,
-   "effective_time": "000000"
-  },
-  {
-   "code": "4534",
-   "effective_date": "2026-11-13",
-   "status": "SUSPENDED",
-   "name": "慶騰",
-   "source": "https://www.tpex.org.tw/openapi/v1/tpex_cmode",
-   "label": "停止交易（本次官方狀態）",
-   "observed_on": "2026-11-13",
    "effective_time": "000000"
   },
   {
@@ -21160,12 +21160,12 @@
   },
   {
    "code": "4804",
-   "effective_date": "2026-11-13",
+   "effective_date": "2026-11-20",
    "status": "SUSPENDED",
    "name": "大略-KY",
    "source": "https://www.tpex.org.tw/openapi/v1/tpex_cmode",
    "label": "停止交易（本次官方狀態）",
-   "observed_on": "2026-11-13",
+   "observed_on": "2026-11-20",
    "effective_time": "000000"
   },
   {
@@ -25792,7 +25792,7 @@
    "code": "6474",
    "effective_date": "2025-11-25",
    "status": "TRADABLE",
-   "name": "華豫寧",
+   "name": "維夫拉克控股",
    "source": "https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap03_O",
    "label": "上市櫃",
    "observed_on": null,
@@ -29209,6 +29209,16 @@
    "effective_time": "000000"
   },
   {
+   "code": "7848",
+   "effective_date": "2026-11-16",
+   "status": "TRADABLE",
+   "name": "騏億鑫",
+   "source": "https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap03_O",
+   "label": "上市櫃",
+   "observed_on": null,
+   "effective_time": "000000"
+  },
+  {
    "code": "7855",
    "effective_date": "2026-08-11",
    "status": "TRADABLE",
@@ -29686,6 +29696,16 @@
    "source": "https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap03_O",
    "label": "上市櫃",
    "observed_on": null,
+   "effective_time": "000000"
+  },
+  {
+   "code": "8084",
+   "effective_date": "2026-11-20",
+   "status": "SUSPENDED",
+   "name": "巨虹",
+   "source": "https://www.tpex.org.tw/openapi/v1/tpex_cmode",
+   "label": "停止交易（本次官方狀態）",
+   "observed_on": "2026-11-20",
    "effective_time": "000000"
   },
   {
@@ -30229,6 +30249,16 @@
    "effective_time": "000000"
   },
   {
+   "code": "8291",
+   "effective_date": "2026-11-20",
+   "status": "SUSPENDED",
+   "name": "尚茂",
+   "source": "https://www.tpex.org.tw/openapi/v1/tpex_cmode",
+   "label": "停止交易（本次官方狀態）",
+   "observed_on": "2026-11-20",
+   "effective_time": "000000"
+  },
+  {
    "code": "8299",
    "effective_date": "2004-12-06",
    "status": "TRADABLE",
@@ -30495,6 +30525,16 @@
    "name": "紅木-KY",
    "source": "https://www.tpex.org.tw/openapi/v1/tpex_spendi_history",
    "label": "暫停交易",
+   "observed_on": null,
+   "effective_time": "080000"
+  },
+  {
+   "code": "8426",
+   "effective_date": "2026-11-13",
+   "status": "TRADABLE",
+   "name": "紅木-KY",
+   "source": "https://www.tpex.org.tw/openapi/v1/tpex_spendi_history",
+   "label": "恢復交易",
    "observed_on": null,
    "effective_time": "080000"
   },
@@ -31790,5 +31830,5 @@
   "tpex_delisted_2025": "https://www.tpex.org.tw/www/zh-tw/company/deListed?date=2025&paging-table=0&paging-size=10000&paging-offset=0&response=json",
   "tpex_delisted_2026": "https://www.tpex.org.tw/www/zh-tw/company/deListed?date=2026&paging-table=0&paging-size=10000&paging-offset=0&response=json"
  },
- "observed_at": "2026-11-13T04:32:50.282609+08:00"
+ "observed_at": "2026-11-19T22:06:34.498390+08:00"
 }
