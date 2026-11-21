@@ -73,7 +73,7 @@ class BindingTests(unittest.TestCase):
     def test_rendered_web_never_marks_mismatched_validation_as_valid(self):
         signal=json.loads((ROOT/'output/latest_signals.json').read_text(encoding='utf-8'));signal['release_version']=RELEASE_VERSION
         perf=json.loads((ROOT/'output/perf.json').read_text(encoding='utf-8'));perf['release_version']=RELEASE_VERSION
-        validation={'strategy_version':'V5','release_version':RELEASE_VERSION,'rebalance_date':signal['rebalance_date'],'verdict':'PASS','signal_digest':document_digest(signal),'performance_digest':document_digest(perf)}
+        validation={'strategy_version':signal['strategy_version'],'release_version':RELEASE_VERSION,'rebalance_date':signal['rebalance_date'],'verdict':'PASS','signal_digest':document_digest(signal),'performance_digest':document_digest(perf)}
         with tempfile.TemporaryDirectory() as d:
             tmp=Path(d);(tmp/'output').mkdir()
             for name in ['update_data.py','dashboard_ui.css','dashboard_ui.js','monthly_details.js','performance_ui.js','capital_preview.js','weekly_status.js','order_planner.js','order_planner_ui.js','weekly_capital.js','weekly_capital_ui.js','intro_ui.js','holidays.json']:(tmp/name).write_bytes((ROOT/name).read_bytes())
