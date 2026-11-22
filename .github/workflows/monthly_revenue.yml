@@ -1,0 +1,39 @@
+name: 月營收資料更新
+on:
+  schedule:
+    - cron: '20 12 * * *'   # 台北 20:20 每天抓最近兩個月（新公布與更正），法定期限後檢查完整性
+  workflow_dispatch:
+permissions:
+  contents: write   # 上傳 Release 資料庫檔
+concurrency:
+  group: monthly-revenue
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 1
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: requirements.txt
+      - name: 安裝依賴
+        run: pip install -q requests
+      - name: 下載、更新、檢查並上傳月營收（只動 monthly_revenue.sqlite3）
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python monthly_revenue.py update --release
+      - name: 失敗才告警
+        if: failure()
+        env:
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
+            --data-urlencode chat_id="${TG_CHAT_ID}" \
+            --data-urlencode "text=⚠️ 月營收資料更新失敗（不影響選股）：${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" || true
