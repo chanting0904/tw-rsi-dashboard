@@ -1,3 +1,9 @@
+V6.0.7
+2026-11-23
+- 新增「月營收影子紀錄」（研究用，選股、權重、買賣規則與 output/ 都不變）：research_notes/shadow_revenue.py 每週記下本週已發布計畫每檔的近 3 月營收年增、K 係數（>30% ×1.5、<0 ×0.5）與套用後的近似權重，並用同一引擎比較 V6 原版與 V6+K 自實盤起點 2026-10-02、參數固定日 2026-11-23 以來的報酬。
+- 新排程 .github/workflows/shadow_revenue.yml：台北每週六 12:00 執行，結果寫入 research_notes/shadow_revenue.md／.jsonl 並推送；失敗只 Telegram 告警。
+- 供 2027-02 複審 K 組合時看實盤期間的對照。
+
 V6.0.6
 2026-11-23
 - 新增月營收資料庫（研究用，選股、權重與買賣規則不變，正式程式不讀取）：monthly_revenue.py 抓公開資訊觀測站上市、上櫃月營收（含 KY 外國企業），存成 local_db/monthly_revenue.sqlite3，放在 GitHub Release（local-db）。
