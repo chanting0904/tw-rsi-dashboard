@@ -52,6 +52,7 @@ def financial_effective_date(company, year, quarter, holidays):
 def refresh(root=ROOT, through=None, *, getter=fetch):
     now = dt.datetime.now(ZoneInfo('Asia/Taipei'))
     today = now.date()
+    automatic = through is None
     through = through or (today.isoformat() if now.hour * 60 + now.minute >= 810
         and is_trading(today, load_holidays()) else prev_trading_day_str(today, load_holidays()))
     if through > today.isoformat():
@@ -93,6 +94,14 @@ def refresh(root=ROOT, through=None, *, getter=fetch):
             identity = response[0]
             day, market = identity.split(':')
             batches.setdefault(day, {})[market] = quote_rows(json.loads(response[2]), market, day)
+        # 排程延遲到 13:30～17:00 才執行時，官方可能只公布了一個市場（或都還沒公布）。
+        # 自動決定的訊號日改回前一交易日，不把未完整的當日行情寫入。
+        if (automatic and through == today.isoformat() and now.hour < 17 and through in batches
+                and not (batches[through]['TWSE'] and batches[through]['TPEx'])):
+            print('今日官方收盤行情尚未完整公布，改更新至前一交易日')
+            batches.pop(through)
+            through = prev_trading_day_str(today, load_holidays())
+            receipt['through'] = through
         for day, markets in batches.items():
             if bool(markets['TWSE']) != bool(markets['TPEx']):
                 raise ValueError('僅有單一市場行情，停止更新：' + day)

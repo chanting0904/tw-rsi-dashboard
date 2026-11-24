@@ -221,5 +221,48 @@ class CompanyListingTests(unittest.TestCase):
             store.close()
 
 
+class DelayedScheduleTests(unittest.TestCase):
+    def test_partial_same_day_quotes_fall_back_to_previous_session(self):
+        import sync_market
+
+        class Store:
+            baseline_day = '2026-11-20'
+            def __init__(self, root):
+                self.db = sqlite3.connect(':memory:')
+                self.db.execute('CREATE TABLE bars(day,code,o,h,l,c,v,src)')
+                self.db.executemany('INSERT INTO bars VALUES(?,?,?,?,?,?,?,?)',
+                    [('2026-11-23', str(1000 + i), 10, 10, 10, 10, 1, 't') for i in range(1000)])
+            def save_document(self, *args):
+                pass
+            def close(self):
+                pass
+
+        class Clock(dt.datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return dt.datetime(2026, 11, 24, 13, 46, tzinfo=tz)
+
+        row = lambda i: [str(1000 + i), 'x', '10', '11', '9', '10', '1000']
+        twse = {'stat': 'OK', 'date': '20261124', 'tables': [{'fields': ['證券代號', '證券名稱', '開盤價', '最高價',
+                '最低價', '收盤價', '成交金額'], 'data': [row(i) for i in range(800)]}]}
+        tpex = {'stat': 'OK', 'tables': [{'date': '20261124', 'fields': ['代號'], 'data': [], 'totalCount': 0}]}
+
+        def getter(url, params, post=False):
+            if 'MI_INDEX' in url:
+                return json.dumps(twse).encode()
+            if 'dailyQuotes' in url:
+                return json.dumps(tpex).encode()
+            raise RuntimeError('quotes accepted')
+
+        with patch.object(sync_market, 'MarketStore', Store), patch.object(sync_market.dt, 'datetime', Clock), \
+                patch.object(sync_market, 'is_trading', lambda d, h=None: d.weekday() < 5), \
+                patch.object(sync_market, 'prev_trading_day_str', lambda d, h=None: '2026-11-23'):
+            with self.assertRaisesRegex(RuntimeError, 'quotes accepted'):
+                sync_market.refresh(getter=getter)
+            # An explicit signal day still refuses a single-market batch.
+            with self.assertRaisesRegex(ValueError, '僅有單一市場行情'):
+                sync_market.refresh(through='2026-11-24', getter=getter)
+
+
 if __name__ == '__main__':
     unittest.main()
