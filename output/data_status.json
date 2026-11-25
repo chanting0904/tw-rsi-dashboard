@@ -1,7 +1,7 @@
 {
  "through": "2026-11-24",
  "historical_through": "2026-10-22",
- "checked_at": "2026-11-25T06:49:52.992906+08:00",
+ "checked_at": "2026-11-25T12:49:35.669910+08:00",
  "sources": [
   {
    "name": "2026-11-24:TWSE",
@@ -16,7 +16,7 @@
   {
    "name": "ex:TWSE",
    "source": "https://www.twse.com.tw/exchangeReport/TWT49U",
-   "sha256": "67f696a969ab108425ae85b4d0efe3e2d4574a168b41ee8eafbdccff673586a9"
+   "sha256": "5ee999e526a78a0c14cf48a348806d94b8267258700a22e2c746c55b93c954c8"
   },
   {
    "name": "reduction:TWSE",
@@ -41,12 +41,12 @@
   {
    "name": "ann:sii",
    "source": "https://mopsov.twse.com.tw/mops/web/ajax_t108sb27",
-   "sha256": "3a3ed3ab8b8b316db4c063f789b6bc86f799400e72e50fe5f5813f74d0881a3b"
+   "sha256": "373cb5646d292adb7e8a8cebf37f9fbbd6457cad48cb24055c2a862f5797e99a"
   },
   {
    "name": "ann:otc",
    "source": "https://mopsov.twse.com.tw/mops/web/ajax_t108sb27",
-   "sha256": "800abf65b8eb14fa60931d59d9c6f9c3360aee3f741828139fd009e335bca7d8"
+   "sha256": "727b1518d13074c0ba3e5ade0c5d1686ab525051fb6a6c0502d3b6f160c37e34"
   }
  ],
  "financial_period": "2026Q3",
