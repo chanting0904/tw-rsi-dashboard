@@ -170,3 +170,16 @@ class PublicationPersistenceTests(unittest.TestCase):
         for name in ['output/publication_verified.json','output/regression_history.json','output/baseline.json']:
             self.assertIn(name,stage)
         self.assertIn('git add -- "$file"',stage)
+
+
+class EveningTriggerWorkflowTests(unittest.TestCase):
+    def test_cloud_trigger_push_runs_evening_recovery(self):
+        source=(ROOT/'.github/workflows/update_pages.yml').read_text(encoding='utf-8')
+        self.assertIn("- 'triggers/evening_publish.txt'",source)
+        self.assertIn("startsWith(github.event.head_commit.message, 'trigger evening publish')",source)
+        recovery=source.split('id: recovery',1)[1].split('- name:',1)[0]
+        self.assertIn("env.EVENING_TRIGGER == 'true'",recovery)
+        self.assertIn('python recovery_check.py --evening\n',recovery)
+        rebuild=source.split('重建 Web（push 觸發',1)[1].split('- name:',1)[0]
+        self.assertIn("env.EVENING_TRIGGER != 'true'",rebuild)
+        self.assertEqual(source.count("env.EVENING_TRIGGER == 'true'"),4)
