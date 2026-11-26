@@ -1,5 +1,5 @@
 {
- "as_of": "2026-11-19",
+ "as_of": "2026-11-26",
  "status": "PARTIAL",
  "sources": [
   {
@@ -62,8 +62,9 @@
    "market": "tpex",
    "year": 2018,
    "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2018%2F01%2F01&endDate=2018%2F12%2F31&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
-   "ok": false,
-   "error": "ConnectionError"
+   "ok": true,
+   "cached": false,
+   "records": 90
   },
   {
    "market": "twse",
@@ -180,22 +181,22 @@
   {
    "market": "twse",
    "year": 2026,
-   "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20260101&endDate1=20261119&selectType=&stockNo=&response=json",
+   "source": "https://www.twse.com.tw/rwd/zh/announcement/LT185?startDate1=20260101&endDate1=20261126&selectType=&stockNo=&response=json",
    "ok": true,
    "cached": false,
-   "records": 75
+   "records": 76
   },
   {
    "market": "tpex",
    "year": 2026,
-   "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2026%2F01%2F01&endDate=2026%2F11%2F19&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
+   "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/tdr?startDate=2026%2F01%2F01&endDate=2026%2F11%2F26&sect=&mkt=&code=&response=json&paging-table=0&paging-size=10000&paging-offset=0",
    "ok": true,
    "cached": false,
    "records": 92
   }
  ],
- "discovered": 1729,
- "registered": 1752,
+ "discovered": 1809,
+ "registered": 1832,
  "conflicts": [
   {
    "code": "8050",

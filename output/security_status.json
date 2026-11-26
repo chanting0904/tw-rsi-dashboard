@@ -1,6 +1,6 @@
 {
- "checked_for": "2026-11-20",
- "quote_day": "2026-11-19",
+ "checked_for": "2026-11-27",
+ "quote_day": "2026-11-26",
  "listed": {
   "1101": {
    "name": "台泥",
@@ -3791,7 +3791,7 @@
    "exchange": "TWSE"
   },
   "6949": {
-   "name": "沛爾生醫*-創",
+   "name": "沛爾*-創",
    "exchange": "TWSE"
   },
   "6951": {
@@ -7506,6 +7506,10 @@
    "name": "漢測",
    "exchange": "TPEX"
   },
+  "7869": {
+   "name": "宏于電機",
+   "exchange": "TPEX"
+  },
   "8024": {
    "name": "佑華",
    "exchange": "TPEX"
@@ -7683,7 +7687,7 @@
    "exchange": "TPEX"
   },
   "8155": {
-   "name": "博智",
+   "name": "博智電子",
    "exchange": "TPEX"
   },
   "8171": {
@@ -7964,8 +7968,8 @@
   }
  },
  "source_dates": {
-  "twse_listed": "2026-11-18",
-  "tpex_listed": "2026-11-19"
+  "twse_listed": "2026-11-25",
+  "tpex_listed": "2026-11-26"
  },
  "events": [
   {
@@ -21160,12 +21164,12 @@
   },
   {
    "code": "4804",
-   "effective_date": "2026-11-20",
+   "effective_date": "2026-11-27",
    "status": "SUSPENDED",
    "name": "大略-KY",
    "source": "https://www.tpex.org.tw/openapi/v1/tpex_cmode",
    "label": "停止交易（本次官方狀態）",
-   "observed_on": "2026-11-20",
+   "observed_on": "2026-11-27",
    "effective_time": "000000"
   },
   {
@@ -28242,7 +28246,7 @@
    "code": "6949",
    "effective_date": "2024-03-08",
    "status": "TRADABLE",
-   "name": "沛爾生醫*-創",
+   "name": "沛爾*-創",
    "source": "https://openapi.twse.com.tw/v1/opendata/t187ap03_L",
    "label": "上市櫃",
    "observed_on": null,
@@ -29249,6 +29253,16 @@
    "effective_time": "000000"
   },
   {
+   "code": "7869",
+   "effective_date": "2026-11-26",
+   "status": "TRADABLE",
+   "name": "宏于電機",
+   "source": "https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap03_O",
+   "label": "上市櫃",
+   "observed_on": null,
+   "effective_time": "000000"
+  },
+  {
    "code": "8008",
    "effective_date": "2013-07-12",
    "status": "DELISTED",
@@ -29700,12 +29714,12 @@
   },
   {
    "code": "8084",
-   "effective_date": "2026-11-20",
+   "effective_date": "2026-11-27",
    "status": "SUSPENDED",
    "name": "巨虹",
    "source": "https://www.tpex.org.tw/openapi/v1/tpex_cmode",
    "label": "停止交易（本次官方狀態）",
-   "observed_on": "2026-11-20",
+   "observed_on": "2026-11-27",
    "effective_time": "000000"
   },
   {
@@ -29972,7 +29986,7 @@
    "code": "8155",
    "effective_date": "2012-12-18",
    "status": "TRADABLE",
-   "name": "博智",
+   "name": "博智電子",
    "source": "https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap03_O",
    "label": "上市櫃",
    "observed_on": null,
@@ -30250,12 +30264,12 @@
   },
   {
    "code": "8291",
-   "effective_date": "2026-11-20",
+   "effective_date": "2026-11-27",
    "status": "SUSPENDED",
    "name": "尚茂",
    "source": "https://www.tpex.org.tw/openapi/v1/tpex_cmode",
    "label": "停止交易（本次官方狀態）",
-   "observed_on": "2026-11-20",
+   "observed_on": "2026-11-27",
    "effective_time": "000000"
   },
   {
@@ -31830,5 +31844,5 @@
   "tpex_delisted_2025": "https://www.tpex.org.tw/www/zh-tw/company/deListed?date=2025&paging-table=0&paging-size=10000&paging-offset=0&response=json",
   "tpex_delisted_2026": "https://www.tpex.org.tw/www/zh-tw/company/deListed?date=2026&paging-table=0&paging-size=10000&paging-offset=0&response=json"
  },
- "observed_at": "2026-11-19T22:06:34.498390+08:00"
+ "observed_at": "2026-11-26T22:25:47.018433+08:00"
 }

@@ -1,19 +1,19 @@
 {
- "final_nav": 14062523.0,
- "cagr": 0.5177,
+ "final_nav": 11864878.0,
+ "cagr": 0.4952,
  "mdd": -0.3066,
- "sharpe": 1.57,
- "sortino": 2.38,
- "calmar": 1.69,
- "pf": 1.574966969578286,
+ "sharpe": 1.52,
+ "sortino": 2.28,
+ "calmar": 1.61,
+ "pf": 1.5523534826844994,
  "winrate": 45.6,
- "trades": 5909,
- "turnover": 326.41,
+ "trades": 5918,
+ "turnover": 324.85,
  "selection_mode": "single_ranked_pool",
  "performance_basis": "hypothetical_single_strategy_since_start",
  "start_capital": 100000,
  "strategy_version": "V6",
- "release_version": "V6.0.4",
+ "release_version": "V6.0.9",
  "buy_fee": 0.000399,
  "sell_fee": 0.003399,
  "minimum_commission": 1.0,
@@ -24,7 +24,7 @@
   "etf_sale_tax": 0.001,
   "order_policy": "one_minimum_per_code_side_rebalance"
  },
- "completed_through": "2026-11-13",
+ "completed_through": "2026-11-20",
  "execution_policy": "guarded_weekly_capital_v1",
  "nav_frequency": "daily",
  "delisted_valuation": "zero",
@@ -32,7 +32,7 @@
   "date": "2026-10-16",
   "cagr": 0.5081981101448945,
   "mdd": -0.3066301749349204,
-  "release_version": "V6.0.4",
+  "release_version": "V6.0.9",
   "selection_rules": {
    "selection_mode": "single_ranked_pool",
    "a_rank_method": "ewm",
@@ -47,7 +47,7 @@
   }
  },
  "monthly_contributions": {
-  "through": "2026-11-13",
+  "through": "2026-11-20",
   "months": {
    "2015-01": {
     "through": "2015-01-30",
@@ -2026,17 +2026,17 @@
     }
    },
    "2026-11": {
-    "through": "2026-11-13",
-    "return_pct": 7.323658851856929,
+    "through": "2026-11-20",
+    "return_pct": -9.448527630136539,
     "winner": {
-     "code": "8099",
-     "name": "大世科",
-     "contribution": 3.471118168438149
+     "code": "6108",
+     "name": "競國",
+     "contribution": 1.3494940891626628
     },
     "loser": {
-     "code": "2466",
-     "name": "冠西電",
-     "contribution": -2.1713115139841705
+     "code": "5465",
+     "name": "富驊",
+     "contribution": -2.584841781394146
     }
    }
   },
@@ -13602,6 +13602,26 @@
   [
    "2026-11-13",
    14062523.0
+  ],
+  [
+   "2026-11-16",
+   14168651.0
+  ],
+  [
+   "2026-11-17",
+   13633217.0
+  ],
+  [
+   "2026-11-18",
+   13306449.0
+  ],
+  [
+   "2026-11-19",
+   12591334.0
+  ],
+  [
+   "2026-11-20",
+   11864878.0
   ]
  ],
  "dd": [
@@ -25164,6 +25184,26 @@
   [
    "2026-11-13",
    -9.03
+  ],
+  [
+   "2026-11-16",
+   -8.35
+  ],
+  [
+   "2026-11-17",
+   -11.81
+  ],
+  [
+   "2026-11-18",
+   -13.92
+  ],
+  [
+   "2026-11-19",
+   -18.55
+  ],
+  [
+   "2026-11-20",
+   -23.25
   ]
  ],
  "yearly": [
@@ -25257,11 +25297,11 @@
   },
   {
    "year": 2026,
-   "ret": 106.66,
+   "ret": 74.36,
    "mdd": -30.66,
    "basis_nav": 6804729.0,
    "basis_date": "2025-12-31",
-   "end_date": "2026-11-13"
+   "end_date": "2026-11-20"
   }
  ],
  "pending_stock_deliveries": [],
