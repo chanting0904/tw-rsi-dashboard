@@ -1,52 +1,52 @@
 {
- "through": "2026-11-26",
+ "through": "2026-11-27",
  "historical_through": "2026-10-22",
- "checked_at": "2026-11-26T22:23:47.351564+08:00",
+ "checked_at": "2026-11-28T05:43:06.102279+08:00",
  "sources": [
   {
-   "name": "2026-11-26:TWSE",
+   "name": "2026-11-27:TWSE",
    "source": "https://www.twse.com.tw/exchangeReport/MI_INDEX",
-   "sha256": "44fa40b51730cb3848f6e12de8a0c515f95611b66157e5df290a819742848753"
+   "sha256": "fd833287833b54445d99574b249b5dc4a7a437005173a8e72fb596da417c70c4"
   },
   {
-   "name": "2026-11-26:TPEx",
+   "name": "2026-11-27:TPEx",
    "source": "https://www.tpex.org.tw/www/zh-tw/afterTrading/dailyQuotes",
-   "sha256": "505b3b6feab52ebe20cff2de9f97802c1ef0e0919492f10b32c52f4f7f2afdf9"
+   "sha256": "687c895e0f4a35539c31e644654a35887aaf5d969ec9359154d9d37dff65f29e"
   },
   {
    "name": "ex:TWSE",
    "source": "https://www.twse.com.tw/exchangeReport/TWT49U",
-   "sha256": "e037559296be68c312f670990d184cc552605bacda845306c5e3c05ccd72bbc0"
+   "sha256": "992551ef25a23d4875ce0e47fef0d6be89331560067a88cf40d929a1133edd9d"
   },
   {
    "name": "reduction:TWSE",
    "source": "https://www.twse.com.tw/exchangeReport/TWTAUU",
-   "sha256": "865a99d2af29e39441fdebc5ecb1699ea47b40775a88de49989114ba8048ae42"
+   "sha256": "0e14c705763c3edf89ed8428bf0cf042c81a21929efacf1c5e3456a838896706"
   },
   {
    "name": "ex:TPEx",
    "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/exDailyQ",
-   "sha256": "86632d4929e5fde91ce1fd29ae7fec01de7102f9656bbe82557e9bc87065a005"
+   "sha256": "66e9e2d669daf18b19d8a4342a672f884bf5366e38369db0a724f491f2f0dffc"
   },
   {
    "name": "reduction:TPEx",
    "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/revivt",
-   "sha256": "8598bc43ca6f8de107ff1f7eabb365e2c330874059cfc7b82ef723b40cc9b9e0"
+   "sha256": "b142923cde50a32d8e2164d3abd005b5babbc28c9594811a9983c7554f0dc401"
   },
   {
    "name": "parvalue:TWSE",
    "source": "https://www.twse.com.tw/exchangeReport/TWTB8U",
-   "sha256": "6aab3aaf9e7a7dbe7395a1404aab75d984d96a488409acfdafbee14317a2c77f"
+   "sha256": "9bfcc5fe161351a081009b6ffc14d1aaf0822ea9afe3c1d5a2c8296d09627aae"
   },
   {
    "name": "ann:sii",
    "source": "https://mopsov.twse.com.tw/mops/web/ajax_t108sb27",
-   "sha256": "c3f862861c5e3897c34ce5d7725bfc21eb5a9ada2afc92511be155f6d0e2a550"
+   "sha256": "d07ca92c82a9773891709cb6b138f186f4d0f3b042214532344b6642ea79b598"
   },
   {
    "name": "ann:otc",
    "source": "https://mopsov.twse.com.tw/mops/web/ajax_t108sb27",
-   "sha256": "7785c811a2055ce948477f428135926b9872060530cdc2dc6241f6eb4804b399"
+   "sha256": "c29c2f8677df61ac79915420a2c5837191709824b29c8454ed075c7536296fd0"
   }
  ],
  "financial_period": "2026Q3",
@@ -55,9 +55,9 @@
   "new_listings": 0
  },
  "status": "PASS",
- "latest_price_date": "2026-11-26",
+ "latest_price_date": "2026-11-27",
  "no_quote_days": [
   "2026-10-23"
  ],
- "market_rows": 1971
+ "market_rows": 1953
 }
