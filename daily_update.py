@@ -152,6 +152,16 @@ def main():
     expected_rebal_date = last_day.isoformat() if last_day else None
     earliest = prev_trading_day_str(today_tw, holidays)
     latest = today_tw.isoformat() if is_trading(today_tw,holidays) and now_tw.hour*60+now_tw.minute>=810 else earliest
+    # sync_market 在 17:00 前遇到當日只公布單一市場時會改更新到前一交易日；
+    # 這裡跟著它的收據走，避免寫出只有上市股、日期卻標成今天的價格檔。
+    if latest == today_tw.isoformat() and now_tw.hour < 17:
+        try:
+            with open(os.path.join(HERE, 'output', 'data_status.json'), encoding='utf-8') as stream:
+                synced = json.load(stream).get('through') or ''
+        except (OSError, ValueError):
+            synced = ''
+        if synced and synced < latest:
+            latest = earliest
     batches = []
     def collect(name, getter):
         try:

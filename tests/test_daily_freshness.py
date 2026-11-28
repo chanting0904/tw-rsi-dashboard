@@ -60,3 +60,29 @@ class DailyFreshnessTests(unittest.TestCase):
 
     def test_preopen_same_day_quote_is_not_a_completed_close(self):
         with self.assertRaises(RuntimeError):self.run_daily(({'2330':100.},'20261023'),({'2317':20.},'20261023'))
+
+class SyncedDayCapTests(unittest.TestCase):
+    """V6.0.11：17:00 前 sync_market 退回前一交易日時，daily_update 不可寫出只有單一市場的今日價格。"""
+    def run_at(self,hour,synced):
+        class Afternoon(dt.datetime):
+            @classmethod
+            def now(cls,tz=None):return cls(2026,10,23,hour,30,tzinfo=tz)
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d);(root/'output').mkdir()
+            (root/'output/data_status.json').write_text(json.dumps({'through':synced}),encoding='utf-8')
+            html=root/'index.html';html.write_text('const DATA = '+json.dumps({'holdings_a':[{'code':'2330','px':1.}],'holdings_b':[]})+';',encoding='utf-8')
+            saved=Mock(return_value=({'2330':99.,'2317':19.},'20261022'))
+            with patch.multiple(daily,HERE=d,IDX=str(html)),patch.object(daily,'datetime',Afternoon),\
+                    patch.object(daily,'is_trading',lambda day,h=None:day.weekday()<5),\
+                    patch.object(daily,'prev_trading_day_str',lambda day,h=None:'2026-10-22'),\
+                    patch.object(daily,'twse_prices',Mock(return_value=({'2330':100.},'20261023'))),\
+                    patch.object(daily,'tpex_prices',Mock(side_effect=RuntimeError('not yet published'))),\
+                    patch.object(daily,'saved_prices',saved),patch.object(daily,'yf_prices',return_value=({},None)),\
+                    contextlib.redirect_stdout(io.StringIO()):
+                daily.main()
+            return json.loads((root/'output/prices.json').read_text(encoding='utf-8'))
+    def test_partial_today_follows_sync_receipt_before_1700(self):
+        result=self.run_at(14,'2026-10-22')
+        self.assertEqual(result['px_date'],'2026-10-22');self.assertEqual(result['prices'],{'2330':99.,'2317':19.})
+    def test_complete_receipt_keeps_today(self):
+        self.assertEqual(self.run_at(14,'2026-10-23')['px_date'],'2026-10-23')

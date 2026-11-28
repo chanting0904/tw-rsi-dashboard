@@ -97,9 +97,11 @@ def refresh(root=ROOT, through=None, *, getter=fetch):
         # 排程延遲到 13:30～17:00 才執行時，官方可能只公布了一個市場（或都還沒公布）。
         # 自動決定的訊號日改回前一交易日，不把未完整的當日行情寫入。
         if (automatic and through == today.isoformat() and now.hour < 17 and through in batches
-                and not (batches[through]['TWSE'] and batches[through]['TPEx'])):
+                and latest < through and not (batches[through]['TWSE'] and batches[through]['TPEx'])):
             print('今日官方收盤行情尚未完整公布，改更新至前一交易日')
             batches.pop(through)
+            # 不保存被捨棄的當日半套行情文件，收據來源也不列入。
+            quotes = [q for q in quotes if not q[0].startswith(through + ':')]
             through = prev_trading_day_str(today, load_holidays())
             receipt['through'] = through
         for day, markets in batches.items():
