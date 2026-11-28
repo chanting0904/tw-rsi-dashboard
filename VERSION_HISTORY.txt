@@ -1,3 +1,9 @@
+V6.0.10
+2026-11-28
+- 修正晚間發布被研究提交撞掉：11/26 晚間計畫已算好並通過驗證，但夜間研究排程剛好推了研究紀錄，部署步驟看到主分支有新提交就判定「過期」而放棄，需重新觸發才發布。
+- 改為：主分支的新提交只動 research_notes/ 或 triggers/evening_publish.txt 時，不影響本次計畫，照常提交並部署；動到其他任何檔案（或無法比對）時，仍維持原本的保守做法略過過期部署。
+- 新增測試 StaleDeployCheckTests；選股、權重、買賣規則與回測結果不變。
+
 V6.0.9
 2026-11-26
 - 晚間發布新增準時觸發：GitHub 免費排程常延遲 1 小時以上甚至漏跑。新增 triggers/evening_publish.txt，由 Claude 雲端排程每個交易日台北 21:05 推送更新；commit 訊息以「trigger evening publish」開頭時，工作流程改跑 recovery_check.py --evening（只在本週發布日執行，其他日自動略過；已發布則不重複）。

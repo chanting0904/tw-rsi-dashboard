@@ -183,3 +183,27 @@ class EveningTriggerWorkflowTests(unittest.TestCase):
         rebuild=source.split('重建 Web（push 觸發',1)[1].split('- name:',1)[0]
         self.assertIn("env.EVENING_TRIGGER != 'true'",rebuild)
         self.assertEqual(source.count("env.EVENING_TRIGGER == 'true'"),4)
+
+
+class StaleDeployCheckTests(unittest.TestCase):
+    """研究紀錄或觸發檔的新提交不應讓晚間部署被判為過期。"""
+    def decide(self, changed):
+        import os, shutil, subprocess
+        bash = shutil.which('bash')
+        if not bash: self.skipTest('bash not available')
+        source=(ROOT/'.github/workflows/update_pages.yml').read_text(encoding='utf-8')
+        cond=next(l.strip() for l in source.splitlines() if l.strip().startswith('if [ -n "$changed" ]'))
+        script='changed="$CHANGED"\n'+cond+'\n echo SKIP\nelse\n echo DEPLOY\nfi\n'
+        # Windows 命令列參數會吃掉換行，改用環境變數傳入多行檔名清單
+        out=subprocess.run([bash,'-c',script],capture_output=True,text=True,check=True,
+                           env={**os.environ,'CHANGED':changed}).stdout.strip()
+        return out
+    def test_research_and_trigger_commits_keep_deploy(self):
+        self.assertEqual(self.decide('research_notes/auto_research_log.md'),'DEPLOY')
+        self.assertEqual(self.decide('research_notes/a.md\ntriggers/evening_publish.txt'),'DEPLOY')
+        self.assertEqual(self.decide(''),'DEPLOY')
+    def test_other_changes_skip_stale_deploy(self):
+        self.assertEqual(self.decide('output/latest_signals.json'),'SKIP')
+        self.assertEqual(self.decide('research_notes/a.md\nv5_engine/selection.py'),'SKIP')
+        self.assertEqual(self.decide('triggers/other.txt'),'SKIP')
+        self.assertEqual(self.decide('__diff_failed__'),'SKIP')

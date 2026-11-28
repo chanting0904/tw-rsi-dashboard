@@ -155,9 +155,14 @@ jobs:
         run: |
           git fetch origin main
           if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
-            echo "主分支已有較新資料，略過這份過期部署"
-            echo "V5_SKIP_DEPLOY=1" >> "$GITHUB_ENV"
-            exit 0
+            # 新提交只動研究紀錄或觸發檔時不影響本次計畫，照常部署；其他變動才視為過期
+            changed=$(git diff --name-only HEAD origin/main) || changed="__diff_failed__"
+            if [ -n "$changed" ] && echo "$changed" | grep -qvE '^(research_notes/|triggers/evening_publish\.txt$)'; then
+              echo "主分支已有較新資料，略過這份過期部署"
+              echo "V5_SKIP_DEPLOY=1" >> "$GITHUB_ENV"
+              exit 0
+            fi
+            echo "主分支只新增研究紀錄或觸發檔，照常部署"
           fi
           git config user.name "rsi-bot"
           git config user.email "bot@rsi.local"
